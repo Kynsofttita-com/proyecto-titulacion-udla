@@ -37,6 +37,7 @@
         <module>shared/common-events</module>
         <module>shared/common-exceptions</module>
         <module>shared/common-security</module>
+        <module>shared/common-jpa</module>
 
         <!-- Servicios de soporte -->
         <module>eureka-server</module>
@@ -129,6 +130,11 @@
             <dependency>
                 <groupId>com.escuela</groupId>
                 <artifactId>common-security</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.escuela</groupId>
+                <artifactId>common-jpa</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
