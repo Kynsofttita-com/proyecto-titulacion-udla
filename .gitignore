@@ -139,10 +139,10 @@ mysql_data/
 backup/
 
 # -------- Docker --------
+# IMPORTANTE: .dockerignore SI se commitea (necesario para builds reproducibles)
 docker-compose.override.yml
 docker-compose.local.yml
 Dockerfile.local
-.dockerignore
 
 # -------- Logs y runtime --------
 logs/

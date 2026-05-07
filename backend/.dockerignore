@@ -1,0 +1,49 @@
+# =============================================================================
+# .dockerignore - Reduce el tamaño del build context y mejora caching
+# =============================================================================
+# Aplica cuando el contexto de build es backend/ (configurado en docker-compose).
+# =============================================================================
+
+# Build artifacts (Maven)
+**/target/
+**/*.class
+**/*.jar
+**/*.war
+
+# IDEs
+**/.idea/
+**/.vscode/
+**/*.iml
+**/.project
+**/.classpath
+**/.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Logs
+**/*.log
+**/logs/
+
+# Tests results
+**/test-output/
+**/.surefire-reports/
+
+# Dependency cache local (no se copia, se monta en build stage)
+.m2/
+
+# Documentation
+README.md
+
+# Files no relevantes para el build
+.editorconfig
+.prettierrc
+
+# Archivo helper temporal del Sprint 1 (ya eliminado)
+generate-ms.sh
