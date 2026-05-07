@@ -1,0 +1,87 @@
+# =============================================================================
+# Backend CI - Build, Tests y Cobertura
+# =============================================================================
+# Workflow que se ejecuta en cada push a main y en cada Pull Request a main.
+# Valida que el backend compila, los tests pasan y genera reporte de cobertura.
+#
+# Etapas:
+#   1. Checkout del código
+#   2. Setup de Java 21 (Temurin)
+#   3. Cache de dependencias Maven (acelera builds posteriores)
+#   4. mvn clean install (compila + tests unitarios + JaCoCo)
+#   5. Upload de reportes JaCoCo como artifact (descargable desde GitHub)
+#   6. Publicación de resultados de tests (Surefire)
+#
+# El threshold de cobertura (80%) se activará en Sprint 4 (cuando ya hay código
+# real para testear). Por ahora solo se genera el reporte sin falla por umbral.
+# =============================================================================
+
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:  # Permite disparar manualmente desde la UI
+
+# Cancelar runs anteriores si hay un nuevo push al mismo branch
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build, Tests y JaCoCo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven  # Cache automático de ~/.m2/repository
+
+      - name: Display environment info
+        run: |
+          echo "Java version:"
+          java -version
+          echo ""
+          echo "Maven version:"
+          mvn -version
+
+      - name: Build, test and generate coverage report
+        working-directory: backend
+        run: mvn -B -ntp clean install
+
+      - name: Upload JaCoCo coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-coverage-reports
+          path: backend/**/target/site/jacoco/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload Surefire test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surefire-test-reports
+          path: backend/**/target/surefire-reports/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Publish test results summary
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Maven Tests
+          path: backend/**/target/surefire-reports/*.xml
+          reporter: java-junit
+          fail-on-error: false

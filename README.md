@@ -1,10 +1,18 @@
 # Sistema de Control Administrativo y Financiero para Escuelas de Conducción
 
+[![Backend CI](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/backend-ci.yml)
+[![Docker Build](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/docker-build.yml/badge.svg)](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/docker-build.yml)
+[![Java](https://img.shields.io/badge/Java-21%20LTS-orange?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.0-green?logo=springboot)](https://spring.io/projects/spring-boot)
+[![Vue.js](https://img.shields.io/badge/Vue.js-3-brightgreen?logo=vue.js)](https://vuejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://docs.docker.com/compose/)
+
 **Proyecto de Titulación - Universidad de las Américas (UDLA)**
 
-**Autores**: Raúl Sebastián Cruz Baño, Hernán Mateo Jurado Moran  
-**Tutor**: Víctor Javier Gómez Regalado  
-**Fecha**: 21 de enero de 2026  
+**Autores**: Raúl Sebastián Cruz Baño, Hernán Mateo Jurado Moran
+**Tutor**: Víctor Javier Gómez Regalado
+**Fecha**: 21 de enero de 2026
 **Ubicación**: Quito, Ecuador
 
 ---
