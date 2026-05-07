@@ -51,6 +51,15 @@
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
+
+        <!-- Spring AMQP (necesario para AbstractRabbitConfig).
+             optional=true: los MS consumidores ya declaran spring-boot-starter-amqp;
+             aqui solo nos sirve para que esta libreria compile. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <!-- No genera jar ejecutable (es una librería) -->
