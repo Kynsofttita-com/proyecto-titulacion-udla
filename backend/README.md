@@ -9,8 +9,9 @@ backend/
 ├── pom.xml                      # POM padre (versiones centralizadas)
 │
 ├── shared/                      # Librerías compartidas entre microservicios
-│   ├── common-events/           # DTOs de eventos RabbitMQ
+│   ├── common-events/           # DTOs de eventos RabbitMQ (BaseEvent + dominio en Sprint 3)
 │   ├── common-exceptions/       # Excepciones base + handlers RFC 7807
+│   ├── common-jpa/              # BaseEntity (audit + soft delete) + AuditorAware + JpaAuditingConfig (auto-config)
 │   └── common-security/         # Utilidades JWT (Sprint 4)
 │
 ├── eureka-server/               # Service discovery (puerto 8761)
@@ -176,16 +177,53 @@ El **Eureka Server** además expone:
 - [SPRINTS_PLAN.xlsx](../SPRINTS_PLAN.xlsx) — Plan detallado de los 12 sprints
 - [CLAUDE.md](../CLAUDE.md) — Guía operativa del proyecto
 
-## ✅ Estado de validación (Sprint 1)
+## ✅ Estado de validación
 
+### Sprint 0 — Setup inicial
 ```
-[x] Compilación: BUILD SUCCESS en 14/14 módulos
-[x] Eureka Server arranca y expone dashboard
-[x] API Gateway arranca, se registra en Eureka, tiene 8 rutas configuradas
-[x] MS-Auth arranca, conecta a Postgres, se registra en Eureka
-[x] Gateway descubre MS-Auth via Service Discovery (lb://ms-auth)
-[x] Ruteo end-to-end Gateway → MS-Auth funcional
-[ ] Tests unitarios con cobertura 80%+ (Sprint 4-12)
-[ ] Tests de integración con Testcontainers (Sprint 4-12)
-[ ] CI/CD con GitHub Actions (Sprint 1 - Tarea 3)
+[x] Estructura del monorepo
+[x] Docker compose infra (Postgres + RabbitMQ + MinIO + Adminer)
+[x] 9 schemas PostgreSQL creados via init-schemas.sql
+[x] Repositorio Git inicializado y pusheado a GitHub
+```
+
+### Sprint 1 — Estructura Maven + Service Discovery + Containerización
+```
+[x] Compilación: BUILD SUCCESS en 15/15 módulos
+[x] Eureka Server arranca y expone dashboard (http://localhost:8761)
+[x] API Gateway arranca, se registra en Eureka, 8 rutas configuradas (lb://ms-*)
+[x] Los 8 microservicios arrancan, conectan a Postgres y se registran en Eureka
+[x] Ruteo end-to-end Gateway → MS funcional vía Service Discovery
+[x] Dockerfile.spring multi-stage compartido
+[x] docker-compose.yml stack completo (14 contenedores)
+```
+
+### Sprint 2.0 — CI/CD + GitHub Flow
+```
+[x] GitHub Actions: Backend CI (build + tests) y Docker Build
+[x] Branch protection en main (Branch Ruleset)
+[x] CONTRIBUTING.md + pull_request_template.md
+```
+
+### Sprint 2 — Base de datos (T2.1 + T2.2 + T2.3)
+```
+[x] Diseño BD documentado en docs/database/schema.md (1376 líneas, 9 diagramas Mermaid)
+[x] 9 migraciones Flyway V1 + V1_5 (seed) — 38 tablas en 9 schemas
+[x] common-jpa con BaseEntity (audit + soft delete) + AuditorAware + AutoConfiguration
+[x] 33 entidades JPA (@SuperBuilder, @Table(schema=...), Lombok)
+[x] 34 repositorios JpaRepository en los 8 MS
+[x] @EnableJpaAuditing(auditorAwareRef="auditorAware") en los 8 Application.java
+[x] Hibernate ddl-auto=validate verde — entidades coinciden con schema
+[x] Tests smoke pasando en los 8 MS (con H2 + INIT=CREATE SCHEMA)
+[x] Stack Docker completo levanta en ~50-60 s, 14 contenedores healthy
+```
+
+### Pendiente (Sprints futuros)
+```
+[ ] Sprint 3: Mensajería RabbitMQ + eventos asíncronos
+[ ] Sprint 4: Spring Security + JWT (HS512, HttpOnly cookies)
+[ ] Sprint 5–10: CRUDs por dominio + frontend Vue 3
+[ ] Sprint 11: Reportes + notificaciones
+[ ] Sprint 12: QA, performance, deployment Oracle Cloud Free Tier
+[ ] Cobertura 80%+ y tests integración con Testcontainers (en cada sprint funcional)
 ```
