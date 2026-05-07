@@ -88,6 +88,45 @@ spring:
       fail-on-unknown-properties: false
     time-zone: UTC
 
+  # ---------------------------------------------------------------------------
+  # Mail (Sprint 4 / T4.4)
+  # En dev usamos Mailtrap; en prod Gmail SMTP. Ver .env.example.
+  # ---------------------------------------------------------------------------
+  mail:
+    host: ${MAIL_HOST:sandbox.smtp.mailtrap.io}
+    port: ${MAIL_PORT:2525}
+    username: ${MAILTRAP_USER:}
+    password: ${MAILTRAP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  # ---------------------------------------------------------------------------
+  # Thymeleaf (templates de emails)
+  # ---------------------------------------------------------------------------
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false  # true en prod
+
+# -----------------------------------------------------------------------------
+# Configuracion de notificaciones (Sprint 4 / T4.4)
+# -----------------------------------------------------------------------------
+escuela:
+  notificaciones:
+    # Si false, los listeners persisten en log_envios_email con estado PENDIENTE
+    # pero NO envian email real (util para dev sin credenciales SMTP).
+    mail-enabled: ${JAVA_MAIL_ENABLED:false}
+    from-email: ${MAIL_FROM:no-reply@escuela-conduccion.local}
+    from-name: ${MAIL_FROM_NAME:Escuela de Conduccion}
+    # URL base del frontend (para construir links de reset password, etc.)
+    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+
 # -----------------------------------------------------------------------------
 # Eureka Client - registrar este MS en el servicio de descubrimiento
 # -----------------------------------------------------------------------------

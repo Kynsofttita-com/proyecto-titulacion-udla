@@ -91,4 +91,26 @@ public class RabbitConfig extends AbstractRabbitConfig {
                 .to(authExchangeReference())
                 .with("auth.usuario.creado");
     }
+
+    /**
+     * Suscribe a {@code auth.password.reset.solicitado} para enviar email
+     * con link de recuperacion (Sprint 4 / T4.4).
+     */
+    @Bean
+    public Binding authPasswordResetSolicitadoBinding() {
+        return BindingBuilder.bind(notificacionesQueue())
+                .to(authExchangeReference())
+                .with("auth.password.reset.solicitado");
+    }
+
+    /**
+     * Suscribe a {@code auth.usuario.bloqueado} para notificar al usuario
+     * que su cuenta fue bloqueada por intentos fallidos (Sprint 4 / T4.4).
+     */
+    @Bean
+    public Binding authUsuarioBloqueadoBinding() {
+        return BindingBuilder.bind(notificacionesQueue())
+                .to(authExchangeReference())
+                .with("auth.usuario.bloqueado");
+    }
 }
