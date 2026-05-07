@@ -1,0 +1,342 @@
+# =============================================================================
+# Docker Compose - Stack Completo
+# Sistema de Control Administrativo - Escuelas de Conducción
+# =============================================================================
+# Levanta TODO el sistema (infraestructura + 10 servicios Spring Boot).
+# El frontend Vue se agregará en Sprint 9.
+#
+# Uso:
+#   docker compose -f infrastructure/docker/docker-compose.yml up -d --build
+#   docker compose -f infrastructure/docker/docker-compose.yml ps
+#   docker compose -f infrastructure/docker/docker-compose.yml logs -f ms-auth
+#   docker compose -f infrastructure/docker/docker-compose.yml down
+#
+# Para solo infraestructura (los MS corren en IDE), usar docker-compose.infra.yml
+# =============================================================================
+
+services:
+
+  # ===========================================================================
+  # INFRAESTRUCTURA
+  # ===========================================================================
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: escuela-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-escuela_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-escuela_db}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../postgres/init-schemas.sql:/docker-entrypoint-initdb.d/01-init-schemas.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-escuela_user} -d ${POSTGRES_DB:-escuela_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - escuela-network
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: escuela-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - escuela-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: escuela-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - escuela-network
+
+  adminer:
+    image: adminer:latest
+    container_name: escuela-adminer
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: pepa-linha
+    ports:
+      - "${ADMINER_PORT:-8888}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - escuela-network
+
+  # ===========================================================================
+  # SERVICIOS DE SOPORTE (Spring Cloud)
+  # ===========================================================================
+
+  eureka-server:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: eureka-server
+        SERVICE_PORT: "8761"
+    image: escuela/eureka-server:0.0.1
+    container_name: escuela-eureka
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8761
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - escuela-network
+
+  api-gateway:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: api-gateway
+        SERVICE_PORT: "8080"
+    image: escuela/api-gateway:0.0.1
+    container_name: escuela-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      EUREKA_URL: http://eureka-server:8761/eureka
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - escuela-network
+
+  # ===========================================================================
+  # MICROSERVICIOS DE DOMINIO
+  # ===========================================================================
+
+  ms-auth:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: ms-auth
+        SERVICE_PORT: "8081"
+    image: escuela/ms-auth:0.0.1
+    container_name: escuela-ms-auth
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment: &ms-environment
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-escuela_db}
+      POSTGRES_USER: ${POSTGRES_USER:-escuela_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      EUREKA_URL: http://eureka-server:8761/eureka
+      MINIO_HOST: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+    depends_on: &ms-depends_on
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - escuela-network
+
+  ms-estudiantes:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: ms-estudiantes
+        SERVICE_PORT: "8082"
+    image: escuela/ms-estudiantes:0.0.1
+    container_name: escuela-ms-estudiantes
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment: *ms-environment
+    depends_on: *ms-depends_on
+    networks:
+      - escuela-network
+
+  ms-instructores:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: ms-instructores
+        SERVICE_PORT: "8083"
+    image: escuela/ms-instructores:0.0.1
+    container_name: escuela-ms-instructores
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment: *ms-environment
+    depends_on: *ms-depends_on
+    networks:
+      - escuela-network
+
+  ms-vehiculos:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: ms-vehiculos
+        SERVICE_PORT: "8084"
+    image: escuela/ms-vehiculos:0.0.1
+    container_name: escuela-ms-vehiculos
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment: *ms-environment
+    depends_on: *ms-depends_on
+    networks:
+      - escuela-network
+
+  ms-asignaciones:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: ms-asignaciones
+        SERVICE_PORT: "8085"
+    image: escuela/ms-asignaciones:0.0.1
+    container_name: escuela-ms-asignaciones
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment: *ms-environment
+    depends_on: *ms-depends_on
+    networks:
+      - escuela-network
+
+  ms-cobros:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: ms-cobros
+        SERVICE_PORT: "8086"
+    image: escuela/ms-cobros:0.0.1
+    container_name: escuela-ms-cobros
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment: *ms-environment
+    depends_on: *ms-depends_on
+    networks:
+      - escuela-network
+
+  ms-reportes:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: ms-reportes
+        SERVICE_PORT: "8087"
+    image: escuela/ms-reportes:0.0.1
+    container_name: escuela-ms-reportes
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    environment: *ms-environment
+    depends_on: *ms-depends_on
+    networks:
+      - escuela-network
+
+  ms-notificaciones:
+    build:
+      context: ../../backend
+      dockerfile: ../infrastructure/docker/Dockerfile.spring
+      args:
+        MODULE: ms-notificaciones
+        SERVICE_PORT: "8088"
+    image: escuela/ms-notificaciones:0.0.1
+    container_name: escuela-ms-notificaciones
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      <<: *ms-environment
+      MAIL_HOST: ${MAIL_HOST:-sandbox.smtp.mailtrap.io}
+      MAIL_PORT: ${MAIL_PORT:-2525}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-noreply@escuela.local}
+    depends_on: *ms-depends_on
+    networks:
+      - escuela-network
+
+# =============================================================================
+# Volúmenes persistentes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+    name: escuela_postgres_data
+  rabbitmq_data:
+    driver: local
+    name: escuela_rabbitmq_data
+  minio_data:
+    driver: local
+    name: escuela_minio_data
+
+# =============================================================================
+# Red compartida
+# =============================================================================
+networks:
+  escuela-network:
+    driver: bridge
+    name: escuela-network
