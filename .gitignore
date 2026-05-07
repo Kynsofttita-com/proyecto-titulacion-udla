@@ -1,0 +1,190 @@
+# =============================================================================
+# Sistema de Control Administrativo y Financiero para Escuelas de Conducción
+# .gitignore alineado con DECISIONES.md (2026-05-06)
+# =============================================================================
+
+# -------- Claude Code --------
+# Solo overrides locales, mantener settings.json y agents/ en el repo
+.claude/settings.local.json
+
+# -------- IDEs y Editores --------
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+*.swn
+.~*
+
+# -------- Sistema operativo --------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# -------- Maven (Backend Java) --------
+target/
+*.class
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Sí incluir Maven Wrapper en el repo:
+# !mvnw
+# !mvnw.cmd
+# !.mvn/wrapper/maven-wrapper.properties
+
+# -------- Node / Vue (Frontend) --------
+node_modules/
+.pnpm-store/
+.pnp.*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Builds
+dist/
+dist-ssr/
+build/
+.vite/
+.nuxt/
+.output/
+.cache/
+
+# Logs npm/yarn/pnpm
+npm-debug.log*
+yarn-error.log
+yarn-debug.log*
+.pnpm-debug.log*
+
+# Coverage / tests
+coverage/
+.nyc_output/
+*.lcov
+junit.xml
+test-results/
+playwright-report/
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+
+# Linting/formatting cache
+.eslintcache
+.stylelintcache
+.prettiercache
+
+# IMPORTANTE: lock files SÍ se commitean (reproducibilidad)
+# package-lock.json, yarn.lock, pnpm-lock.yaml NO se ignoran
+
+# -------- Secretos y credenciales --------
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+# IMPORTANTE: .env.example SÍ se commitea (template)
+!.env.example
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+secrets/
+credentials.json
+application-prod.yml
+application-prod.yaml
+application-secrets.yml
+
+# Cloud / orquestadores credentials
+.aws/
+.kube/
+.gcloud/
+.kubeconfig
+kubeconfig
+
+# -------- Bases de datos --------
+*.db
+*.sqlite
+*.sqlite3
+*.mdb
+*.accdb
+*.dump
+*.bak
+postgres_data/
+postgres-data/
+mysql_data/
+backup/
+
+# -------- Docker --------
+docker-compose.override.yml
+docker-compose.local.yml
+Dockerfile.local
+.dockerignore
+
+# -------- Logs y runtime --------
+logs/
+log/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# -------- SonarQube / Code quality --------
+.sonarqube/
+.scannerwork/
+.sonar/
+
+# -------- Coverage Java (JaCoCo) --------
+jacoco.exec
+jacoco-it.exec
+jacoco-ut.exec
+
+# -------- Archivos temporales --------
+*.tmp
+*.temp
+*.bak
+*~
+
+# -------- Compilados nativos --------
+*.so
+*.dylib
+# Nota: *.dll, *.exe NO se ignoran globalmente (puede haber binarios necesarios en infra)
+
+# -------- GitHub Actions secrets --------
+.github/workflows/secrets.yml
+
+# -------- Documentación generada --------
+docs/_build/
+docs/.vuepress/dist/
+
+# -------- Excel temporales --------
+~$*.xlsx
+~$*.docx
+
+# -------- Otros --------
+.turbo/
+.nx/
+*.local

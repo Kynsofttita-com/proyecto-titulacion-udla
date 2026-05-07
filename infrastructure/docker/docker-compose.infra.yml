@@ -1,0 +1,144 @@
+# =============================================================================
+# Docker Compose - Solo Infraestructura (Sprint 0)
+# Sistema de Control Administrativo - Escuelas de Conducción
+# =============================================================================
+# Este archivo levanta SOLO los servicios de infraestructura:
+#   - PostgreSQL (BD)
+#   - RabbitMQ (mensajería)
+#   - MinIO (object storage)
+#   - Adminer (UI para inspección de BD - opcional)
+#
+# Los microservicios se corren localmente (mvn spring-boot:run / IDE) durante
+# el desarrollo. El docker-compose.yml completo (con todos los MS) se creará
+# cuando los microservicios estén implementados (a partir del Sprint 1).
+#
+# Uso:
+#   docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
+#   docker compose -f infrastructure/docker/docker-compose.infra.yml down
+#   docker compose -f infrastructure/docker/docker-compose.infra.yml logs -f
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 15 - Base de datos relacional
+  # 1 instancia con 9 schemas (database-per-microservice via schemas)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: escuela-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-escuela_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-escuela_db}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../postgres/init-schemas.sql:/docker-entrypoint-initdb.d/01-init-schemas.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-escuela_user} -d ${POSTGRES_DB:-escuela_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - escuela-network
+
+  # ---------------------------------------------------------------------------
+  # RabbitMQ 3.12 - Broker de mensajes para eventos asíncronos
+  # Management UI disponible en http://localhost:15672
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: escuela-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"      # AMQP protocol
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - escuela-network
+
+  # ---------------------------------------------------------------------------
+  # MinIO - Object Storage compatible S3
+  # Para almacenar documentos de estudiantes (cédulas, licencias),
+  # documentos de vehículos, fotos de perfil, etc.
+  # Console UI disponible en http://localhost:9001
+  # ---------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: escuela-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"          # API S3
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"  # Web Console
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - escuela-network
+
+  # ---------------------------------------------------------------------------
+  # Adminer - UI web para inspeccionar la base de datos (opcional, solo dev)
+  # Útil durante desarrollo para revisar schemas, datos, etc.
+  # Acceso: http://localhost:8888
+  # ---------------------------------------------------------------------------
+  adminer:
+    image: adminer:latest
+    container_name: escuela-adminer
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: pepa-linha
+    ports:
+      - "${ADMINER_PORT:-8888}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - escuela-network
+
+# =============================================================================
+# Volúmenes persistentes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+    name: escuela_postgres_data
+  rabbitmq_data:
+    driver: local
+    name: escuela_rabbitmq_data
+  minio_data:
+    driver: local
+    name: escuela_minio_data
+
+# =============================================================================
+# Red compartida entre todos los servicios
+# =============================================================================
+networks:
+  escuela-network:
+    driver: bridge
+    name: escuela-network
