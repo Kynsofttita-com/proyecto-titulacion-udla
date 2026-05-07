@@ -1,29 +1,34 @@
 package com.escuela.common.jpa;
 
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 /**
- * Habilita JPA Auditing para todos los microservicios que importen
- * {@code common-jpa}.
+ * Auto-configuración compartida para JPA Auditing.
  *
- * <p>Registra automáticamente el bean {@link AuditorAware} con la implementación
- * {@link AuditorAwareImpl} si no hay otro definido en el contexto.</p>
+ * <p>Se carga automáticamente en todos los microservicios que tengan
+ * {@code common-jpa} en classpath, gracias al archivo
+ * {@code META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports}.</p>
  *
- * <p>Cada microservicio que use BaseEntity solo necesita importar
- * {@code common-jpa} y agregar {@code @EnableJpaAuditing} en su clase Application
- * (apuntando a {@code auditorAwareRef = "auditorAware"}).</p>
+ * <p>Registra el bean {@link AuditorAware} con la implementación
+ * {@link AuditorAwareImpl} solo si no hay otro bean ya registrado.</p>
  *
- * <p>Ya que cada microservicio tiene su propia {@code @SpringBootApplication}
- * con {@code @EnableJpaAuditing}, este config solo expone el bean {@link AuditorAware}
- * cuando es solicitado.</p>
+ * <p>Cada microservicio que use BaseEntity necesita además agregar
+ * {@code @EnableJpaAuditing(auditorAwareRef = "auditorAware")} en su clase
+ * {@code Application} para activar el listener de auditing.</p>
  */
-@Configuration
+@AutoConfiguration
+@ConditionalOnClass(AuditorAware.class)
 public class JpaAuditingConfig {
 
+    /**
+     * Provee el {@link AuditorAware} usado para popular {@code createdBy}
+     * y {@code updatedBy}. Lee el usuario actual desde Spring SecurityContext
+     * o devuelve "system" si no hay autenticación.
+     */
     @Bean
     @ConditionalOnMissingBean(AuditorAware.class)
     public AuditorAware<String> auditorAware() {
