@@ -30,6 +30,13 @@ concurrency:
   group: backend-ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Permisos necesarios para que dorny/test-reporter pueda publicar checks
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  actions: read
+
 jobs:
   build-and-test:
     name: Build, Tests y JaCoCo
