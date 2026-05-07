@@ -1,16 +1,15 @@
 # =============================================================================
-# Configuración de tests - MS-Auth
+# Configuración de tests - ms-notificaciones
 # =============================================================================
-# Override de la configuración para perfil "test":
-# - Usa H2 en memoria (no requiere Postgres real para tests unitarios)
-# - Desactiva Eureka (no necesita registrarse)
-# - Desactiva Flyway (H2 maneja schema con Hibernate ddl-auto=create-drop)
-# - Desactiva auto-configuración de RabbitMQ (los tests que la necesiten la activan)
+# - Usa H2 en memoria con MODE=PostgreSQL para que las entidades JPA con
+#   @Table(schema = "notificaciones_schema") funcionen igual que en producción.
+# - INIT crea el schema antes de Hibernate.
+# - Desactiva Eureka, Flyway, RabbitMQ.
 # =============================================================================
 
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    url: "jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS notificaciones_schema"
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -21,7 +20,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        default_schema: PUBLIC
+        default_schema: notificaciones_schema
 
   flyway:
     enabled: false

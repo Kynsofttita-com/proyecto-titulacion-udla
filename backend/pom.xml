@@ -229,22 +229,29 @@
                 </plugin>
 
                 <!-- Surefire (tests unitarios) -->
+                <!--
+                    Nota: NO usamos <excludedGroups> a nivel padre porque requiere que
+                    junit-jupiter-engine esté en classpath, lo cual no ocurre en modules
+                    shared/* (no tienen tests). Los integration tests se separan por
+                    naming convention: *Tests.java (unit) vs *IT.java (integration via
+                    failsafe). failIfNoTests=false evita errores en modules sin tests.
+                -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${surefire.version}</version>
                     <configuration>
-                        <excludedGroups>integration</excludedGroups>
+                        <failIfNoTests>false</failIfNoTests>
                     </configuration>
                 </plugin>
 
-                <!-- Failsafe (tests de integración con tag "integration") -->
+                <!-- Failsafe (tests de integración - naming convention *IT.java) -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${surefire.version}</version>
                     <configuration>
-                        <groups>integration</groups>
+                        <failIfNoTests>false</failIfNoTests>
                     </configuration>
                 </plugin>
 
