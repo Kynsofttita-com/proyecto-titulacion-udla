@@ -42,6 +42,19 @@ eureka:
     register-with-eureka: false
     fetch-registry: false
 
+# Config de seguridad para tests (JWT_SECRET fijo, no usar en produccion)
+escuela:
+  security:
+    jwt:
+      secret: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      access-token-expiration-minutes: 15
+      refresh-token-expiration-days: 7
+      issuer: escuela-conduccion
+    auth:
+      max-failed-attempts: 3
+      lockout-duration-minutes: 15
+      reset-token-expiration-minutes: 60
+
 logging:
   level:
     root: WARN

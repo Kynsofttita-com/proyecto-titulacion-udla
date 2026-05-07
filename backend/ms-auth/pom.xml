@@ -40,6 +40,14 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Spring Security (BCrypt + filter chain minimal). El JWT lo valida
+             el API Gateway; aqui solo necesitamos PasswordEncoder y permitAll
+             en /auth/*. Sprint 4 / T4.2. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- JPA / Hibernate -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
