@@ -94,6 +94,24 @@ spring:
     time-zone: UTC
 
 # -----------------------------------------------------------------------------
+# Configuracion de seguridad (Sprint 4 / T4.2)
+# -----------------------------------------------------------------------------
+escuela:
+  security:
+    jwt:
+      # Clave HS512 (minimo 64 chars = 512 bits). Generar con: openssl rand -hex 64
+      secret: ${JWT_SECRET}
+      access-token-expiration-minutes: 15
+      refresh-token-expiration-days: 7
+      issuer: escuela-conduccion
+    auth:
+      # Account lockout
+      max-failed-attempts: 3
+      lockout-duration-minutes: 15
+      # Forgot password
+      reset-token-expiration-minutes: 60
+
+# -----------------------------------------------------------------------------
 # Eureka Client - registrar este MS en el servicio de descubrimiento
 # -----------------------------------------------------------------------------
 eureka:
