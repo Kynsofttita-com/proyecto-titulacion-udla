@@ -350,32 +350,43 @@ proyecto-titulacion/
 
 ## 9. Convenciones de Git
 
-### 9.1 Branching strategy: GitHub Flow simplificado
+### 9.1 Branching strategy: GitHub Flow + 1 PR por sprint
 
-> **Actualizado en Sprint 2.0** (cambio desde "Trunk-based con develop" a "GitHub Flow"). Razón: simplicidad, menor fricción y flujo estándar en la industria moderna. Cada feature pasa por PR con CI/CD obligatorio antes de merge a `main`.
+> **Actualizado en Sprint 2.2:** evolucionado a "1 PR por sprint completo" en lugar de "1 PR por tarea". Razón: PRs más representativos del trabajo realizado, mejor para titulación (cada PR = milestone del sprint), menos overhead de mergear.
 
 **Branches:**
 - `main` → branch principal, siempre estable, **protegida** (no se permite push directo)
-- `feature/sprint-N-<descripcion-corta>` → para nuevas features de cada sprint
-- `fix/<descripcion-corta>` → para correcciones de bugs
+- `feature/sprint-N-<descripcion-amplia>` → un branch por sprint completo (no por tarea individual)
+- `fix/<descripcion-corta>` → para correcciones de bugs urgentes
 - `docs/sprint-N-<descripcion-corta>` → para cambios solo de documentación
 - `chore/<descripcion-corta>` → para tareas de mantenimiento (deps, configs, CI)
 
-**Flujo:**
-1. Crear branch desde `main` actualizado
-2. Hacer commits con formato `Sprint N (Tarea)` (ver 9.2)
-3. Push del branch al remote (`git push -u origin <branch>`)
-4. Abrir Pull Request en GitHub apuntando a `main`
-5. Esperar a que CI pase (Backend CI + Docker Build si aplica)
-6. **Squash and merge** desde GitHub UI (mantiene historia limpia en `main`)
-7. Eliminar el branch tras merge (GitHub lo ofrece automáticamente)
+**Flujo (1 PR por sprint):**
+1. Crear branch desde `main` actualizado al inicio del sprint
+2. Implementar todas las tareas del sprint (T_N.1, T_N.2, T_N.3, ...)
+3. Hacer commits granulares por tarea con formato `Sprint N (Tarea descripcion)` (ver 9.2)
+4. Push del branch al remote conforme avanzan los commits
+5. Cuando el sprint está completo y validado, abrir UN solo Pull Request a `main`
+6. Esperar a que CI pase (Backend CI + Docker Build si aplica)
+7. **Squash and merge** desde GitHub UI → todos los commits del sprint se consolidan en uno solo
+8. Eliminar el branch tras merge
 
 **Convenciones de naming de branches:**
-- Usar guiones: `feature/sprint-2-1-disenar-schema-bd` (no underscore ni camelCase)
-- Mantenerlo corto: 3-5 palabras descriptivas
+- Usar guiones: `feature/sprint-2-base-de-datos` (descripcion del sprint, no de la tarea)
+- Mantenerlo corto: 3-5 palabras descriptivas del objetivo del sprint
 - Sin acentos ni caracteres especiales
 
-**Excepción permitida:** commits directos a `main` solo en la fase de **setup inicial** del repositorio (Sprints 0-2.0). A partir del Sprint 2.1, todo via PR.
+**Excepciones aceptadas:**
+- Commits directos a `main` solo en setup inicial (Sprints 0-2.0). A partir del 2.1, todo via PR.
+- Sub-PRs dentro de un sprint si la pieza es independiente y arriesgada (ej: PR #1 del Sprint 2.0 movió `CONTRIBUTING.md`).
+- Sprints con sub-PRs (como Sprint 2.0 con CI/CD y luego mover docs) están permitidos cuando hay razones técnicas.
+
+**Ventajas de 1 PR por sprint:**
+- Cada PR es un "milestone" claro del sprint (perfecto para titulación)
+- Historia de `main` limpia: `Sprint N (descripcion)` por commit squashed
+- Menos overhead de mergear PRs chicos
+- El reviewer ve el trabajo completo del sprint en contexto
+- Para el jurado: cada sprint del SPRINTS_PLAN.xlsx se mapea a 1 PR mergeado
 
 ### 9.1.1 Branch Protection Rules en `main`
 

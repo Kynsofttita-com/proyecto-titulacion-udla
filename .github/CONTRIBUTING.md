@@ -2,7 +2,9 @@
 
 Esta guía describe el flujo de trabajo para colaborar en este proyecto. Sigue estas reglas para mantener historia clara, código verificado por CI y trazabilidad por sprint.
 
-> **TL;DR:** crea un branch desde `main`, haz commits con formato `Sprint N (Tarea)`, abre Pull Request, espera CI verde, **squash and merge** desde GitHub.
+> **TL;DR:** **un branch por sprint completo**. Crea `feature/sprint-N-descripcion` desde `main`, hacé commits granulares por tarea con formato `Sprint N (Tarea)`, al cerrar el sprint abrí Pull Request, esperá CI verde y **squash and merge**.
+
+> **Política actualizada en Sprint 2.2:** un sprint = un PR (no un PR por tarea). Esto da mejor trazabilidad para titulación y reduce overhead. Los commits granulares siguen siendo por tarea.
 
 ---
 

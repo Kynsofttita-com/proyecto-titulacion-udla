@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    common-jpa
+    ==========
+    Libreria compartida con BaseEntity y configuracion de JPA Auditing.
+    Importada por todos los microservicios que tienen entidades JPA.
+
+    Provee:
+    - BaseEntity: superclase con audit fields (created_at, updated_at,
+      created_by, updated_by) y deleted_at para soft delete.
+    - AuditorAwareImpl: provee el usuario actual desde SecurityContextHolder
+      o "system" si no hay autenticacion.
+    - JpaAuditingConfig: habilita @EnableJpaAuditing globalmente.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.escuela</groupId>
+        <artifactId>escuela-backend-parent</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>common-jpa</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Common JPA</name>
+    <description>BaseEntity + JPA Auditing compartido</description>
+
+    <dependencies>
+        <!-- Spring Data JPA (provee anotaciones @CreatedDate, @LastModifiedDate, etc.) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Spring Security (para SecurityContextHolder en AuditorAware) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- SLF4J -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+    </build>
+</project>
