@@ -58,6 +58,18 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
+        <!-- Sprint 4 / T4.4: envio de emails (Mailtrap dev / Gmail SMTP prod) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!-- Sprint 4 / T4.4: templates Thymeleaf para emails -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
         <!-- Actuator (healthchecks) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
