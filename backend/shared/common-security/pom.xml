@@ -2,12 +2,21 @@
 <!--
     common-security
     ===============
-    Librería compartida con utilidades de seguridad: JwtTokenProvider,
-    JwtAuthenticationFilter, configuraciones base de Spring Security.
-    Usada por API Gateway y todos los microservicios para validar JWT.
+    Libreria compartida con utilidades de seguridad JWT.
 
-    Las dependencias completas (Spring Security, JWT) se agregan en Sprint 4.
-    En Sprint 1 solo establecemos la estructura base.
+    Provee:
+      - JwtTokenProvider para generar y validar tokens HS512.
+      - UserContext / UserContextHolder para que microservicios downstream
+        accedan al usuario autenticado leyendo headers X-User-*.
+      - AutoConfiguration que registra el JwtTokenProvider via JwtProperties.
+
+    Decisiones de diseno (Sprint 4 / DECISIONES.md):
+      - Algoritmo: HS512 (HMAC simetrico) con clave de 512 bits.
+      - Tipos de token: ACCESS (15 min) y REFRESH (7 dias).
+      - Refresh con rotation: cada uso del refresh genera otro nuevo
+        (la persistencia de jtis usados va en MS-Auth, T4.2).
+      - Validacion centralizada en API Gateway (T4.3).
+        Los MS leen headers X-User-* (no validan token).
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -26,7 +35,7 @@
     <packaging>jar</packaging>
 
     <name>Common Security</name>
-    <description>Utilidades compartidas de seguridad (JWT, Spring Security)</description>
+    <description>Utilidades compartidas de seguridad (JWT)</description>
 
     <dependencies>
         <!-- Lombok -->
@@ -42,11 +51,32 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
-        <!--
-            Las dependencias de Spring Security, JWT y validación se agregan
-            en Sprint 4 (Tarea de implementación de JWT). En Sprint 1 solo
-            establecemos la estructura del módulo.
-        -->
+        <!-- Spring Boot core (para @ConfigurationProperties + @AutoConfiguration) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- JJWT (JSON Web Tokens) - 0.12.x usa la nueva API Jwts.builder() -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+        </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
