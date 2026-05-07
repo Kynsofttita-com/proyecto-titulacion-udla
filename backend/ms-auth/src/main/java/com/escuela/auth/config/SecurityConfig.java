@@ -40,8 +40,6 @@ public class SecurityConfig {
                         // Endpoints publicos (no requieren autenticacion)
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        // Endpoint de prueba T3.3 (se elimina en T4.5)
-                        .requestMatchers("/test/**").permitAll()
                         // Swagger UI
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Resto requiere autenticacion (vendra cuando MS-Auth tenga endpoints administrativos en Sprint 5+)
