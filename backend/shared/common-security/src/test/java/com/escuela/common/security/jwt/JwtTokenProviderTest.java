@@ -87,12 +87,16 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Parse de token con firma incorrecta lanza SignatureException")
+    @DisplayName("Parse de token con firma alterada lanza JwtException")
     void firmaIncorrecta() {
         String token = provider.generateAccessToken(USER_ID, EMAIL, ROLES);
-        // Cambiar el ultimo caracter de la firma
-        String alterado = token.substring(0, token.length() - 1) +
-                (token.endsWith("A") ? "B" : "A");
+        int lastDot = token.lastIndexOf('.');
+        // Reemplazar la firma completa con bytes base64url validos pero
+        // distintos a la firma real. Cambiar 1 solo char no es suficientemente
+        // robusto: dependiendo de la base64url decoding, puede caer en bytes
+        // que coincidan en padding y la verificacion no falle (visto en CI Linux).
+        String alterado = token.substring(0, lastDot + 1) +
+                "ZmFrZS1zaWduYXR1cmUtdGhhdC13aWxsLW5vdC1tYXRjaA";
 
         assertThatThrownBy(() -> provider.parse(alterado))
                 .isInstanceOf(JwtException.class);
