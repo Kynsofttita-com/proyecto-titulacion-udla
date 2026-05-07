@@ -160,6 +160,11 @@ management:
       enabled: true
     db:
       enabled: true
+    # Sprint 4 / T4.5: mail health requiere conectarse al SMTP. Desactivamos
+    # para que el contenedor no quede unhealthy cuando no hay credenciales
+    # Mailtrap (modo dry-run). El envio real se valida via log_envios_email.
+    mail:
+      enabled: false
 
 # -----------------------------------------------------------------------------
 # OpenAPI / Swagger UI
