@@ -350,12 +350,43 @@ proyecto-titulacion/
 
 ## 9. Convenciones de Git
 
-### 9.1 Branching strategy: Trunk-based simplificado
+### 9.1 Branching strategy: GitHub Flow simplificado
 
-- `main` → producción (siempre estable)
-- `develop` → integración de features
-- `feature/sprint-N-<descripcion>` → para cada feature/tarea
-- `fix/<descripcion>` → para correcciones de bugs
+> **Actualizado en Sprint 2.0** (cambio desde "Trunk-based con develop" a "GitHub Flow"). Razón: simplicidad, menor fricción y flujo estándar en la industria moderna. Cada feature pasa por PR con CI/CD obligatorio antes de merge a `main`.
+
+**Branches:**
+- `main` → branch principal, siempre estable, **protegida** (no se permite push directo)
+- `feature/sprint-N-<descripcion-corta>` → para nuevas features de cada sprint
+- `fix/<descripcion-corta>` → para correcciones de bugs
+- `docs/sprint-N-<descripcion-corta>` → para cambios solo de documentación
+- `chore/<descripcion-corta>` → para tareas de mantenimiento (deps, configs, CI)
+
+**Flujo:**
+1. Crear branch desde `main` actualizado
+2. Hacer commits con formato `Sprint N (Tarea)` (ver 9.2)
+3. Push del branch al remote (`git push -u origin <branch>`)
+4. Abrir Pull Request en GitHub apuntando a `main`
+5. Esperar a que CI pase (Backend CI + Docker Build si aplica)
+6. **Squash and merge** desde GitHub UI (mantiene historia limpia en `main`)
+7. Eliminar el branch tras merge (GitHub lo ofrece automáticamente)
+
+**Convenciones de naming de branches:**
+- Usar guiones: `feature/sprint-2-1-disenar-schema-bd` (no underscore ni camelCase)
+- Mantenerlo corto: 3-5 palabras descriptivas
+- Sin acentos ni caracteres especiales
+
+**Excepción permitida:** commits directos a `main` solo en la fase de **setup inicial** del repositorio (Sprints 0-2.0). A partir del Sprint 2.1, todo via PR.
+
+### 9.1.1 Branch Protection Rules en `main`
+
+Configuradas en GitHub Settings → Branches:
+- ✅ Require a pull request before merging (0 approvals requeridas, single dev)
+- ✅ Require status checks to pass (Backend CI obligatorio; Docker Build cuando aplica)
+- ✅ Require branches to be up to date before merging
+- ✅ Require conversation resolution before merging
+- ❌ Force pushes prohibidos
+- ❌ Branch deletion prohibida
+- ✅ Aplicar reglas a administradores también (no bypass)
 
 ### 9.2 Convenciones de commits
 
