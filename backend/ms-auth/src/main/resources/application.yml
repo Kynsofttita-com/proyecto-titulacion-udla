@@ -48,9 +48,14 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
-    schemas: auth_schema
+    # MS-Auth maneja auth_schema (sus propias tablas) y shared_schema (audit_log centralizado
+    # y processed_events). Esto permite que MS-Auth sea el "owner" del schema compartido.
+    schemas: auth_schema,shared_schema
     default-schema: auth_schema
     locations: classpath:db/migration
+    # Desactivar placeholder replacement: las plantillas de email usan {{var}}
+    # (sintaxis Mustache/Thymeleaf) y Flyway lo interpretaria como placeholder ${var}.
+    placeholder-replacement: false
 
   # ---------------------------------------------------------------------------
   # RabbitMQ (eventos asíncronos)

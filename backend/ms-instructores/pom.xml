@@ -147,6 +147,10 @@
             <groupId>com.escuela</groupId>
             <artifactId>common-security</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.escuela</groupId>
+            <artifactId>common-jpa</artifactId>
+        </dependency>
 
         <!-- Tests -->
         <dependency>
