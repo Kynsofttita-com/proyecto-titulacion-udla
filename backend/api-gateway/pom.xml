@@ -62,6 +62,19 @@
             <artifactId>logstash-logback-encoder</artifactId>
         </dependency>
 
+        <!-- Spring Security (reactive) - necesario para deshabilitar CSRF/auth
+             default y dejar que nuestro filtro JWT global controle el acceso. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- common-security: JwtTokenProvider + UserHeaders -->
+        <dependency>
+            <groupId>com.escuela</groupId>
+            <artifactId>common-security</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

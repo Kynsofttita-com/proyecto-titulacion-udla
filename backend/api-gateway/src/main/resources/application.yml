@@ -106,6 +106,29 @@ management:
     gateway:
       access: read_only
 
+# =============================================================================
+# Configuracion de seguridad (Sprint 4 / T4.3)
+# =============================================================================
+# El Gateway valida el JWT en cada request y agrega headers X-User-* a los
+# microservicios downstream. Para validar usa el JwtTokenProvider de
+# common-security, configurado con el mismo secret que MS-Auth.
+escuela:
+  security:
+    jwt:
+      # IMPORTANTE: debe ser el MISMO valor que en MS-Auth (.env JWT_SECRET).
+      secret: ${JWT_SECRET}
+      access-token-expiration-minutes: 15
+      refresh-token-expiration-days: 7
+      issuer: escuela-conduccion
+  gateway:
+    # Paths que NO requieren JWT (endpoints publicos). Ant patterns.
+    public-paths:
+      - /auth/**
+      - /actuator/**
+      - /v3/api-docs/**
+      - /swagger-ui/**
+      - /swagger-ui.html
+
 # Logging
 logging:
   level:
