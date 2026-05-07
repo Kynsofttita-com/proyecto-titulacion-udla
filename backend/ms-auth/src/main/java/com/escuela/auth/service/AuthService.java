@@ -71,7 +71,15 @@ public class AuthService {
     // LOGIN
     // -----------------------------------------------------------------------
 
-    @Transactional
+    /**
+     * <p><b>noRollbackFor:</b> sin esto, cuando lanzamos
+     * {@link InvalidCredentialsException} para un password incorrecto, Spring
+     * hace rollback de la transaccion y los {@code failed_attempts}
+     * incrementados se descartan — el lockout nunca se activaria. Marcando
+     * estas excepciones como "no provocan rollback" garantizamos que el
+     * cambio en la BD se persista.</p>
+     */
+    @Transactional(noRollbackFor = {InvalidCredentialsException.class, AccountLockedException.class})
     public LoginResponse login(LoginRequest request) {
         Usuario usuario = usuarioRepository.findByEmail(request.email())
                 .orElseThrow(() -> new InvalidCredentialsException("Credenciales invalidas"));
