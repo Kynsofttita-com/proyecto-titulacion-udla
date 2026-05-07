@@ -1,0 +1,115 @@
+# =============================================================================
+# API Gateway - Configuración
+# =============================================================================
+# Punto de entrada único del sistema. Rutea peticiones a los 8 microservicios
+# usando descubrimiento dinámico via Eureka (lb://nombre-servicio).
+# =============================================================================
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      # Habilitar descubrimiento de rutas via Eureka (alternativa a routes manuales)
+      discovery:
+        locator:
+          enabled: false  # Lo desactivamos para tener control explícito de rutas
+          lower-case-service-id: true
+
+      # Rutas explícitas hacia cada microservicio
+      routes:
+        - id: ms-auth
+          uri: lb://ms-auth
+          predicates:
+            - Path=/auth/**, /usuarios/**, /roles/**, /configuracion/**
+
+        - id: ms-estudiantes
+          uri: lb://ms-estudiantes
+          predicates:
+            - Path=/estudiantes/**
+
+        - id: ms-instructores
+          uri: lb://ms-instructores
+          predicates:
+            - Path=/instructores/**
+
+        - id: ms-vehiculos
+          uri: lb://ms-vehiculos
+          predicates:
+            - Path=/vehiculos/**
+
+        - id: ms-asignaciones
+          uri: lb://ms-asignaciones
+          predicates:
+            - Path=/asignaciones/**
+
+        - id: ms-cobros
+          uri: lb://ms-cobros
+          predicates:
+            - Path=/cobros/**, /facturas/**
+
+        - id: ms-reportes
+          uri: lb://ms-reportes
+          predicates:
+            - Path=/reportes/**
+
+        - id: ms-notificaciones
+          uri: lb://ms-notificaciones
+          predicates:
+            - Path=/notificaciones/**
+
+      # CORS global (permite orígenes del frontend)
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
+
+      # Timeouts (HTTP client interno)
+      httpclient:
+        connect-timeout: 5000      # 5 segundos
+        response-timeout: 30s      # 30 segundos
+
+# Eureka client - registrarse en el servidor de descubrimiento
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.uuid}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      access: read_only
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.escuela.gateway: ${LOG_LEVEL_APP:DEBUG}
+    org.springframework.cloud.gateway: INFO
+    reactor.netty.http.client: WARN

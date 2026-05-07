@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    common-events
+    =============
+    Librería compartida con DTOs de eventos publicados/consumidos via RabbitMQ.
+    Usada por todos los microservicios para mantener un contrato común de eventos.
+
+    Contiene:
+    - BaseEvent (clase abstracta con eventId, timestamp, source, version)
+    - Eventos específicos: UsuarioCreadoEvent, EstudianteCreadoEvent, etc.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.escuela</groupId>
+        <artifactId>escuela-backend-parent</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>common-events</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Common Events</name>
+    <description>DTOs compartidos de eventos RabbitMQ</description>
+
+    <dependencies>
+        <!-- Lombok para reducir boilerplate -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Jackson para serialización JSON -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <!-- Validation API (jakarta) para validar eventos -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+    </dependencies>
+
+    <!-- No genera jar ejecutable (es una librería) -->
+    <build>
+        <finalName>${project.artifactId}</finalName>
+    </build>
+</project>

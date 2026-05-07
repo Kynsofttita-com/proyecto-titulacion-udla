@@ -1,0 +1,161 @@
+# =============================================================================
+# MS-Auth - Configuración
+# =============================================================================
+# Microservicio de autenticación, autorización y configuración del sistema.
+# Schema BD: cobros_schema
+# =============================================================================
+
+server:
+  port: 8086
+
+spring:
+  application:
+    name: ms-cobros
+
+  # ---------------------------------------------------------------------------
+  # Datasource (PostgreSQL)
+  # ---------------------------------------------------------------------------
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:escuela_db}?currentSchema=cobros_schema
+    username: ${POSTGRES_USER:escuela_user}
+    password: ${POSTGRES_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+
+  # ---------------------------------------------------------------------------
+  # JPA / Hibernate
+  # ---------------------------------------------------------------------------
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Las tablas las crea Flyway, no Hibernate
+    properties:
+      hibernate:
+        default_schema: cobros_schema
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+    show-sql: false
+    open-in-view: false
+
+  # ---------------------------------------------------------------------------
+  # Flyway (migraciones)
+  # ---------------------------------------------------------------------------
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: cobros_schema
+    default-schema: cobros_schema
+    locations: classpath:db/migration
+
+  # ---------------------------------------------------------------------------
+  # RabbitMQ (eventos asíncronos)
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+          multiplier: 2.0
+
+  # ---------------------------------------------------------------------------
+  # Cache (Caffeine in-memory)
+  # ---------------------------------------------------------------------------
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=10m
+
+  # ---------------------------------------------------------------------------
+  # Jackson (JSON)
+  # ---------------------------------------------------------------------------
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: false
+    deserialization:
+      fail-on-unknown-properties: false
+    time-zone: UTC
+
+# -----------------------------------------------------------------------------
+# Eureka Client - registrar este MS en el servicio de descubrimiento
+# -----------------------------------------------------------------------------
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.uuid}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+# -----------------------------------------------------------------------------
+# Actuator (healthchecks, métricas)
+# -----------------------------------------------------------------------------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    rabbit:
+      enabled: true
+    db:
+      enabled: true
+
+# -----------------------------------------------------------------------------
+# OpenAPI / Swagger UI
+# -----------------------------------------------------------------------------
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.escuela.cobros: ${LOG_LEVEL_APP:DEBUG}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
+    org.springframework.amqp: WARN
+
+# -----------------------------------------------------------------------------
+# Resilience4j (circuit breakers para llamadas a otros MS)
+# -----------------------------------------------------------------------------
+resilience4j:
+  circuitbreaker:
+    instances:
+      default:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        wait-duration-in-open-state: 30s
+        failure-rate-threshold: 50
+  retry:
+    instances:
+      default:
+        max-attempts: 3
+        wait-duration: 1s
