@@ -4,475 +4,346 @@
 [![Docker Build](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/docker-build.yml/badge.svg)](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/docker-build.yml)
 [![Java](https://img.shields.io/badge/Java-21%20LTS-orange?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.0-green?logo=springboot)](https://spring.io/projects/spring-boot)
+[![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.0-green?logo=spring)](https://spring.io/projects/spring-cloud)
 [![Vue.js](https://img.shields.io/badge/Vue.js-3-brightgreen?logo=vue.js)](https://vuejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)](https://www.postgresql.org/)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.12-orange?logo=rabbitmq)](https://www.rabbitmq.com/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://docs.docker.com/compose/)
 
-**Proyecto de Titulación - Universidad de las Américas (UDLA)**
+**Proyecto de Titulación — Universidad de las Américas (UDLA)**
 
-**Autores**: Raúl Sebastián Cruz Baño, Hernán Mateo Jurado Moran
-**Tutor**: Víctor Javier Gómez Regalado
-**Fecha**: 21 de enero de 2026
-**Ubicación**: Quito, Ecuador
+- **Autores:** Raúl Sebastián Cruz Baño, Hernán Mateo Jurado Moran
+- **Tutor:** Víctor Javier Gómez Regalado
+- **Ubicación:** Quito, Ecuador
+- **Entrega final:** 5 de mayo de 2026
+
+> 📚 **Documentos de referencia (orden de prioridad):**
+> 1. [`DECISIONES.md`](./DECISIONES.md) — 30 decisiones técnicas finales (cerradas 2026-05-06)
+> 2. [`SPRINTS_PLAN.xlsx`](./SPRINTS_PLAN.xlsx) — Plan de los 12 sprints
+> 3. [`CLAUDE.md`](./CLAUDE.md) — Guía operativa
+> 4. [`docs/database/schema.md`](./docs/database/schema.md) — Diseño BD (38 tablas, 9 schemas)
 
 ---
 
-## Descripción del Proyecto
+## 📌 Estado actual del proyecto
 
-Sistema integral web responsive para automatizar la administración operativa y financiera de escuelas de conducción en Ecuador. Implementado con arquitectura de microservicios, utilizando Java Spring Boot para el backend, Vue.js 3 para el frontend, y PostgreSQL para persistencia de datos.
+| Sprint | Tema | Estado |
+|---|---|---|
+| **Sprint 0** | Setup monorepo + infra docker | ✅ Cerrado |
+| **Sprint 1** | Estructura Maven + Eureka + Gateway + Containerización | ✅ Cerrado |
+| **Sprint 2.0** | CI/CD + GitHub Flow | ✅ Cerrado |
+| **Sprint 2** | Diseño BD + Migraciones Flyway + Entidades JPA + Repositorios | ✅ Cerrado (38 tablas, 33 entidades, 34 repositorios) |
+| **Sprint 3** | Mensajería RabbitMQ + eventos asíncronos | 🚧 En progreso |
+| Sprints 4–12 | Auth/JWT, CRUDs, Frontend Vue, Reportes, QA, Deploy | 📋 Planificado |
 
-### Problema Identificado
+---
+
+## 🎯 Descripción del Proyecto
+
+Sistema integral web responsive para automatizar la administración operativa y financiera de escuelas de conducción en Ecuador. Arquitectura de **microservicios** (8 MS + Gateway + Eureka), **Java Spring Boot 3** en backend, **Vue.js 3** en frontend, **PostgreSQL 15** con 9 schemas y mensajería asíncrona con **RabbitMQ**.
+
+### Problema identificado
 
 Las escuelas de conducción en Ecuador operan con:
-- ❌ Procesos manuales y fragmentados
-- ❌ Múltiples herramientas desintegradas (Excel, papeles)
-- ❌ Falta de visión consolidada del estado operativo
-- ❌ Deficiencias en control administrativo y financiero
+- Procesos manuales y fragmentados
+- Múltiples herramientas desintegradas (Excel, papeles)
+- Falta de visión consolidada del estado operativo
 
-**Impacto**: ~2,815-5,630 personas en el sector afectadas (563 escuelas × 5-10 administrativos)
+**Impacto:** ~2,815–5,630 personas en el sector (563 escuelas × 5–10 administrativos).
 
-### Solución Propuesta
+### Solución propuesta
 
-✅ Plataforma web responsive unificada  
-✅ Arquitectura de microservicios escalable  
-✅ Integración completa de procesos  
-✅ Dashboard con KPIs y reportes  
-✅ Automatización de notificaciones  
+Plataforma web responsive unificada · Arquitectura de microservicios · Integración completa de procesos · Dashboard con KPIs · Automatización de notificaciones por email.
 
 ---
 
-## Características Principales
+## 🏗️ Arquitectura: 8 Microservicios + Gateway + Eureka
 
-### 7 Módulos Funcionales
-
-| Módulo | Descripción | Microservicio |
-|--------|-------------|----------------|
-| 👤 **Autenticación** | Login seguro, gestión de roles, auditoría | MS-Auth |
-| 👨‍🎓 **Estudiantes** | Matrícula, seguimiento académico, documentación | MS-Estudiantes |
-| 👨‍🏫 **Instructores** | Perfiles, certificaciones, disponibilidad, carga horaria | MS-Instructores |
-| 🚗 **Vehículos** | Flota, mantenimiento, combustible, alertas | MS-Vehículos |
-| 📅 **Asignaciones** | Programación de clases (estudiante + instructor + vehículo) | MS-Asignaciones |
-| 💳 **Cobros** | Pagos, comprobantes, cuentas por cobrar, conciliación | MS-Cobros |
-| 📊 **Reportes** | Operativos, financieros, KPIs, exportación PDF/Excel | MS-Reportes |
-| 🔔 **Notificaciones** | Email transaccionales (async) | MS-Notificaciones |
+| Módulo | Microservicio | Puerto | Responsabilidad |
+|--------|---------------|--------|-----------------|
+| 👤 **Autenticación** | MS-Auth | 8081 | Login, JWT, roles, configuración del sistema |
+| 👨‍🎓 **Estudiantes** | MS-Estudiantes | 8082 | Matrícula, documentos, progreso, asistencia |
+| 👨‍🏫 **Instructores** | MS-Instructores | 8083 | Perfiles, certificaciones, disponibilidad |
+| 🚗 **Vehículos** | MS-Vehículos | 8084 | Flota, mantenimiento, combustible, inspecciones |
+| 📅 **Asignaciones** | MS-Asignaciones | 8085 | Programación tripartita: instructor + estudiante + vehículo |
+| 💳 **Cobros** | MS-Cobros | 8086 | Facturación, pagos, conciliación |
+| 📊 **Reportes** | MS-Reportes | 8087 | Operativos, financieros, exportación PDF/Excel |
+| 🔔 **Notificaciones** | MS-Notificaciones | 8088 | In-app + email (async) |
+| **Gateway** | API Gateway | 8080 | Único punto de entrada, ruteo, rate limit |
+| **Discovery** | Eureka Server | 8761 | Service registration & discovery |
 
 ---
 
-## Stack Tecnológico
+## 🛠️ Stack Tecnológico
 
 ### Backend
-```
-Java 21 + Spring Boot 3.x
-├── Spring Cloud (Gateway, Eureka, Config)
-├── Spring Security + JWT (24h)
-├── Spring Data JPA + Hibernate
-├── PostgreSQL
-├── RabbitMQ/Kafka (mensajería asíncrona)
-└── Docker + Kubernetes/Compose
-```
+- **Java 21** (LTS) + **Spring Boot 3.4.0**
+- **Spring Cloud 2024.0.0** (Gateway, Eureka, OpenFeign, LoadBalancer)
+- **Spring Security + JWT** (HS512, 512 bits, HttpOnly cookies, 24 h expiración) — Sprint 4
+- **Spring Data JPA + Hibernate** + **Flyway** migrations
+- **PostgreSQL 15** — 1 instancia, 9 schemas separados (no DB-per-service)
+- **RabbitMQ 3.12** + Spring AMQP — mensajería asíncrona
+- **Caffeine** — cache in-memory (no Redis)
+- **MinIO 8.5.x** — object storage S3-compatible
+- **MapStruct 1.6.x** — mapeo DTO ↔ entidad
+- **Resilience4j** — circuit breaker, retry
+- **SpringDoc 2.7.x** — OpenAPI 3
+- **JUnit 5, Mockito, AssertJ, Testcontainers, H2** — testing
 
-### Frontend
-```
-Vue.js 3 (SPA Responsive)
-├── Vite (bundler)
-├── Pinia (state management)
-├── Axios (HTTP client)
-├── Responsive Design (mobile-first)
-└── ES2022+ + TypeScript
-```
+### Frontend (Sprint 6+)
+- **Vue.js 3** (SPA) con Composition API + `<script setup lang="ts">`
+- **Vite** + **Pinia** + **Vue Router** + **Axios**
+- Diseño responsive mobile-first
 
-### Infrastructure
-```
-Docker Compose (local)
-PostgreSQL 14+ (relacional)
-RabbitMQ (message broker)
-GitHub Actions (CI/CD)
-```
+### Infraestructura
+- **Docker** + **Docker Compose** (14 contenedores)
+- **GitHub Actions** CI/CD (Backend CI obligatorio, Docker Build path-filtered)
+- **Email:** Mailtrap (dev) / Gmail SMTP (prod)
+- **Despliegue:** Oracle Cloud Free Tier (fallback DigitalOcean $6/mes)
 
 ---
 
-## Instalación y Configuración
-
-### Requisitos Previos
-- ✅ Java 21 JDK
-- ✅ Maven 3.8+
-- ✅ Node.js 18+ + npm
-- ✅ Docker & Docker Compose
-- ✅ Git
-- ✅ PostgreSQL 14+ (o usar Docker)
-
-### Inicio Rápido
-
-```bash
-# 1. Clonar repositorio
-git clone <repo-url>
-cd proyecto-titulacion
-
-# 2. Levantar infraestructura (PostgreSQL, RabbitMQ)
-docker-compose up -d
-
-# 3. Backend: Build microservicios
-cd microservices
-mvn clean install
-
-# 4. Frontend: Instalar dependencias
-cd ../frontend
-npm install
-
-# 5. Ejecutar
-# Backend: mvn spring-boot:run (en cada microservicio)
-# Frontend: npm run dev
-
-# URLs:
-# 🌐 Frontend: http://localhost:5173
-# 🔌 API: http://localhost:8080
-```
-
-### Configuración de Base de Datos
-
-```bash
-# Las migraciones se ejecutan automáticamente al iniciar los servicios
-# Para reset manual (desarrollo):
-mvn flyway:clean flyway:migrate
-```
-
----
-
-## Estructura del Proyecto
+## 📂 Estructura del Proyecto
 
 ```
 proyecto-titulacion/
-├── CLAUDE.md                    # Guía para Claude Code ⭐
-├── README.md                    # Este archivo
-├── docker-compose.yml           # Compose para desarrollo local
+├── CLAUDE.md                          # Guía operativa para Claude Code
+├── DECISIONES.md                      # Decisiones técnicas (fuente de verdad)
+├── SPRINTS_PLAN.xlsx                  # Plan de 12 sprints
+├── README.md                          # Este archivo
 │
-├── frontend/                    # Vue.js 3 SPA
-│   ├── src/
-│   │   ├── components/         # Componentes reutilizables
-│   │   ├── views/              # Páginas
-│   │   ├── stores/             # Estado global (Pinia)
-│   │   ├── services/           # Clientes API
-│   │   └── router/             # Rutas
-│   └── package.json
+├── backend/                           # Backend Spring Boot 3 (15 módulos Maven)
+│   ├── pom.xml                        # POM padre
+│   ├── eureka-server/                 # Service discovery (8761)
+│   ├── api-gateway/                   # Gateway (8080)
+│   ├── ms-auth/                       # Autenticación (8081)
+│   ├── ms-estudiantes/                # Estudiantes (8082)
+│   ├── ms-instructores/               # Instructores (8083)
+│   ├── ms-vehiculos/                  # Vehículos (8084)
+│   ├── ms-asignaciones/               # Asignaciones (8085)
+│   ├── ms-cobros/                     # Cobros (8086)
+│   ├── ms-reportes/                   # Reportes (8087)
+│   ├── ms-notificaciones/             # Notificaciones (8088)
+│   └── shared/                        # Librerías compartidas
+│       ├── common-events/             # DTOs de eventos RabbitMQ
+│       ├── common-exceptions/         # Excepciones + handlers RFC 7807
+│       ├── common-jpa/                # BaseEntity + AuditorAware + AutoConfiguration
+│       └── common-security/           # Utilidades JWT (Sprint 4)
 │
-├── microservices/              # Backend (Java/Spring)
-│   ├── api-gateway/            # Gateway (8080)
-│   ├── ms-auth/                # Autenticación (8081)
-│   ├── ms-estudiantes/         # Estudiantes (8082)
-│   ├── ms-instructores/        # Instructores (8083)
-│   ├── ms-vehiculos/           # Vehículos (8084)
-│   ├── ms-asignaciones/        # Asignaciones (8085)
-│   ├── ms-cobros/              # Cobros (8086)
-│   ├── ms-reportes/            # Reportes (8087)
-│   └── shared/                 # Librerías compartidas
+├── frontend/                          # Vue.js 3 SPA (Sprint 6+)
 │
 ├── infrastructure/
-│   ├── database/               # Migraciones SQL
-│   ├── docker/                 # Dockerfiles
-│   └── scripts/                # Scripts DevOps
+│   ├── docker/
+│   │   ├── docker-compose.infra.yml   # Solo infra (4 contenedores)
+│   │   ├── docker-compose.yml         # Stack completo (14 contenedores)
+│   │   ├── Dockerfile.spring          # Multi-stage para servicios Java
+│   │   └── README.md
+│   └── postgres/
+│       └── init-schemas.sql           # Crea los 9 schemas
 │
-└── docs/                       # Documentación
-    ├── architecture/           # Diagramas C4
-    ├── api/                    # OpenAPI/Swagger
-    └── guides/                 # Manuales de desarrollo
+├── docs/
+│   ├── database/
+│   │   └── schema.md                  # Diseño BD: 38 tablas, 9 schemas, diagramas Mermaid
+│   ├── architecture/                  # C4 diagrams (futuro)
+│   └── api/                           # OpenAPI specs (futuro)
+│
+└── .github/
+    ├── workflows/                     # backend-ci.yml + docker-build.yml
+    ├── CONTRIBUTING.md                # GitHub Flow + convenciones
+    └── pull_request_template.md
 ```
 
 ---
 
-## Comandos Útiles
+## 🚀 Inicio Rápido
 
-### Backend
+### Requisitos previos
+- Java 21 JDK
+- Maven 3.8+
+- Node.js 18+ (frontend, Sprint 6+)
+- Docker Desktop + Docker Compose
+- Git
+
+### Opción A — Stack completo containerizado (recomendado)
 
 ```bash
-# Build servicio específico
-cd microservices/ms-auth
-mvn clean package -DskipTests
+# 1. Clonar
+git clone https://github.com/Kynsofttita-com/proyecto-titulacion-udla.git
+cd proyecto-titulacion-udla
 
-# Ejecutar localmente
-mvn spring-boot:run
+# 2. Levantar los 14 contenedores
+docker compose -f infrastructure/docker/docker-compose.yml up -d
 
-# Tests unitarios
-mvn test
+# 3. Verificar (esperar ~50-60 s a que pasen los healthchecks)
+docker compose -f infrastructure/docker/docker-compose.yml ps
+```
 
-# Tests de integración
+### Opción B — Solo infra (los MS corren desde tu IDE)
+
+```bash
+# Levantar solo Postgres + RabbitMQ + MinIO + Adminer
+docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
+
+# Compilar backend
+cd backend
+mvn clean install -DskipTests
+
+# Arrancar Eureka primero, luego Gateway, luego cada MS
+cd eureka-server && mvn spring-boot:run
+# (en otra terminal)
+cd api-gateway && mvn spring-boot:run
+# (etc., uno por terminal)
+```
+
+### URLs útiles
+
+| Servicio | URL |
+|----------|-----|
+| Eureka Dashboard | http://localhost:8761 |
+| API Gateway | http://localhost:8080 |
+| Gateway routes | http://localhost:8080/actuator/gateway/routes |
+| RabbitMQ Management | http://localhost:15672 (guest/guest) |
+| MinIO Console | http://localhost:9001 (minioadmin/minioadmin123) |
+| Adminer (BD) | http://localhost:8888 |
+| Frontend (Sprint 6+) | http://localhost:5173 |
+
+---
+
+## 🗄️ Base de Datos
+
+- **PostgreSQL 15** — 1 instancia, **9 schemas separados** (1 por microservicio + `shared_schema`)
+- **38 tablas** distribuidas: `auth_schema` (11) · `vehiculos_schema` (5) · `estudiantes_schema` (5) · `instructores_schema` (4) · `asignaciones_schema` (3) · `cobros_schema` (3) · `notificaciones_schema` (3) · `reportes_schema` (2) · `shared_schema` (2)
+- **FKs solo dentro del mismo schema** — entre MS se referencian IDs sin restricción FK (consistencia eventual vía RabbitMQ)
+- **Auditing global:** `created_at`, `updated_at`, `created_by`, `updated_by` + `deleted_at` (soft delete)
+- **Migraciones Flyway V1** ejecutadas automáticamente al arrancar cada MS
+
+Ver detalle completo en [`docs/database/schema.md`](./docs/database/schema.md).
+
+---
+
+## 🧪 Testing
+
+```bash
+# Tests smoke + unitarios
+cd backend && mvn test
+
+# Tests de integración (requiere Docker para Testcontainers)
 mvn verify -Dgroups=integration
 
-# Build Docker
-docker build -t ms-auth:latest .
+# Cobertura JaCoCo
+mvn test jacoco:report
+# Reportes en: backend/<ms>/target/site/jacoco/index.html
 ```
 
-### Frontend
-
-```bash
-# Servidor de desarrollo (HMR)
-npm run dev
-
-# Build producción
-npm run build
-
-# Tests unitarios
-npm run test
-
-# Tests E2E
-npm run test:e2e
-
-# Linting
-npm run lint
-npm run format
-```
-
-### Docker Compose
-
-```bash
-# Iniciar todo
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f ms-auth
-
-# Detener
-docker-compose down
-
-# Rebuild
-docker-compose build --no-cache
-```
+**Cobertura objetivo:** 80%+ por módulo (medido desde Sprint 4 cuando hay lógica de negocio real).
 
 ---
 
-## API Documentation
+## 🌐 API Documentation
 
-### Base URLs
-- **Local**: `http://localhost:8080`
-- **Desarrollo**: `https://dev-api.proyecto.local`
+### Base URL
+- **Local:** `http://localhost:8080`
+- **Documentación Swagger UI** (cuando el MS lo expone): `http://localhost:<puerto>/swagger-ui.html`
 
-### Autenticación
-```
-POST /auth/login
-{
-  "username": "user@escuela.com",
-  "password": "password123"
-}
-
-Respuesta:
-{
-  "token": "eyJhbGciOiJIUzI1NiIs...",
-  "expiresIn": 86400,
-  "role": "ROLE_ADMIN"
-}
-```
-
-### Endpoints Principales
+### Autenticación (Sprint 4)
+JWT con HS512 (clave 512 bits) en HttpOnly cookies, expiración 24 h, bloqueo tras 3 intentos fallidos.
 
 ```
-POST   /estudiantes              → Matricular estudiante
-GET    /estudiantes/{id}         → Obtener datos estudiante
-GET    /estudiantes/{id}/progreso → Progreso académico
-
-POST   /asignaciones             → Programar clase
-GET    /asignaciones/{id}        → Detalles asignación
-
-POST   /cobros                   → Registrar pago
-GET    /cobros/estudiante/{id}   → Estado de cuenta
-
-GET    /reportes/estudiantes     → Reporte de estudiantes
-GET    /reportes/financiero      → Reporte financiero
-POST   /reportes/exportar        → Exportar PDF/Excel
+POST /auth/login          → Login
+POST /auth/refresh        → Refresh token
+POST /auth/logout         → Logout
+POST /auth/forgot-password
 ```
 
-**[Ver especificación completa: /docs/api/openapi.yaml]**
+Ver especificación completa en `docs/api/` (a generar en Sprint 4).
 
 ---
 
-## Metodología y Planificación
+## 🔄 Metodología y Workflow
 
-### Scrum con Sprints de 2 Semanas
+### Scrum con sprints de **1 semana**, 12 sprints en total
 
-**Timeline**: 24 sep 2025 - 5 may 2026 (41 semanas)
+**Tracking:** Jira
 
-| Fase | Duración | Objetivo |
-|------|----------|----------|
-| 📋 Planificación | 6 sem | Factibilidad y alcance |
-| 🔍 Análisis | 6 sem | Requisitos detallados |
-| 🎨 Diseño | 3 sem | Arquitectura y prototipos |
-| 💻 Desarrollo | 12 sem | Implementación (7 microservicios) |
-| ✅ Pruebas | 4 sem | QA e integración |
+### Convenciones de código
+- **Java:** PascalCase clases, camelCase métodos, paquetes `com.escuela.<servicio>.<layer>`
+- **Vue:** PascalCase componentes, camelCase JS, kebab-case HTML
+- **BD:** snake_case, plural (`estudiantes`, `instructores`)
+- **Idioma:** español respetando estándares del lenguaje (snake_case solo en BD y env vars)
 
-### Ceremonias
-- 📌 **Sprint Planning**: Lunes 2h
-- 🔄 **Daily Standup**: Diario 15min
-- 👀 **Sprint Review**: Viernes 1h
-- 🎯 **Retrospective**: Viernes 1h
+### Git Workflow — GitHub Flow
+- **`main`** protegido (Branch Ruleset)
+- **1 PR por cada commit/tarea** (desde Sprint 3) — antes era 1 PR por sprint completo, cambiado por problemas con tests acumulados al final
+- Branch por tarea: `feature/sprint-N-X-descripcion-corta`
+- Commit format: `Sprint N (Tarea X descripcion)` o `Sprint N (Fix tarea)`
+- Squash and merge a main
+- Backend CI obligatorio antes de mergear
 
-### Herramientas
-- **Jira**: Backlog, sprints, burn-down
-- **GitHub**: Versionado, PRs
-- **Confluence**: Documentación
+Ver [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md) para el detalle.
 
 ---
 
-## Requisitos No Funcionales
+## 🔒 Seguridad
 
-### Rendimiento
-- ⚡ Respuesta <500ms (p95)
-- 📦 Capacidad: 50 usuarios concurrentes
-- 🔄 Throughput: 100 req/s
-
-### Disponibilidad
-- 🟢 SLA: 99.9%
-- 💾 Backups diarios (retención 30 días)
-- 🔁 Disaster recovery plan
-
-### Seguridad
-- 🔒 HTTPS obligatorio (TLS 1.2+)
-- 🔑 JWT con expiración 24h
-- 🔐 Contraseñas bcrypt
-- 🚫 Bloqueo tras 3 intentos fallidos (15 min)
-- 📋 Auditoría completa (usuario, timestamp, IP, acción)
-
-### Escalabilidad
-- 📈 Arquitectura de microservicios
-- 🐳 Containerización Docker
-- ☸️ Orquestación Kubernetes-ready
+- 🔐 **Spring Security + JWT** HS512 (512 bits), HttpOnly cookies, 24h
+- 🛡️ **bcrypt** para passwords + bloqueo tras 3 intentos fallidos (15 min)
+- 📋 **Auditoría completa** en `shared_schema.audit_log` (usuario, timestamp, IP, acción)
+- ✅ **Validaciones Ecuador:** cédula (10 dígitos + dígito verificador), placa (`ABC-1234` o `AB-1234A`), RUC (13 dígitos), teléfono móvil (`09XXXXXXXX`)
+- 🔒 **HTTPS/TLS 1.2+** mandatorio en producción
 
 ---
 
-## Limitaciones del Proyecto (Fuera de Alcance)
+## 📈 Requisitos no funcionales
 
-❌ Aplicaciones móviles nativas  
-❌ LMS con exámenes online  
-❌ GPS/Seguimiento en tiempo real  
-❌ Inteligencia Artificial  
-❌ Multi-idioma  
-❌ Integración automática ANT  
-❌ Chat o comunicación real-time  
-
----
-
-## Validación Ecuatoriana
-
-El sistema valida datos en formato ecuatoriano:
-- 🆔 Cédula: 10 dígitos (con dígito verificador)
-- 🚗 Placas: ABC-1234 o AAA-1234
-- 📱 Teléfonos: 10 dígitos
-- 📅 Fechas: DD/MM/AAAA
-- 💵 Montos: USD con 2 decimales
+| Requisito | Valor |
+|-----------|-------|
+| Response time (p95) | < 500 ms |
+| Usuarios concurrentes | 50 |
+| Estudiantes activos | 1,000 max |
+| Instructores | 50 max |
+| Vehículos | 30 max |
+| Backups | Diarios, retención 30 días |
+| SLA disponibilidad | 99.9% |
 
 ---
 
-## Testing
+## 🚫 Fuera de alcance
 
-### Cobertura Mínima: 80%
-
-```bash
-# Unit tests
-mvn test
-
-# Integration tests
-mvn verify -Dgroups=integration
-
-# Frontend tests
-npm run test
-
-# E2E tests
-npm run test:e2e
-```
+- ❌ Aplicaciones móviles nativas (web responsive sí)
+- ❌ LMS con exámenes online o simulaciones
+- ❌ GPS/Tracking en tiempo real
+- ❌ Inteligencia Artificial / ML
+- ❌ Multi-idioma (solo español Ecuador)
+- ❌ Integración automática con APIs ANT (export de datos sí)
+- ❌ Multi-tenant compartido (es **single-tenant configurable**: cada escuela = 1 deploy)
 
 ---
 
-## Deployment
+## 📚 Documentación adicional
 
-### Local
-```bash
-docker-compose up -d
-# 🌐 http://localhost:5173 (frontend)
-# 🔌 http://localhost:8080 (API)
-```
-
-### Production (Kubernetes)
-```bash
-kubectl apply -f kubernetes/
-kubectl scale deployment ms-auth --replicas=3
-```
+- 📘 [DECISIONES.md](./DECISIONES.md) — 30 decisiones técnicas
+- 📗 [SPRINTS_PLAN.xlsx](./SPRINTS_PLAN.xlsx) — Plan detallado por sprint
+- 📙 [CLAUDE.md](./CLAUDE.md) — Guía operativa para Claude Code
+- 🗄️ [docs/database/schema.md](./docs/database/schema.md) — Diseño completo de BD
+- 🔧 [backend/README.md](./backend/README.md) — Cómo levantar el backend
+- 🐳 [infrastructure/docker/README.md](./infrastructure/docker/README.md) — Detalle de Docker Compose
+- 🤝 [.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md) — GitHub Flow + convenciones
 
 ---
 
-## Contribuciones y Código
+## 👥 Contacto
 
-### Style Guide
-- **Java**: Google Java Style (CLAUDE.md)
-- **JavaScript/Vue**: Prettier + ESLint
-- **SQL**: snake_case, plural names
-- **Commits**: Conventional Commits
-
-### Pull Request Workflow
-1. ✨ Crear rama: `feature/MS-001-nombre`
-2. 💻 Implementar + tests
-3. 📝 Actualizar documentación
-4. 🔍 Code review (1 aprobación mínimo)
-5. ✅ Merge a `develop`
+- **Project Lead:** Víctor Javier Gómez Regalado
+- **Estudiantes:** Raúl Sebastián Cruz Baño, Hernán Mateo Jurado Moran
+- **Universidad:** Universidad de las Américas (UDLA), Quito, Ecuador
+- **Repositorio:** https://github.com/Kynsofttita-com/proyecto-titulacion-udla
 
 ---
 
-## Monitoreo y Observabilidad
-
-### Metrics
-- Prometheus + Grafana
-- Application metrics via Spring Actuator
-- Dashboard de KPIs
-
-### Logging
-- ELK Stack (Elasticsearch, Logstash, Kibana)
-- Structured logging con SLF4J
-- Trazabilidad de transacciones
-
-### Alerting
-- Email/Slack para incidentes críticos
-- Umbrales: CPU >80%, memoria >85%, errores >1%
-
----
-
-## Costos del Proyecto
-
-**Presupuesto total estimado**: $22,370.00 USD
-
-| Fase | Costo | % |
-|------|-------|---|
-| 💻 Desarrollo | $8,400 | 37.55% |
-| 📋 Planificación | $4,090 | 18.28% |
-| 🔍 Análisis | $3,600 | 16.09% |
-| 👨‍💼 Administración | $2,880 | 12.88% |
-| 🎨 Diseño | $1,800 | 8.05% |
-| ✅ Pruebas | $1,600 | 7.15% |
-
-**Nota**: Considera únicamente recursos humanos. Infraestructura (cloud, dominios, certificados) no incluida.
-
----
-
-## Documentación Adicional
-
-- 📘 [CLAUDE.md](./CLAUDE.md) - Guía completa para Claude Code
-- 🏗️ [Arquitectura C4](./docs/architecture/) - Diagramas de contexto y componentes
-- 🔌 [API OpenAPI](./docs/api/openapi.yaml) - Especificación completa de endpoints
-- 📊 [ER Diagrams](./docs/database/) - Modelo relacional
-- 📖 [Frontend Guide](./docs/frontend-guide.md) - Patrones y mejores prácticas Vue.js
-- 🔒 [Security Policy](./docs/SECURITY.md) - Políticas de seguridad
-
----
-
-## Soporte y Contacto
-
-- **Project Lead**: Víctor Javier Gómez Regalado
-- **Estudiantes**: Raúl Sebastián Cruz Baño, Hernán Mateo Jurado Moran
-- **Universidad**: Universidad de las Américas (UDLA)
-- **Ubicación**: Quito, Ecuador
-- **Fecha de Entrega**: 5 de mayo de 2026
-
----
-
-## Licencia
+## 📜 Licencia
 
 Código propietario de Kynsoft SAS con derechos académicos para UDLA.
 
 ---
 
-**Última actualización**: 6 de mayo de 2026
+**Última actualización:** 2026-05-07 (cierre Sprint 2)
