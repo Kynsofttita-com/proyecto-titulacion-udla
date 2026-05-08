@@ -122,8 +122,15 @@ escuela:
       issuer: escuela-conduccion
   gateway:
     # Paths que NO requieren JWT (endpoints publicos). Ant patterns.
+    # /auth/refresh y /auth/logout son publicos: usan refresh token (en body), no access token.
+    # Asi siguen accesibles cuando el access token expiro (que es justo cuando se necesitan).
+    # /auth/me SI requiere JWT (access token) -> NO esta aqui, lo valida el Gateway.
     public-paths:
-      - /auth/**
+      - /auth/login
+      - /auth/refresh
+      - /auth/logout
+      - /auth/forgot-password
+      - /auth/reset-password
       - /actuator/**
       - /v3/api-docs/**
       - /swagger-ui/**
