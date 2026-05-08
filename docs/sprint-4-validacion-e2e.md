@@ -238,3 +238,73 @@ docker exec escuela-postgres psql -U escuela_user -d escuela_db -c \
 docker exec escuela-postgres psql -U escuela_user -d escuela_db -c \
   "SELECT * FROM shared_schema.processed_events ORDER BY processed_at DESC LIMIT 10;"
 ```
+
+---
+
+## 🔁 Validación post-cierre (2026-05-08) — suites curl reusables
+
+Tras el merge de PR #13, se ejecutaron **dos suites curl exhaustivas** que destaparon 6 bugs adicionales en Sprint 4. Ambas suites quedan en el repo como pruebas de regresión para futuros sprints.
+
+### Suite 1 — `test_sprint4_exhaustivo.sh` (71 tests · 100%)
+
+Cubre los cinco T4.x con asserts de:
+- **T4.4 Eureka:** los 9 servicios registrados (API-GATEWAY, MS-AUTH, MS-ESTUDIANTES, MS-INSTRUCTORES, MS-VEHICULOS, MS-ASIGNACIONES, MS-COBROS, MS-REPORTES, MS-NOTIFICACIONES).
+- **T4.2 MS-Auth:** login OK/inválido, anti-enumeration, refresh con rotation, refresh ya-usado rechazado, `/auth/me` con/sin token, logout idempotente, forgot-password (existe/no existe), cookies HttpOnly, validación @Valid devolviendo 400.
+- **T4.1 JWT:** algoritmo HS512, claims (jti/sub/iss/iat/exp/email/roles/type), access vs refresh (`type=ACCESS|REFRESH`), `iss=escuela-conduccion`, refresh rechazado en endpoint protegido.
+- **T4.3 Gateway:** health, ruta protegida sin/con/malformado token, RFC 7807 problem+json + correlationId, CORS preflight con origin permitido/rechazado, autenticación vía Cookie, paths públicos.
+- **T4.5 RabbitMQ:** mgmt UI, exchange `auth.exchange` existe, MS-Notif healthy, eventos publicados.
+
+### Suite 2 — `test_sprint4_avanzado.sh` (45 tests · 100% + 1 skip)
+
+Cubre los 15 casos de profundidad que faltaban:
+
+| # | Caso | Asserts |
+|---|---|---|
+| 1 | **Lockout real** (3 intentos → bloqueo, login correcto rechazado con 423, evento `UsuarioBloqueado` publicado) | 7 |
+| 2 | **Flow forgot→reset→login completo** (token UUID en BD, password viejo rechazado, token marcado `usado=true`, reuso rechazado) | 8 |
+| 3 | **Reset revoca refresh tokens del usuario** | 4 |
+| 4 | **MS-Notif consumer activo** en `notificaciones.queue` y procesa eventos | 2 |
+| 5 | **Cuenta inactiva** (`activo=false`) rechaza login con password correcto | 1 |
+| 6 | **JWT expirado** rechazado (forjado con PyJWT) | 1 |
+| 7 | **Firma manipulada** + **secreto distinto** rechazados | 2 |
+| 8 | **Header spoofing** — Gateway sobreescribe `X-User-*` aunque el cliente los mande | 2 |
+| 9 | **Cookie + Authorization** simultáneos — header tiene prioridad | 4 |
+| 10 | **Reset token expirado** en BD rechazado | 1 |
+| 11 | **DLX** — `auth.dlx`, `notificaciones.dlx`, todas las `.dlq` configuradas | 3 |
+| 12 | **Eureka failover** — bajar MS → Gateway error 5xx, levantarlo → routea de nuevo | 2 |
+| 13 | **Cleanup refresh tokens** | SKIP (no implementado, alcance Sprint 5+) |
+| 14 | **Correlation-id** auto-generado + echo en respuestas 401 | 2 |
+| 15 | **Métricas Actuator** (`jvm.memory.used`, `http.server.requests`, todos los MS) | 5 |
+
+### Bugs fixeados en esta validación post-cierre (6)
+
+| # | Síntoma | Causa raíz | Fix |
+|---|---|---|---|
+| 1 | `/auth/refresh` y `/auth/logout` daban 403 | Marcados como protegidos en Gateway pero su credencial es el refresh token, no el access token. Si access expiró, el usuario quedaba sin poder renovar. | Movidos a `escuela.gateway.public-paths` en `application.yml` del Gateway. |
+| 2 | `/auth/me` daba 403 incluso con JWT válido | El controller usaba `Authentication authentication`, pero MS-Auth no tiene filtro JWT propio (la validación ocurre en el Gateway). El parámetro siempre llegaba `null`. | `@RequestHeader(value=UserHeaders.USER_EMAIL, required=false) String email` + delegación al servicio. |
+| 3 | `LazyInitializationException` al iterar `usuario.getRoles()` en `/auth/me` | `roles` es `FetchType.LAZY` y se accedía fuera de la transacción Hibernate. | Refactor a `getUserInfoByEmail()` con `@Transactional(readOnly=true)` que devuelve DTO `LoginResponse.UserInfo` con roles materializados. |
+| 4 | Validación `@Valid` devolvía 403 en vez de 400 | Sin handler para `MethodArgumentNotValidException`, el body queda vacío. Spring Security 6 con `httpBasic`/`formLogin` deshabilitados usa `Http403ForbiddenEntryPoint` por defecto y devuelve 403. | Handlers para `MethodArgumentNotValidException` y `HttpMessageNotReadableException` en `AuthExceptionHandler` que devuelven `ProblemDetail` 400. |
+| 5 | `ResetPasswordRequest` con `@NotBlank` sobre tipo `UUID` lanzaba `UnexpectedTypeException` | `@NotBlank` solo valida `String`. Para UUID hay que usar `@NotNull`. | Cambio a `@NotNull UUID token`. |
+| 6 | Spring Security warning + matcher mal interpretado | `requestMatchers("POST", "/auth/login")` — Spring Security 6 no tiene overload `(String,String...)`, ambos se tomaban como patterns sin slash inicial. | Reemplazado por `requestMatchers(HttpMethod.POST, "/auth/login")`. |
+
+### Hallazgos no bloqueantes (candidatos para Sprint 5+)
+
+- Gateway responde **HTTP 500** cuando un MS downstream está down. Idealmente sería **503/504** (Service Unavailable) con circuit breaker (Resilience4j).
+- Gateway no propaga `X-Correlation-Id` en respuestas 200 OK (sí en 401). El downstream sí lo recibe en el request, pero el cliente final no lo ve de vuelta cuando todo OK.
+- Sin scheduler de cleanup de refresh tokens expirados en BD. La tabla `auth_schema.refresh_tokens` crecerá indefinidamente.
+
+### Reproducir las suites
+
+```bash
+# Pre-requisitos: stack levantado, .env con JWT_SECRET, Python 3 con PyJWT
+docker compose --env-file .env -f infrastructure/docker/docker-compose.yml up -d --build
+
+# Suite exhaustiva
+bash infrastructure/docker/test_sprint4_exhaustivo.sh
+
+# Suite avanzada (incluye lockout, JWT forging, failover; toma ~2 min)
+bash infrastructure/docker/test_sprint4_avanzado.sh
+```
+
+Los scripts crean usuarios de test (`lockout.test@escuela.local`, `inactive.test@escuela.local`, `reset.test@escuela.local`) con BCrypt hash conocido y los limpian al final.
+
