@@ -33,8 +33,20 @@
 | **Sprint 1** | Estructura Maven + Eureka + Gateway + Containerización | ✅ Cerrado |
 | **Sprint 2.0** | CI/CD + GitHub Flow | ✅ Cerrado |
 | **Sprint 2** | Diseño BD + Migraciones Flyway + Entidades JPA + Repositorios | ✅ Cerrado (38 tablas, 33 entidades, 34 repositorios) |
-| **Sprint 3** | Mensajería RabbitMQ + eventos asíncronos | 🚧 En progreso |
-| Sprints 4–12 | Auth/JWT, CRUDs, Frontend Vue, Reportes, QA, Deploy | 📋 Planificado |
+| **Sprint 3** | Mensajería RabbitMQ + eventos asíncronos | ✅ Cerrado (3 PRs, EventPublisher + idempotencia + flujo E2E) |
+| **Sprint 4** | Auth + JWT + API Gateway + Notificaciones | ✅ Cerrado (5 PRs, 129 tests pasados, 11 bugs fixeados) |
+| **Sprint 5** | CRUDs por dominio | 📋 Próximo |
+| Sprints 6–12 | Frontend Vue, Reportes, QA, Deploy | 📋 Planificado |
+
+### Validación funcional Sprint 4 (suites reusables)
+
+```bash
+# Suite exhaustiva (T4.1 JWT + T4.2 MS-Auth + T4.3 Gateway + T4.4 Eureka + T4.5 RabbitMQ)
+bash infrastructure/docker/test_sprint4_exhaustivo.sh   # 71/71
+
+# Suite avanzada (lockout, forgot/reset E2E, JWT spoofing, DLX, failover, métricas)
+bash infrastructure/docker/test_sprint4_avanzado.sh     # 45/45 + 1 skip
+```
 
 ---
 

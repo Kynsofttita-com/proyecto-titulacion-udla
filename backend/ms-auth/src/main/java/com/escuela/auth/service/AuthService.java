@@ -314,6 +314,31 @@ public class AuthService {
     }
 
     // -----------------------------------------------------------------------
+    // GET USER (Sprint 4 / T4.2)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Devuelve el perfil del usuario para el endpoint {@code GET /auth/me}.
+     *
+     * <p><b>Por que readOnly = true:</b> los roles son {@code FetchType.LAZY}.
+     * Sin la transaccion abierta, al iterar los roles fuera del servicio se
+     * lanza {@code LazyInitializationException}. Aqui los materializamos a
+     * {@code List<String>} antes de retornar, para que el controller no
+     * dependa de una sesion Hibernate.</p>
+     */
+    @Transactional(readOnly = true)
+    public LoginResponse.UserInfo getUserInfoByEmail(String email) {
+        Usuario u = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new InvalidCredentialsException("Usuario no encontrado"));
+        List<String> roles = u.getRoles().stream()
+                .map(Rol::getNombre)
+                .sorted()
+                .toList();
+        return new LoginResponse.UserInfo(u.getId(), u.getEmail(),
+                u.getNombre(), u.getApellido(), roles);
+    }
+
+    // -----------------------------------------------------------------------
     // Excepciones (clases internas, capturadas por el ExceptionHandler en T4.x)
     // -----------------------------------------------------------------------
 

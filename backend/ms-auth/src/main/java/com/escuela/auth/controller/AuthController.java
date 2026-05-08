@@ -6,16 +6,20 @@ import com.escuela.auth.dto.LoginResponse;
 import com.escuela.auth.dto.RefreshRequest;
 import com.escuela.auth.dto.ResetPasswordRequest;
 import com.escuela.auth.service.AuthService;
+import com.escuela.common.security.headers.UserHeaders;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+
 
 /**
  * Endpoints de autenticacion.
@@ -77,6 +81,17 @@ public class AuthController {
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request.token(), request.newPassword());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<LoginResponse.UserInfo> getProfile(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String email) {
+        // El API Gateway valida el JWT y agrega X-User-Email al request.
+        // MS-Auth confia en ese header (no tiene filtro JWT propio).
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(authService.getUserInfoByEmail(email));
     }
 
     // -----------------------------------------------------------------------
