@@ -13,3 +13,11 @@ Thumbs.db
 
 # Node (por si despues se usa)
 node_modules/
+
+# Temporales de Word
+~$*
+~WRL*.tmp
+*.tmp
+
+# Repo git anidado de Jenkins (es solo para que el contenedor lo lea localmente)
+.git/

@@ -1,14 +1,4 @@
-// =============================================================================
-// PIPELINE PRINCIPAL DE JENKINS
-// Deber: CI/CD con Jenkins
-// Autor: Hernan Mateo Jurado Moran
-// =============================================================================
-// Cumple con los 4 requisitos solicitados:
-//   1. Etapas claras (Checkout, Build, Test, Deploy, Reporte)
-//   2. Pipelines modulares y reutilizables (pipeline/*.groovy cargados con load())
-//   3. Integracion continua por rama (when { branch ... })
-//   4. Pipelines en paralelo (parallel { Unit Tests | Integration Tests })
-// =============================================================================
+
 
 pipeline {
     agent any
@@ -108,8 +98,8 @@ pipeline {
     }
 
     post {
-        success { echo "[OK]   Pipeline finalizado exitosamente en rama '${RAMA_ACTUAL}'" }
-        failure { echo "[FAIL] El pipeline fallo en rama '${RAMA_ACTUAL}'" }
+        success { echo "[OK]   Pipeline finalizado exitosamente en rama '${env.BRANCH_NAME ?: 'local'}'" }
+        failure { echo "[FAIL] El pipeline fallo en rama '${env.BRANCH_NAME ?: 'local'}'" }
         always  { echo "Workspace limpiado." }
     }
 }

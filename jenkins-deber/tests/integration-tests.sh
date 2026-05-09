@@ -7,8 +7,8 @@
 echo "[INTEGRATION TEST] Iniciando pruebas de integracion..."
 
 echo "[INTEGRATION TEST] Test 1: Verificar estructura de carpetas"
-if [ -d "src" ] && [ -d "tests" ] && [ -d "vars" ]; then
-    echo "  [PASS] Estructura del proyecto correcta (src, tests, vars)"
+if [ -d "src" ] && [ -d "tests" ] && [ -d "pipeline" ]; then
+    echo "  [PASS] Estructura del proyecto correcta (src, tests, pipeline)"
 else
     echo "  [FAIL] Falta alguna carpeta del proyecto"
     exit 1
