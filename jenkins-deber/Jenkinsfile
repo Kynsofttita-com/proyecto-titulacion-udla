@@ -1,0 +1,115 @@
+// =============================================================================
+// PIPELINE PRINCIPAL DE JENKINS
+// Deber: CI/CD con Jenkins
+// Autor: Hernan Mateo Jurado Moran
+// =============================================================================
+// Cumple con los 4 requisitos solicitados:
+//   1. Etapas claras (Checkout, Build, Test, Deploy, Reporte)
+//   2. Pipelines modulares y reutilizables (pipeline/*.groovy cargados con load())
+//   3. Integracion continua por rama (when { branch ... })
+//   4. Pipelines en paralelo (parallel { Unit Tests | Integration Tests })
+// =============================================================================
+
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME    = 'jenkins-deber-demo'
+        APP_VERSION = "1.0.${BUILD_NUMBER}"
+        RAMA_ACTUAL = "${env.BRANCH_NAME ?: 'local'}"
+    }
+
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+    }
+
+    stages {
+
+        // =====================================================================
+        // ETAPA 1: CHECKOUT
+        // =====================================================================
+        stage('1. Checkout') {
+            steps {
+                echo "================================================"
+                echo "  Pipeline iniciado"
+                echo "  Rama   : ${RAMA_ACTUAL}"
+                echo "  Build #: ${BUILD_NUMBER}"
+                echo "================================================"
+                checkout scm
+            }
+        }
+
+        // =====================================================================
+        // ETAPA 2: BUILD (modulo reutilizable cargado con load)
+        // =====================================================================
+        stage('2. Build') {
+            steps {
+                script {
+                    def build = load 'pipeline/build.groovy'
+                    build.ejecutar()
+                }
+            }
+        }
+
+        // =====================================================================
+        // ETAPA 3: TESTS EN PARALELO
+        // =====================================================================
+        stage('3. Test (Paralelo)') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        script {
+                            def test = load 'pipeline/test.groovy'
+                            test.ejecutar('unit')
+                        }
+                    }
+                }
+                stage('Integration Tests') {
+                    steps {
+                        script {
+                            def test = load 'pipeline/test.groovy'
+                            test.ejecutar('integration')
+                        }
+                    }
+                }
+            }
+        }
+
+        // =====================================================================
+        // ETAPA 4: DEPLOY POR RAMA (CI por rama)
+        // =====================================================================
+        stage('4. Deploy a Desarrollo') {
+            when { branch 'develop' }
+            steps {
+                echo ">> Desplegando ${APP_NAME} v${APP_VERSION} a entorno DEV (simulado)"
+            }
+        }
+
+        stage('4. Deploy a Produccion') {
+            when { branch 'main' }
+            steps {
+                echo ">> Desplegando ${APP_NAME} v${APP_VERSION} a entorno PROD (simulado)"
+            }
+        }
+
+        // =====================================================================
+        // ETAPA 5: REPORTE
+        // =====================================================================
+        stage('5. Reporte') {
+            steps {
+                script {
+                    def report = load 'pipeline/report.groovy'
+                    report.ejecutar()
+                }
+            }
+        }
+    }
+
+    post {
+        success { echo "[OK]   Pipeline finalizado exitosamente en rama '${RAMA_ACTUAL}'" }
+        failure { echo "[FAIL] El pipeline fallo en rama '${RAMA_ACTUAL}'" }
+        always  { echo "Workspace limpiado." }
+    }
+}

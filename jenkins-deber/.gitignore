@@ -1,0 +1,15 @@
+# Jenkins
+.jenkins/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (por si despues se usa)
+node_modules/

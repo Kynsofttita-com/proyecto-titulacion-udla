@@ -1,0 +1,26 @@
+# =============================================================================
+# Docker Compose - Jenkins LTS para el deber
+# Puerto 8090 (UI)  -  Puerto 50000 (agentes)
+# Se eligio 8090 para no chocar con el API Gateway (8080) del proyecto principal
+# =============================================================================
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins-deber
+    restart: unless-stopped
+    user: root
+    ports:
+      - "8090:8080"
+      - "50000:50000"
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
+      - TZ=America/Guayaquil
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      # Mapeamos el repo local para poder usarlo como repo "privado" sin GitHub
+      - ./:/var/repos/jenkins-deber:ro
+
+volumes:
+  jenkins_home:
+    driver: local
