@@ -1,0 +1,770 @@
+{
+  "info": {
+    "name": "Sprint 5 — MS-Estudiantes & MS-Instructores CRUD",
+    "_postman_id": "sprint5-2024-1234-5678-abcd-ef012345678",
+    "description": "Colección completa Sprint 5 para validar MS-Estudiantes y MS-Instructores con autenticación JWT.\n\nRequisitos:\n- Docker compose levantado (14 servicios healthy)\n- Admin seed: admin@escuela.local / Admin123!\n- Usar environment variables (baseUrl, adminEmail, adminPassword, accessToken, etc.)\n\nFlujo recomendado:\n1. Correr '1 Autenticación' → login obtiene accessToken\n2. Correr 'MS-Estudiantes CRUD' con token\n3. Correr 'MS-Instructores CRUD' con token\n4. Correr 'Error Handling' para validar excepciones\n\nRunner: Collection Runner → seleccionar carpetas → Run",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "API Gateway base URL"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@escuela.local",
+      "type": "string",
+      "description": "Admin email para login"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin123!",
+      "type": "string",
+      "description": "Admin password para login"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT Access Token (se llena después de login)"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT Refresh Token (se llena después de login)"
+    },
+    {
+      "key": "estudianteId",
+      "value": "1",
+      "type": "string",
+      "description": "ID del estudiante para operaciones GET by ID, PUT, DELETE"
+    },
+    {
+      "key": "instructorId",
+      "value": "1",
+      "type": "string",
+      "description": "ID del instructor para operaciones GET by ID, PUT, DELETE"
+    },
+    {
+      "key": "cedula",
+      "value": "1234567890",
+      "type": "string",
+      "description": "Cédula para crear estudiante (única)"
+    },
+    {
+      "key": "email",
+      "value": "estudiante@escuela.local",
+      "type": "string",
+      "description": "Email para crear estudiante (única)"
+    },
+    {
+      "key": "nombreCompleto",
+      "value": "Juan Pérez García",
+      "type": "string",
+      "description": "Nombre completo del estudiante"
+    },
+    {
+      "key": "cedulaInstructor",
+      "value": "9876543210",
+      "type": "string",
+      "description": "Cédula para crear instructor (única)"
+    },
+    {
+      "key": "emailInstructor",
+      "value": "instructor@escuela.local",
+      "type": "string",
+      "description": "Email para crear instructor (único)"
+    },
+    {
+      "key": "licencia",
+      "value": "1A123456",
+      "type": "string",
+      "description": "Número de licencia para instructor (única)"
+    },
+    {
+      "key": "nombreInstructor",
+      "value": "Carlos Rodríguez López",
+      "type": "string",
+      "description": "Nombre completo del instructor"
+    },
+    {
+      "key": "numeroTelefono",
+      "value": "+593912345678",
+      "type": "string",
+      "description": "Número de teléfono para contacto"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 AUTENTICACIÓN",
+      "item": [
+        {
+          "name": "Login (obtener JWT token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Obtiene accessToken y refreshToken. Los tokens se guardan automáticamente en variables."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response tiene accessToken', () => pm.expect(json.accessToken).to.be.a('string').and.not.empty);",
+                  "pm.test('Response tiene refreshToken', () => pm.expect(json.refreshToken).to.be.a('string').and.not.empty);",
+                  "pm.test('Response tiene user con email', () => pm.expect(json.user.email).to.exist);",
+                  "pm.test('User tiene roles array', () => pm.expect(json.user.roles).to.be.an('array'));",
+                  "pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "console.log('✅ Tokens guardados. AccessToken:', json.accessToken.substring(0, 20) + '...');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar token (GET /auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Verifica que el token JWT es válido obteniendo datos del usuario autenticado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Email coincide con adminEmail', () => pm.expect(json.email).to.eql(pm.collectionVariables.get('adminEmail')));",
+                  "pm.test('Roles es array', () => pm.expect(json.roles).to.be.an('array'));",
+                  "pm.test('Roles incluye ADMIN', () => pm.expect(json.roles).to.include('ADMIN'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 MS-ESTUDIANTES CRUD",
+      "item": [
+        {
+          "name": "GET /estudiantes (Listar todos)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes"]
+            },
+            "description": "Obtiene lista paginada de todos los estudiantes. Requiere autenticación."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response es array o tiene content', () => {",
+                  "  pm.expect(json).to.satisfy(obj => Array.isArray(obj) || obj.content);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /estudiantes/{id} (Detalle)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes/{{estudianteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes", "{{estudianteId}}"]
+            },
+            "description": "Obtiene detalles de un estudiante específico por ID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK o 404 Not Found (ambos válidos)', () => {",
+                  "  pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Tiene id', () => pm.expect(json.id).to.exist);",
+                  "  pm.test('Tiene cedula', () => pm.expect(json.cedula).to.exist);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /estudiantes (Crear)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedula}}\",\n  \"email\": \"{{email}}\",\n  \"nombreCompleto\": \"{{nombreCompleto}}\",\n  \"numeroTelefono\": \"{{numeroTelefono}}\",\n  \"domicilio\": \"Quito, Ecuador\",\n  \"provincia\": \"Pichincha\",\n  \"ciudad\": \"Quito\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes"]
+            },
+            "description": "Crea un nuevo estudiante. Validaciones: cédula y email únicos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created o 409 Conflict', () => {",
+                  "  pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Response tiene id', () => pm.expect(json.id).to.exist);",
+                  "  pm.test('Cédula coincide', () => pm.expect(json.cedula).to.eql(pm.collectionVariables.get('cedula')));",
+                  "  pm.collectionVariables.set('estudianteId', json.id);",
+                  "  console.log('✅ Estudiante creado con ID:', json.id);",
+                  "} else if (pm.response.code === 409) {",
+                  "  console.log('⚠️ Estudiante ya existe (cédula duplicada)');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /estudiantes/{id} (Actualizar)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreCompleto\": \"{{nombreCompleto}} (Actualizado)\",\n  \"numeroTelefono\": \"+593987654321\",\n  \"domicilio\": \"Quito, Ecuador (Actualizado)\",\n  \"provincia\": \"Pichincha\",\n  \"ciudad\": \"Quito\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes/{{estudianteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes", "{{estudianteId}}"]
+            },
+            "description": "Actualiza un estudiante existente por ID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK o 404 Not Found', () => {",
+                  "  pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Nombre fue actualizado', () => {",
+                  "    pm.expect(json.nombreCompleto).to.include('Actualizado');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /estudiantes/{id} (Eliminar - Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes/{{estudianteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes", "{{estudianteId}}"]
+            },
+            "description": "Realiza soft-delete de un estudiante (marca como eliminado, no lo borra de BD)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content o 404 Not Found', () => {",
+                  "  pm.expect([204, 404]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 204) {",
+                  "  console.log('✅ Estudiante eliminado (soft-delete)');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 MS-INSTRUCTORES CRUD",
+      "item": [
+        {
+          "name": "GET /instructores (Listar todos)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instructores",
+              "host": ["{{baseUrl}}"],
+              "path": ["instructores"]
+            },
+            "description": "Obtiene lista paginada de todos los instructores. Requiere autenticación."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response es array o tiene content', () => {",
+                  "  pm.expect(json).to.satisfy(obj => Array.isArray(obj) || obj.content);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /instructores/{id} (Detalle)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instructores/{{instructorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["instructores", "{{instructorId}}"]
+            },
+            "description": "Obtiene detalles de un instructor específico por ID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK o 404 Not Found', () => {",
+                  "  pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Tiene id', () => pm.expect(json.id).to.exist);",
+                  "  pm.test('Tiene cedula', () => pm.expect(json.cedula).to.exist);",
+                  "  pm.test('Tiene licencia', () => pm.expect(json.licencia).to.exist);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /instructores (Crear)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedulaInstructor}}\",\n  \"email\": \"{{emailInstructor}}\",\n  \"licencia\": \"{{licencia}}\",\n  \"nombreCompleto\": \"{{nombreInstructor}}\",\n  \"numeroTelefono\": \"{{numeroTelefono}}\",\n  \"domicilio\": \"Quito, Ecuador\",\n  \"provincia\": \"Pichincha\",\n  \"ciudad\": \"Quito\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/instructores",
+              "host": ["{{baseUrl}}"],
+              "path": ["instructores"]
+            },
+            "description": "Crea un nuevo instructor. Validaciones: cédula, email y licencia únicos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created o 409 Conflict', () => {",
+                  "  pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Response tiene id', () => pm.expect(json.id).to.exist);",
+                  "  pm.test('Cédula coincide', () => pm.expect(json.cedula).to.eql(pm.collectionVariables.get('cedulaInstructor')));",
+                  "  pm.test('Licencia coincide', () => pm.expect(json.licencia).to.eql(pm.collectionVariables.get('licencia')));",
+                  "  pm.collectionVariables.set('instructorId', json.id);",
+                  "  console.log('✅ Instructor creado con ID:', json.id);",
+                  "} else if (pm.response.code === 409) {",
+                  "  console.log('⚠️ Instructor ya existe (cédula/email/licencia duplicado)');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /instructores/{id} (Actualizar)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreCompleto\": \"{{nombreInstructor}} (Actualizado)\",\n  \"numeroTelefono\": \"+593987654321\",\n  \"domicilio\": \"Quito, Ecuador (Actualizado)\",\n  \"provincia\": \"Pichincha\",\n  \"ciudad\": \"Quito\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/instructores/{{instructorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["instructores", "{{instructorId}}"]
+            },
+            "description": "Actualiza un instructor existente por ID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK o 404 Not Found', () => {",
+                  "  pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Nombre fue actualizado', () => {",
+                  "    pm.expect(json.nombreCompleto).to.include('Actualizado');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /instructores/{id} (Eliminar - Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instructores/{{instructorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["instructores", "{{instructorId}}"]
+            },
+            "description": "Realiza soft-delete de un instructor (marca como eliminado, no lo borra de BD)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content o 404 Not Found', () => {",
+                  "  pm.expect([204, 404]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 204) {",
+                  "  console.log('✅ Instructor eliminado (soft-delete)');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4 ERROR HANDLING",
+      "item": [
+        {
+          "name": "Cédula duplicada (409 Conflict)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedula}}\",\n  \"email\": \"otro@escuela.local\",\n  \"nombreCompleto\": \"Otro Estudiante\",\n  \"numeroTelefono\": \"{{numeroTelefono}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes"]
+            },
+            "description": "Intenta crear estudiante con cédula duplicada. Debe retornar 409 Conflict con RFC 7807 ProblemDetail."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response tiene type (RFC 7807)', () => pm.expect(json.type).to.exist);",
+                  "pm.test('Response tiene title', () => pm.expect(json.title).to.exist);",
+                  "pm.test('Response tiene detail', () => pm.expect(json.detail).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Email duplicado (409 Conflict)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1111111111\",\n  \"email\": \"{{email}}\",\n  \"nombreCompleto\": \"Otro Estudiante\",\n  \"numeroTelefono\": \"{{numeroTelefono}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes"]
+            },
+            "description": "Intenta crear estudiante con email duplicado. Debe retornar 409 Conflict."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));",
+                  "const json = pm.response.json();",
+                  "pm.test('ProblemDetail contiene información de error', () => {",
+                  "  pm.expect(json.title).to.include('Email');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin autenticación (401 Unauthorized)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes"]
+            },
+            "description": "Intenta acceder endpoint sin JWT token. Debe retornar 401 Unauthorized."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "No encontrado (404 Not Found)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes", "99999"]
+            },
+            "description": "Intenta obtener estudiante con ID que no existe. Debe retornar 404 Not Found."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));",
+                  "const json = pm.response.json();",
+                  "pm.test('ProblemDetail contiene información de error', () => {",
+                  "  pm.expect(json.title).to.include('no encontrado');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Licencia duplicada en Instructor (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"2222222222\",\n  \"email\": \"otro-instructor@escuela.local\",\n  \"licencia\": \"{{licencia}}\",\n  \"nombreCompleto\": \"Otro Instructor\",\n  \"numeroTelefono\": \"{{numeroTelefono}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/instructores",
+              "host": ["{{baseUrl}}"],
+              "path": ["instructores"]
+            },
+            "description": "Intenta crear instructor con licencia duplicada. Debe retornar 409 Conflict."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));",
+                  "const json = pm.response.json();",
+                  "pm.test('Error menciona licencia', () => {",
+                  "  pm.expect(json.title || json.detail).to.include('Licencia');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

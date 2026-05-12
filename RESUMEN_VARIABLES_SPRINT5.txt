@@ -1,0 +1,227 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║               RESUMEN RÁPIDO - VARIABLES POSTMAN SPRINT 5                       ║
+║                    (Copiar y pegar estos valores en Postman)                    ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+📋 VARIABLES HEREDADAS (Existen de Sprint 3-4)
+═══════════════════════════════════════════════════════════════════════════════════
+
+baseUrl              = http://localhost:8080
+adminEmail           = admin@escuela.local
+adminPassword        = Admin123!
+accessToken          = (se llena automáticamente tras login)
+refreshToken         = (se llena automáticamente tras login)
+
+⚡ IMPORTANTE: accessToken y refreshToken se OBTIENEN SOLOS después de ejecutar
+             el endpoint "Login". No necesitas ingresar nada manualmente.
+
+═══════════════════════════════════════════════════════════════════════════════════
+
+✨ VARIABLES NUEVAS (Debes agregar para Sprint 5)
+═══════════════════════════════════════════════════════════════════════════════════
+
+┌─ IDENTIFICADORES ─────────────────────────────────────────────────────────────┐
+│                                                                                  │
+│ estudianteId              = 1                                                   │
+│ instructorId              = 1                                                   │
+│                                                                                  │
+│ ℹ️  Se auto-actualizan cuando creas un estudiante/instructor                   │
+│    (no necesitas cambiarlos después de crear)                                   │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DATOS DE ESTUDIANTE ─────────────────────────────────────────────────────────┐
+│                                                                                  │
+│ cedula                    = 1234567890   ← ⚠️ CAMBIAR (debe ser único)          │
+│ email                     = estudiante@escuela.local   ← ⚠️ CAMBIAR (único)     │
+│ nombreCompleto            = Juan Pérez García   ← ⚠️ CAMBIAR (personalizar)     │
+│ numeroTelefono            = +593912345678                                       │
+│                                                                                  │
+│ ℹ️  Validaciones: cedula y email DEBEN SER ÚNICOS en la base de datos          │
+│    Si ves 409 Conflict, significa que ya existe ese cedula/email               │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DATOS DE INSTRUCTOR ─────────────────────────────────────────────────────────┐
+│                                                                                  │
+│ cedulaInstructor          = 9876543210  ← ⚠️ CAMBIAR (debe ser único)          │
+│ emailInstructor           = instructor@escuela.local   ← ⚠️ CAMBIAR (único)     │
+│ licencia                  = 1A123456    ← ⚠️ CAMBIAR (debe ser único)          │
+│ nombreInstructor          = Carlos Rodríguez López   ← ⚠️ CAMBIAR (personalizar)│
+│                                                                                  │
+│ ℹ️  Validaciones: cedula, email Y licencia DEBEN SER ÚNICOS                    │
+│    Si ves 409 Conflict, significa que ya existe uno de estos                   │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════════
+
+🚀 CÓMO USAR EN POSTMAN
+═══════════════════════════════════════════════════════════════════════════════════
+
+PASO 1: IMPORTAR COLECCIÓN
+─────────────────────────────
+1. Abre Postman
+2. File → Import
+3. Selecciona: POSTMAN_Sprint5_Collection_v2.json
+4. Click "Import"
+
+PASO 2: CAMBIAR VARIABLES (Haz esto ANTES de empezar)
+────────────────────────────────────────────────────
+1. En Postman, haz click en el nombre de la colección (arriba a la izquierda)
+2. Pestaña "Variables"
+3. Localiza y MODIFICA:
+
+   cedula                  → 1234567891         (cambia el 0 final)
+   email                   → estudiante1@...    (personaliza)
+   cedulaInstructor        → 9876543211         (cambia el 0 final)
+   emailInstructor         → instructor1@...    (personaliza)
+   licencia                → 1A123457           (cambia el 6 final)
+   nombreCompleto          → Tu nombre          (personaliza)
+   nombreInstructor        → Otro nombre        (personaliza)
+
+4. Click "Save"
+
+PASO 3: EJECUTAR ENDPOINTS
+──────────────────────────
+1. Colección → 1 AUTENTICACIÓN → Login
+   ✅ Ejecuta → obtiene token automáticamente
+
+2. Colección → 2 MS-ESTUDIANTES CRUD
+   ✅ POST /estudiantes → crea
+   ✅ GET /estudiantes → lista todos
+   ✅ GET /estudiantes/{id} → detalle (usa {{estudianteId}})
+   ✅ PUT /estudiantes/{id} → actualiza
+   ✅ DELETE /estudiantes/{id} → elimina
+
+3. Colección → 3 MS-INSTRUCTORES CRUD
+   ✅ Igual que estudiantes pero con instructor
+
+4. Colección → 4 ERROR HANDLING
+   ✅ Prueba errores: duplicados, sin auth, no encontrado
+
+═══════════════════════════════════════════════════════════════════════════════════
+
+📊 TABLA RÁPIDA DE REFERENCIA
+═══════════════════════════════════════════════════════════════════════════════════
+
+VARIABLE              VALOR ACTUAL            CAMBIAR?  RECOMENDADO
+─────────────────────────────────────────────────────────────────────────
+baseUrl               http://localhost:8080   ❌ NO     (dejar igual)
+adminEmail            admin@escuela.local     ❌ NO     (es el seed)
+adminPassword         Admin123!               ❌ NO     (es el seed)
+accessToken           (vacío)                 ❌ NO     (se auto-llena)
+refreshToken          (vacío)                 ❌ NO     (se auto-llena)
+
+estudianteId          1                       ⚡ AUTO   (se auto-actualiza)
+instructorId          1                       ⚡ AUTO   (se auto-actualiza)
+
+cedula                1234567890              ✅ SÍ     1234567891
+email                 estudiante@...          ✅ SÍ     estudiante1@escuela.local
+nombreCompleto        Juan Pérez García       ✅ SÍ     Tu nombre real
+numeroTelefono        +593912345678           ⚡ OPC    (opcional)
+
+cedulaInstructor      9876543210              ✅ SÍ     9876543211
+emailInstructor       instructor@...          ✅ SÍ     instructor1@escuela.local
+licencia              1A123456                ✅ SÍ     1A123457
+nombreInstructor      Carlos Rodríguez        ✅ SÍ     Otro nombre
+
+═══════════════════════════════════════════════════════════════════════════════════
+
+⚠️  PROBLEMAS Y SOLUCIONES
+═══════════════════════════════════════════════════════════════════════════════════
+
+PROBLEMA: "409 Conflict - Cédula duplicada"
+CAUSA:    Ya existe un estudiante/instructor con esa cédula
+SOLUCIÓN: Cambiar cedula/cedulaInstructor a número diferente
+          Ej: 1234567891 → 1234567892
+
+PROBLEMA: "409 Conflict - Email duplicado"
+CAUSA:    Ya existe un estudiante/instructor con ese email
+SOLUCIÓN: Cambiar email/emailInstructor a email diferente
+          Ej: estudiante@... → estudiante1@escuela.local
+
+PROBLEMA: "409 Conflict - Licencia duplicada"
+CAUSA:    Ya existe un instructor con esa licencia
+SOLUCIÓN: Cambiar licencia a número diferente
+          Ej: 1A123456 → 1A123457
+
+PROBLEMA: "401 Unauthorized"
+CAUSA:    JWT token expiró o no existe
+SOLUCIÓN: Ejecutar endpoint "Login" nuevamente para obtener token fresco
+
+PROBLEMA: "404 Not Found"
+CAUSA:    El estudiante/instructor no existe (ID incorrecto)
+SOLUCIÓN: Crear primero (POST) o usar ID válido existente
+
+PROBLEMA: "Cannot read variable..."
+CAUSA:    Postman no ve las variables
+SOLUCIÓN:
+  1. Verifica que la colección está importada
+  2. Verifica que seleccionaste el Environment correcto
+  3. Recarga la página de Postman (F5)
+
+═══════════════════════════════════════════════════════════════════════════════════
+
+✅ CHECKLIST ANTES DE PRESENTAR
+═══════════════════════════════════════════════════════════════════════════════════
+
+□ Postman instalado y abierto
+□ Colección POSTMAN_Sprint5_Collection_v2.json importada
+□ Variables configuradas (cedula, email, cedulaInstructor, etc. cambiadas)
+□ Ejecutaste Login y obtuviste accessToken (sin errores)
+□ Probaste POST /estudiantes → creó exitosamente
+□ Probaste POST /instructores → creó exitosamente
+□ Probaste GET endpoints y viste datos
+□ Probaste DELETE endpoints (soft-delete) sin errores
+□ Probaste ERROR HANDLING (duplicados, no auth, not found)
+
+═══════════════════════════════════════════════════════════════════════════════════
+
+🎯 FLUJO RECOMENDADO PARA DEMO AL PROFESOR
+═══════════════════════════════════════════════════════════════════════════════════
+
+1. "Importamos la colección Postman que ya tiene configurados los endpoints"
+   → Mostrar colección importada
+
+2. "Aquí están nuestras variables de entorno"
+   → Mostrar sección Variables
+
+3. "Primero hacemos login con credenciales del admin"
+   → Ejecutar POST /auth/login → Mostrar token obtenido
+
+4. "Ahora creamos un estudiante"
+   → Ejecutar POST /estudiantes → Mostrar 201 Created con ID
+
+5. "Listamos todos los estudiantes"
+   → Ejecutar GET /estudiantes → Mostrar lista completa
+
+6. "Buscamos el estudiante que acabamos de crear"
+   → Ejecutar GET /estudiantes/{id} → Mostrar detalles
+
+7. "Actualizamos sus datos"
+   → Ejecutar PUT /estudiantes/{id} → Mostrar cambios
+
+8. "Eliminamos el estudiante (soft-delete)"
+   → Ejecutar DELETE /estudiantes/{id} → Mostrar 204 No Content
+
+9. "Hacemos lo mismo con instructores"
+   → Repetir pasos 4-8 con endpoints de /instructores
+
+10. "Validamos errores: intentamos crear con cédula duplicada"
+    → Ejecutar POST con cedula existente → Mostrar 409 Conflict con RFC 7807
+
+11. "¿Preguntas, profesor?"
+    → Estar preparado para responder
+
+═══════════════════════════════════════════════════════════════════════════════════
+
+📝 ARCHIVO DE REFERENCIA
+═══════════════════════════════════════════════════════════════════════════════════
+
+Para más detalles, consulta: GUIA_VARIABLES_POSTMAN_SPRINT5.md
+
+═══════════════════════════════════════════════════════════════════════════════════
+
+Documento:  RESUMEN_VARIABLES_SPRINT5.txt
+Versión:    1.0
+Fecha:      12 Mayo 2026
+
+¡Listo para usar! Copia estos valores a Postman y comienza las pruebas. 🚀
