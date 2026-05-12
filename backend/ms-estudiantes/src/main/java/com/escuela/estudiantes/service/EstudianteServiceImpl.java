@@ -1,5 +1,9 @@
 package com.escuela.estudiantes.service;
 
+import com.escuela.common.events.estudiantes.EstudianteActualizadoEvent;
+import com.escuela.common.events.estudiantes.EstudianteCreadoEvent;
+import com.escuela.common.events.estudiantes.EstudianteEliminadoEvent;
+import com.escuela.common.events.estudiantes.EstudianteMatriculadoEvent;
 import com.escuela.estudiantes.dto.CreateEstudianteRequest;
 import com.escuela.estudiantes.dto.EstudianteDetailResponse;
 import com.escuela.estudiantes.dto.EstudianteListResponse;
@@ -22,6 +26,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 /**
  * Implementacion del servicio de Estudiantes.
  *
@@ -32,21 +38,34 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>Validacion de unicidad de cedula y email (entre los no eliminados).</li>
  *   <li>Mapeo Entity &lt;-&gt; DTO via {@link EstudianteMapper}.</li>
  *   <li>Soft delete (no borra fisicamente).</li>
+ *   <li>Publicacion de eventos a RabbitMQ via {@link EstudianteEventDispatcher}.</li>
  * </ul>
  *
- * <p>NO publica eventos todavia (eso entra en PR #4 del Sprint 5).</p>
+ * <p>Eventos publicados:</p>
+ * <ul>
+ *   <li>{@code estudiantes.creado} - tras crear un estudiante</li>
+ *   <li>{@code estudiantes.actualizado} - tras actualizar</li>
+ *   <li>{@code estudiantes.eliminado} - tras soft-delete</li>
+ *   <li>{@code estudiantes.matriculado} - cuando el estado pasa a ACTIVO</li>
+ * </ul>
  */
 @Service
 public class EstudianteServiceImpl implements EstudianteService {
 
     private static final Logger log = LoggerFactory.getLogger(EstudianteServiceImpl.class);
 
+    private static final String ESTADO_ACTIVO = "ACTIVO";
+
     private final EstudianteRepository repository;
     private final EstudianteMapper mapper;
+    private final EstudianteEventDispatcher eventDispatcher;
 
-    public EstudianteServiceImpl(EstudianteRepository repository, EstudianteMapper mapper) {
+    public EstudianteServiceImpl(EstudianteRepository repository,
+                                 EstudianteMapper mapper,
+                                 EstudianteEventDispatcher eventDispatcher) {
         this.repository = repository;
         this.mapper = mapper;
+        this.eventDispatcher = eventDispatcher;
     }
 
     @Override
@@ -71,6 +90,15 @@ public class EstudianteServiceImpl implements EstudianteService {
 
         Estudiante guardado = repository.save(estudiante);
         log.info("Estudiante creado id={} cedula={}", guardado.getId(), guardado.getCedula());
+
+        eventDispatcher.publishCreado(EstudianteCreadoEvent.builder()
+                .estudianteId(guardado.getId())
+                .cedula(guardado.getCedula())
+                .email(guardado.getEmail())
+                .nombreCompleto(nombreCompleto(guardado))
+                .estado(guardado.getEstado())
+                .build());
+
         return mapper.toResponse(guardado);
     }
 
@@ -97,6 +125,9 @@ public class EstudianteServiceImpl implements EstudianteService {
         Estudiante estudiante = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new EstudianteNotFoundException(id));
 
+        // Capturar estado previo para detectar transicion a "matriculado"
+        String estadoPrevio = estudiante.getEstado();
+
         // Si cambian el email, validar unicidad (excepto si es el mismo email)
         if (request.email() != null && !request.email().equalsIgnoreCase(estudiante.getEmail())
                 && repository.existsByEmailAndDeletedAtIsNull(request.email())) {
@@ -106,6 +137,27 @@ public class EstudianteServiceImpl implements EstudianteService {
         mapper.updateEntity(estudiante, request);
         Estudiante actualizado = repository.save(estudiante);
         log.info("Estudiante actualizado id={}", actualizado.getId());
+
+        eventDispatcher.publishActualizado(EstudianteActualizadoEvent.builder()
+                .estudianteId(actualizado.getId())
+                .cedula(actualizado.getCedula())
+                .email(actualizado.getEmail())
+                .nombreCompleto(nombreCompleto(actualizado))
+                .estado(actualizado.getEstado())
+                .build());
+
+        // Si el estado pasa a ACTIVO, ademas disparamos el evento de matricula
+        if (!Objects.equals(estadoPrevio, ESTADO_ACTIVO)
+                && ESTADO_ACTIVO.equals(actualizado.getEstado())) {
+            eventDispatcher.publishMatriculado(EstudianteMatriculadoEvent.builder()
+                    .estudianteId(actualizado.getId())
+                    .cedula(actualizado.getCedula())
+                    .email(actualizado.getEmail())
+                    .nombreCompleto(nombreCompleto(actualizado))
+                    .fechaMatricula(actualizado.getFechaMatricula())
+                    .build());
+        }
+
         return mapper.toResponse(actualizado);
     }
 
@@ -117,6 +169,11 @@ public class EstudianteServiceImpl implements EstudianteService {
         estudiante.markAsDeleted();
         repository.save(estudiante);
         log.info("Estudiante soft-deleted id={}", id);
+
+        eventDispatcher.publishEliminado(EstudianteEliminadoEvent.builder()
+                .estudianteId(estudiante.getId())
+                .cedula(estudiante.getCedula())
+                .build());
     }
 
     // -----------------------------------------------------------------------
@@ -127,5 +184,9 @@ public class EstudianteServiceImpl implements EstudianteService {
         if (!CedulaValidator.isValid(cedula)) {
             throw new CedulaInvalidaException(cedula);
         }
+    }
+
+    private String nombreCompleto(Estudiante e) {
+        return e.getNombre() + " " + e.getApellido();
     }
 }
