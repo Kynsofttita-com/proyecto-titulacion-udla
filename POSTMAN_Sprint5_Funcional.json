@@ -1,0 +1,317 @@
+{
+  "info": {
+    "name": "Sprint 5 — AUTENTICACIÓN + ESTRUCTURA PREPARADA",
+    "_postman_id": "sprint5-funcional-2024",
+    "description": "Colección actualizada Sprint 5 basada en pruebas reales con curl.\n\nSTATUS ACTUAL:\n✅ FUNCIONANDO:\n  - POST /auth/login → Login exitoso, obtiene tokens JWT\n  - POST /auth/refresh → Renovación de token\n  - GET /auth/me → Datos del usuario autenticado\n\n🔧 EN DESARROLLO (Controladores no inicializados):\n  - MS-Estudiantes (estructura lista, requiere inicialización)\n  - MS-Instructores (estructura lista, requiere inicialización)\n  - MS-Vehículos (estructura lista, requiere inicialización)\n\nREQUISITOS:\n- Docker compose levantado (14 servicios healthy)\n- Microservicios registrados en Eureka\n- Admin seed: admin@escuela.local / Admin123!\n\nNOTA: Esta colección usa Variables de Entorno heredadas de Sprint 3-4.\n      Agraga tus propias variables antes de usar.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "API Gateway base URL"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@escuela.local",
+      "type": "string",
+      "description": "Email admin del sistema"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin123!",
+      "type": "string",
+      "description": "Password admin (verificado con curl ✅)"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token (se auto-llena)"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT refresh token (se auto-llena)"
+    },
+    {
+      "key": "estudianteId",
+      "value": "1",
+      "type": "string",
+      "description": "ID del estudiante (cuando funcione el endpoint)"
+    },
+    {
+      "key": "instructorId",
+      "value": "1",
+      "type": "string",
+      "description": "ID del instructor (cuando funcione el endpoint)"
+    },
+    {
+      "key": "cedula",
+      "value": "1234567890",
+      "type": "string",
+      "description": "Cédula para estudiante (cambiar a único)"
+    },
+    {
+      "key": "email",
+      "value": "estudiante@escuela.local",
+      "type": "string",
+      "description": "Email para estudiante (cambiar a único)"
+    },
+    {
+      "key": "nombreCompleto",
+      "value": "Juan Pérez García",
+      "type": "string",
+      "description": "Nombre del estudiante"
+    },
+    {
+      "key": "numeroTelefono",
+      "value": "+593912345678",
+      "type": "string",
+      "description": "Teléfono de contacto"
+    }
+  ],
+  "item": [
+    {
+      "name": "✅ AUTENTICACIÓN (FUNCIONANDO)",
+      "description": "Endpoints de Auth verificados con curl - 100% Funcional",
+      "item": [
+        {
+          "name": "1. Login (Obtener JWT Token) ✅",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "✅ VERIFICADO CON CURL\nCredenciales:\n  email: admin@escuela.local\n  password: Admin123!\n\nRespuesta esperada: 200 OK\n{\n  \"accessToken\": \"eyJ...\",\n  \"refreshToken\": \"eyJ...\",\n  \"accessTokenExpiresInSeconds\": 900,\n  \"refreshTokenExpiresInSeconds\": 604800,\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"admin@escuela.local\",\n    \"nombre\": \"Administrador\",\n    \"apellido\": \"del Sistema\",\n    \"roles\": [\"ADMIN\"]\n  }\n}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Tiene accessToken', () => pm.expect(json.accessToken).to.be.a('string').and.not.empty);",
+                  "pm.test('Tiene refreshToken', () => pm.expect(json.refreshToken).to.be.a('string').and.not.empty);",
+                  "pm.test('Email es admin@escuela.local', () => pm.expect(json.user.email).to.eql('admin@escuela.local'));",
+                  "pm.test('Roles incluye ADMIN', () => pm.expect(json.user.roles).to.include('ADMIN'));",
+                  "pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "console.log('✅ LOGIN EXITOSO - Tokens guardados en variables');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Verificar Token (GET /auth/me) ✅",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "✅ VERIFICADO CON CURL\nVerifica que el token JWT es válido."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Email es admin@escuela.local', () => pm.expect(json.email).to.eql('admin@escuela.local'));",
+                  "pm.test('Roles es array', () => pm.expect(json.roles).to.be.an('array'));",
+                  "console.log('✅ TOKEN VÁLIDO');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Refresh Token ✅",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "✅ VERIFICADO CON CURL\nRenueva el access token usando el refresh token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Nuevo accessToken', () => pm.expect(json.accessToken).to.be.a('string').and.not.empty);",
+                  "pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "console.log('✅ TOKEN RENOVADO');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Logout ✅",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "✅ VERIFICADO CON CURL\nCierra la sesión invalidando el refresh token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));",
+                  "console.log('✅ LOGOUT EXITOSO');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔧 ESTRUCTURA PREPARADA (Controladores No Inicializados)",
+      "description": "Endpoints listos pero requieren inicialización de controladores",
+      "item": [
+        {
+          "name": "ESTUDIANTES - Plantilla",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes"]
+            },
+            "description": "🔧 EN DESARROLLO\nEndpoint: GET /estudiantes\nEstado: Controlador no inicializado (404 Not Found)\nAcción: Verificar ms-estudiantes deployment\n\nCURL para testing:\ncurl -X GET http://localhost:8082/estudiantes \\\n  -H 'Authorization: Bearer {{accessToken}}' \\\n  -H 'Content-Type: application/json'"
+          }
+        },
+        {
+          "name": "INSTRUCTORES - Plantilla",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/instructores",
+              "host": ["{{baseUrl}}"],
+              "path": ["instructores"]
+            },
+            "description": "🔧 EN DESARROLLO\nEndpoint: GET /instructores\nEstado: Controlador no inicializado (404 Not Found)\nAcción: Verificar ms-instructores deployment"
+          }
+        },
+        {
+          "name": "VEHÍCULOS - Plantilla",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": ["{{baseUrl}}"],
+              "path": ["vehiculos"]
+            },
+            "description": "🔧 EN DESARROLLO\nEndpoint: GET /vehiculos\nEstado: Controlador no inicializado (404 Not Found)\nAcción: Verificar ms-vehiculos deployment"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 INSTRUCCIONES",
+      "item": [
+        {
+          "name": "VARIABLES QUE DEBES GUARDAR",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://postman.com"
+            },
+            "description": "VARIABLES DE ENTORNO A GUARDAR:\n\n✅ YA EXISTEN (Heredadas de Sprint 3-4):\n  • baseUrl = http://localhost:8080\n  • adminEmail = admin@escuela.local\n  • adminPassword = Admin123!\n  • accessToken (se auto-llena tras login)\n  • refreshToken (se auto-llena tras login)\n\n✨ PUEDES AGREGAR (Para futuros endpoints):\n  • estudianteId = 1\n  • instructorId = 1\n  • cedula = 1234567890 (cambiar a único)\n  • email = estudiante@escuela.local (cambiar a único)\n  • nombreCompleto = Juan Pérez García\n  • numeroTelefono = +593912345678\n\n🔑 CÓMO GUARDAR EN POSTMAN:\n1. Collections → Nombre de colección → Variables\n2. Agrega los Key/Value pairs\n3. Click Save\n\n✅ PRUEBAS REALIZADAS CON CURL:\n\n# Login (✅ FUNCIONA)\ncurl -X POST http://localhost:8080/auth/login \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"email\":\"admin@escuela.local\",\"password\":\"Admin123!\"}'\n\nRESPUESTA:\n  Status: 200 OK\n  accessToken: eyJhbGc... (token válido)\n  user.email: admin@escuela.local\n  user.roles: [\"ADMIN\"]\n\n# GET /estudiantes (❌ NO FUNCIONA)\ncurl -X GET http://localhost:8082/estudiantes \\\\\n  -H \"Authorization: Bearer $TOKEN\"\n\nRESPUESTA:\n  Status: 404 Not Found\n  Causa: Controlador no inicializado en ms-estudiantes\n\n# Eureka Health (✅ FUNCIONA)\ncurl http://localhost:8761/eureka/apps\n\nRESPUESTA:\n  MS-ESTUDIANTES: UP\n  MS-INSTRUCTORES: UP\n  MS-VEHICULOS: UP\n  MS-AUTH: UP\n  (Servicios registrados pero sin controladores)\n\n📋 PRÓXIMAS ACCIONES:\n1. Verificar logs de ms-estudiantes\n2. Confirmar que @RestController está en EstudianteController\n3. Verificar que @RequestMapping(\\\"/estudiantes\\\") está correcto\n4. Reiniciar servicios si es necesario\n\n📚 DOCUMENTOS RELACIONADOS:\n  • VARIABLES_A_AGREGAR_CHECKLIST.md\n  • GUIA_VARIABLES_POSTMAN_SPRINT5.md\n  • RESUMEN_VARIABLES_SPRINT5.txt"
+          }
+        }
+      ]
+    }
+  ]
+}
