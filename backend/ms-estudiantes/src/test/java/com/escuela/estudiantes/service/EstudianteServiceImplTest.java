@@ -1,5 +1,9 @@
 package com.escuela.estudiantes.service;
 
+import com.escuela.common.events.estudiantes.EstudianteActualizadoEvent;
+import com.escuela.common.events.estudiantes.EstudianteCreadoEvent;
+import com.escuela.common.events.estudiantes.EstudianteEliminadoEvent;
+import com.escuela.common.events.estudiantes.EstudianteMatriculadoEvent;
 import com.escuela.estudiantes.dto.CreateEstudianteRequest;
 import com.escuela.estudiantes.dto.EstudianteDetailResponse;
 import com.escuela.estudiantes.dto.EstudianteResponse;
@@ -43,6 +47,9 @@ class EstudianteServiceImplTest {
 
     @Mock
     private EstudianteMapper mapper;
+
+    @Mock
+    private EstudianteEventDispatcher eventDispatcher;
 
     @InjectMocks
     private EstudianteServiceImpl service;
@@ -92,6 +99,7 @@ class EstudianteServiceImplTest {
         assertThat(response.id()).isEqualTo(1L);
         assertThat(response.cedula()).isEqualTo(CEDULA_VALIDA);
         verify(repository).save(any(Estudiante.class));
+        verify(eventDispatcher).publishCreado(any(EstudianteCreadoEvent.class));
     }
 
     @Test
@@ -181,6 +189,31 @@ class EstudianteServiceImplTest {
         assertThat(response.id()).isEqualTo(1L);
         verify(mapper).updateEntity(entidad, req);
         verify(repository).save(entidad);
+        verify(eventDispatcher).publishActualizado(any(EstudianteActualizadoEvent.class));
+        // No transicion a ACTIVO (el mapper esta mockeado y no aplica el cambio)
+        verify(eventDispatcher, never()).publishMatriculado(any());
+    }
+
+    @Test
+    @DisplayName("update transicion estado PRE_MATRICULADO -> ACTIVO publica EstudianteMatriculadoEvent")
+    void updateMatricula() {
+        UpdateEstudianteRequest req = new UpdateEstudianteRequest(
+                null, null, null, null, null, null, null, "ACTIVO", null, null, null);
+        when(repository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(entidad));
+        // Simulamos que mapper.updateEntity SI aplica el cambio de estado
+        org.mockito.Mockito.doAnswer(inv -> {
+            entidad.setEstado("ACTIVO");
+            return null;
+        }).when(mapper).updateEntity(entidad, req);
+        when(repository.save(entidad)).thenReturn(entidad);
+        when(mapper.toResponse(entidad)).thenReturn(new EstudianteResponse(
+                1L, CEDULA_VALIDA, "Hernan", "Jurado", "hernan@test.com",
+                "0987654321", "ACTIVO", null));
+
+        service.update(1L, req);
+
+        verify(eventDispatcher).publishActualizado(any(EstudianteActualizadoEvent.class));
+        verify(eventDispatcher).publishMatriculado(any(EstudianteMatriculadoEvent.class));
     }
 
     @Test
@@ -222,6 +255,7 @@ class EstudianteServiceImplTest {
 
         assertThat(entidad.getDeletedAt()).isNotNull();
         verify(repository, times(1)).save(entidad);
+        verify(eventDispatcher).publishEliminado(any(EstudianteEliminadoEvent.class));
     }
 
     @Test
