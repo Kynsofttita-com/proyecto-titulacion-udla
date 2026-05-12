@@ -1,0 +1,592 @@
+{
+  "info": {
+    "name": "Sprint 5 - Pruebas MS-Estudiantes & MS-Instructores",
+    "description": "Colección de Postman para probar los endpoints del Sprint 5. Incluye autenticación JWT y todas las operaciones CRUD.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "estudiante_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "instructor_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 AUTENTICACIÓN",
+      "item": [
+        {
+          "name": "1. Login (Obtener JWT Token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@escuela.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "⚠️ HACER PRIMERO: Obtiene JWT token\n\nRequisitos previos:\n1. PostgreSQL corriendo\n2. RabbitMQ corriendo\n3. API Gateway corriendo (puerto 8080)\n4. MS-Auth corriendo (puerto 8081)\n\nRespuesta esperada:\n{\n  \"token\": \"eyJhbGc...\",\n  \"expiresIn\": 86400\n}\n\nCopiar el token y pegarlo en:\nPostman → Variables → jwt_token"
+          }
+        },
+        {
+          "name": "Variables de Entorno (GUARDAR DESPUÉS DE LOGIN)",
+          "description": "PASOS:\n1. Ejecuta \"Login (Obtener JWT Token)\" primero\n2. Copia el valor de \"token\" de la respuesta\n3. En Postman:\n   - Click en el ojo (eye icon) arriba\n   - Click en \"Edit\" junto a \"Sprint 5 - Collection\"\n   - Pega el token en Variables > jwt_token > current value\n4. Guarda (Ctrl+S)\n5. Ahora todos los requests tendrán autenticación"
+        }
+      ]
+    },
+    {
+      "name": "👥 MS-ESTUDIANTES (CRUD)",
+      "item": [
+        {
+          "name": "📋 GET - Listar todos los estudiantes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/estudiantes?page=0&size=20&sort=id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "estudiantes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "id"
+                }
+              ]
+            },
+            "description": "Retorna lista paginada de estudiantes"
+          }
+        },
+        {
+          "name": "📄 GET - Obtener un estudiante por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/estudiantes/{{estudiante_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "estudiantes",
+                "{{estudiante_id}}"
+              ]
+            },
+            "description": "Retorna detalles de un estudiante específico"
+          }
+        },
+        {
+          "name": "➕ POST - Crear nuevo estudiante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              },
+              {
+                "key": "User-Roles",
+                "value": "ADMIN",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1710034065\",\n  \"nombreCompleto\": \"Juan Pérez García\",\n  \"email\": \"juan.perez@example.com\",\n  \"telefonoContacto\": \"0987654321\",\n  \"direccion\": \"Quito, Ecuador\",\n  \"estado\": \"ACTIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/estudiantes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "estudiantes"
+              ]
+            },
+            "description": "Crea un nuevo estudiante\n\nVALIDACIONES:\n- cedula: Única, no puede duplicarse\n- email: Única, no puede duplicarse\n- nombreCompleto: Requerido\n\nRESPUESTA:\nStatus 201 Created\nHeader: Location: /estudiantes/{id}"
+          }
+        },
+        {
+          "name": "✏️ PUT - Actualizar estudiante",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              },
+              {
+                "key": "User-Roles",
+                "value": "ADMIN",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreCompleto\": \"Juan Pérez García - ACTUALIZADO\",\n  \"telefonoContacto\": \"0999999999\",\n  \"direccion\": \"Nueva dirección\",\n  \"estado\": \"ACTIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/estudiantes/{{estudiante_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "estudiantes",
+                "{{estudiante_id}}"
+              ]
+            },
+            "description": "Actualiza un estudiante existente\n\nCampos opcionalmente actualizables:\n- nombreCompleto\n- telefonoContacto\n- direccion\n- estado\n\nNOTA: cedula y email no se pueden cambiar"
+          }
+        },
+        {
+          "name": "🗑️ DELETE - Eliminar estudiante (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              },
+              {
+                "key": "User-Roles",
+                "value": "ADMIN",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/estudiantes/{{estudiante_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "estudiantes",
+                "{{estudiante_id}}"
+              ]
+            },
+            "description": "Elimina un estudiante (soft delete)\n\nNOTA: No borra de la BD, solo marca deletedAt = now()\nRESPULTADO: Status 204 No Content"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎓 MS-INSTRUCTORES (CRUD)",
+      "item": [
+        {
+          "name": "📋 GET - Listar todos los instructores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/instructores?page=0&size=20&sort=id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instructores"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "id"
+                }
+              ]
+            },
+            "description": "Retorna lista paginada de instructores"
+          }
+        },
+        {
+          "name": "📄 GET - Obtener un instructor por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/instructores/{{instructor_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instructores",
+                "{{instructor_id}}"
+              ]
+            },
+            "description": "Retorna detalles de un instructor específico"
+          }
+        },
+        {
+          "name": "➕ POST - Crear nuevo instructor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              },
+              {
+                "key": "User-Roles",
+                "value": "ADMIN",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1720123456\",\n  \"nombreCompleto\": \"Carlos Rodríguez\",\n  \"email\": \"carlos.rodriguez@escuela.com\",\n  \"numeroLicencia\": \"LC-2024-001\",\n  \"especialidad\": \"Conducción Defensiva\",\n  \"telefonoContacto\": \"0987654321\",\n  \"estado\": \"ACTIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/instructores",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instructores"
+              ]
+            },
+            "description": "Crea un nuevo instructor\n\nVALIDACIONES:\n- cedula: Única, no puede duplicarse\n- email: Única, no puede duplicarse\n- numeroLicencia: Única, no puede duplicarse\n- nombreCompleto: Requerido\n\nRESPUESTA:\nStatus 201 Created"
+          }
+        },
+        {
+          "name": "✏️ PUT - Actualizar instructor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              },
+              {
+                "key": "User-Roles",
+                "value": "ADMIN",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreCompleto\": \"Carlos Rodríguez - ACTUALIZADO\",\n  \"especialidad\": \"Conducción Deportiva\",\n  \"telefonoContacto\": \"0999999999\",\n  \"estado\": \"ACTIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/instructores/{{instructor_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instructores",
+                "{{instructor_id}}"
+              ]
+            },
+            "description": "Actualiza un instructor existente\n\nCampos actualizables:\n- nombreCompleto\n- especialidad\n- telefonoContacto\n- estado"
+          }
+        },
+        {
+          "name": "🗑️ DELETE - Eliminar instructor (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              },
+              {
+                "key": "User-Roles",
+                "value": "ADMIN",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/instructores/{{instructor_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instructores",
+                "{{instructor_id}}"
+              ]
+            },
+            "description": "Elimina un instructor (soft delete)\n\nNOTA: No borra de la BD, solo marca deletedAt = now()\nRESULTADO: Status 204 No Content"
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚠️ ERRORES ESPERADOS (para validar)",
+      "item": [
+        {
+          "name": "❌ Error: Cédula duplicada en Estudiantes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              },
+              {
+                "key": "User-Roles",
+                "value": "ADMIN",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1710034065\",\n  \"nombreCompleto\": \"Otro Estudiante\",\n  \"email\": \"otro@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/estudiantes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "estudiantes"
+              ]
+            },
+            "description": "ESPERADO:\nStatus 409 Conflict\nBody:\n{\n  \"type\": \"about:blank\",\n  \"title\": \"Cedula duplicada\",\n  \"detail\": \"Ya existe un estudiante registrado con la cedula: 1710034065\",\n  \"timestamp\": \"...\"\n}"
+          }
+        },
+        {
+          "name": "❌ Error: Email duplicado en Instructores",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              },
+              {
+                "key": "User-Roles",
+                "value": "ADMIN",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1720999999\",\n  \"nombreCompleto\": \"Otro Instructor\",\n  \"email\": \"carlos.rodriguez@escuela.com\",\n  \"numeroLicencia\": \"LC-2024-999\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/instructores",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instructores"
+              ]
+            },
+            "description": "ESPERADO:\nStatus 409 Conflict\nBody:\n{\n  \"type\": \"about:blank\",\n  \"title\": \"Email duplicado\",\n  \"detail\": \"Ya existe un instructor registrado con el email: carlos.rodriguez@escuela.com\",\n  \"timestamp\": \"...\"\n}"
+          }
+        },
+        {
+          "name": "❌ Error: No autenticado (sin JWT token)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/estudiantes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "estudiantes"
+              ]
+            },
+            "description": "ESPERADO:\nStatus 401 Unauthorized\nBody:\n{\n  \"type\": \"about:blank\",\n  \"title\": \"No autenticado\",\n  \"detail\": \"Token de autenticacion requerido\",\n  \"timestamp\": \"...\"\n}"
+          }
+        },
+        {
+          "name": "❌ Error: Recurso no encontrado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Email",
+                "value": "admin@escuela.com",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/estudiantes/9999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "estudiantes",
+                "9999"
+              ]
+            },
+            "description": "ESPERADO:\nStatus 404 Not Found\nBody:\n{\n  \"type\": \"about:blank\",\n  \"title\": \"Estudiante no encontrado\",\n  \"detail\": \"Estudiante con ID 9999 no encontrado\",\n  \"timestamp\": \"...\"\n}"
+          }
+        }
+      ]
+    }
+  ]
+}
