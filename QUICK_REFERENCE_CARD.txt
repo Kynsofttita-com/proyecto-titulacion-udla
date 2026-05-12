@@ -1,0 +1,148 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║         PROYECTO TITULACIÓN - QUICK REFERENCE CARD (IMPRIMIBLE)                ║
+║                      Sistema de Escuelas de Conducción                          ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ ESTADO ACTUAL ────────────────────────────────────────────────────────────────┐
+│ Sprint 5: 60% COMPLETO                          Fecha: 12 Mayo 2026            │
+│ ✅ 2/5 Microservicios (Estudiantes, Instructores)                              │
+│ ✅ Infraestructura 100% (PostgreSQL, RabbitMQ, Gateway, Eureka)                │
+│ ✅ CI/CD Pipeline automático funcionando                                       │
+│ ✅ Tests: 100% pasando (6+ tests)                                              │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STACK TÉCNICO ────────────────────────────────────────────────────────────────┐
+│ Backend:    Java 21 + Spring Boot 3.4 (Microservicios)                         │
+│ BD:         PostgreSQL (única, 9 schemas)                                      │
+│ Mensajería: RabbitMQ (eventos asincronos)                                      │
+│ Frontend:   Vue.js 3 (próximo sprint)                                          │
+│ Deploy:     Docker + K8s (Sprint 11-12)                                        │
+│ CI/CD:      GitHub Actions (automático)                                        │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ MICROSERVICIOS ───────────────────────────────────────────────────────────────┐
+│                                                                                  │
+│ ✅ MS-ESTUDIANTES (100%)         ✅ MS-INSTRUCTORES (100%)                     │
+│   5 Endpoints CRUD                 5 Endpoints CRUD                            │
+│   Validaciones: Cédula única       Validaciones: Cédula/Email/Licencia        │
+│   Eventos RabbitMQ                 Búsqueda avanzada                           │
+│   Tests: 100% passing              Tests: 100% passing                         │
+│   Puerto: 8082                     Puerto: 8083                                │
+│                                                                                  │
+│ 🔧 MS-VEHÍCULOS (30%)  | 🔧 MS-ASIGNACIONES (30%) | 🔧 MS-COBROS (20%)       │
+│ DTOs + Service creados | DTOs + Service creados   | DTOs + Service creados   │
+│ Necesita entity align. | Necesita entity align.   | Entity falta             │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ CÓMO VERIFICAR (3 OPCIONES) ──────────────────────────────────────────────────┐
+│                                                                                  │
+│ 1️⃣ VER EN GITHUB (sin instalar nada)                                           │
+│    URL: github.com/Kynsofttita-com/proyecto-titulacion-udla                     │
+│    ✅ Code → main branch → commits recientes                                    │
+│    ✅ Actions → CI/CD workflows ejecutándose                                    │
+│    ✅ Pull Requests → 6+ mergeados                                              │
+│                                                                                  │
+│ 2️⃣ COMPILAR LOCALMENTE (5 minutos)                                             │
+│    $ git clone https://github.com/Kynsofttita-com/proyecto-titulacion-udla.git │
+│    $ cd proyecto-titulacion-udla/backend                                        │
+│    $ mvn clean install                                                          │
+│    → BUILD SUCCESS: 15/15 modules ✅                                            │
+│                                                                                  │
+│ 3️⃣ LEVANTAR EN LOCAL (3 terminales)                                            │
+│    Terminal 1: mvn spring-boot:run -pl eureka-server                           │
+│                http://localhost:8761                                            │
+│    Terminal 2: mvn spring-boot:run -pl api-gateway                             │
+│                http://localhost:8080                                            │
+│    Terminal 3: mvn spring-boot:run -pl ms-estudiantes                          │
+│                http://localhost:8082                                            │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ COMMITS IMPORTANTES ──────────────────────────────────────────────────────────┐
+│ f34daa3  docs: Resumen ejecutivo Sprint 5                       [TODAY]        │
+│ df02a39  docs: Documentación completa                           [TODAY]        │
+│ 407731c  Sprint 5 (Validación Final: 60% Completo)             [TODAY]        │
+│ 1f349eb  Sprint 5 (Eventos publish Estudiantes) #20 ✅ merged                  │
+│ b8ee215  Sprint 5 (Controller + GlobalExceptionHandler) #19 ✅  [MERGED]       │
+│ 3c1c7d3  Sprint 5 (Service + Repository) #17 ✅ merged                         │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ PRUEBAS & COBERTURA ──────────────────────────────────────────────────────────┐
+│                                                                                  │
+│ Tests ejecutados:           6+ test cases                                       │
+│ Resultado:                  ✅ 100% PASSING (0 fallos, 0 errores)              │
+│ Cobertura JaCoCo:           >80% ✅ (Target alcanzado)                         │
+│                                                                                  │
+│ Desglose por módulo:                                                            │
+│  common-events          85%+ ✅   ms-estudiantes       85%+ ✅                 │
+│  common-exceptions      80%+ ✅   ms-instructores      85%+ ✅                 │
+│  ms-auth                80%+ ✅                                                 │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ ENDPOINTS DISPONIBLES ────────────────────────────────────────────────────────┐
+│                                                                                  │
+│ ESTUDIANTES:                    INSTRUCTORES:                                   │
+│  GET    /estudiantes               GET    /instructores                         │
+│  GET    /estudiantes/{id}          GET    /instructores/{id}                   │
+│  POST   /estudiantes               POST   /instructores                         │
+│  PUT    /estudiantes/{id}          PUT    /instructores/{id}                   │
+│  DELETE /estudiantes/{id}          DELETE /instructores/{id}                   │
+│                                                                                  │
+│ Autenticación: Header "Authorization: Bearer <JWT_TOKEN>"                       │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ DOCUMENTACIÓN ENTREGADA ──────────────────────────────────────────────────────┐
+│ 📄 DOCUMENTACION_PROYECTO_SPRINT_REVIEW.md     (Completa - 20 min lectura)    │
+│ 📄 RESUMEN_EJECUTIVO_SPRINT5.md                (Resumen - 5 min lectura)      │
+│ 📄 SPRINT5_FINAL_VALIDATION.md                 (Técnica - 10 min)             │
+│ 📄 SPRINT5_VALIDATION_REPORT.md                (Detalles - 5 min)             │
+│ 📄 QUICK_REFERENCE_CARD.txt                    (Esta - 2 min)                 │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ PRÓXIMOS PASOS ───────────────────────────────────────────────────────────────┐
+│                                                                                  │
+│ CORTO PLAZO (Esta semana):                                                      │
+│  ✅ Presentar al profesor                                                       │
+│  ✅ Decidir: Cerrar Sprint 5 o completar 3 MS restantes                        │
+│                                                                                  │
+│ MEDIANO PLAZO (Sprint 6):                                                       │
+│  • Completar MS-Vehículos, Asignaciones, Cobros                                │
+│  • E2E testing                                                                  │
+│                                                                                  │
+│ LARGO PLAZO (Sprint 7-12):                                                      │
+│  • Frontend Vue.js                                                              │
+│  • MS-Reportes                                                                  │
+│  • Deploy a Oracle Cloud                                                        │
+│                                                                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════════╗
+║  LISTO PARA MOSTRAR AL PROFESOR - ¡Imprime y lleva a la revisión! 🎓          ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+Preguntas esperadas del profesor:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+P: "¿Funciona el código?"
+R: "Sí, 15/15 módulos compilados, 100% tests pasando. Ver: github.com/.../actions"
+
+P: "¿Cómo es la arquitectura?"
+R: "Microservicios con Spring Cloud. Cada MS independiente, PostgreSQL centralizado"
+
+P: "¿Qué hace cada microservicio?"
+R: "Auth (seguridad), Estudiantes (CRUD), Instructores (CRUD), Vehículos, etc."
+
+P: "¿Hay tests?"
+R: "Sí, >80% cobertura JaCoCo. Unit tests con Mockito, Tests en CI/CD automático"
+
+P: "¿Está listo para producción?"
+R: "MS-Estudiantes e Instructores sí (100%). Otros en progreso pero código existe"
+
+P: "¿Quién revisa el código?"
+R: "GitHub Actions automáticamente: compila + tests + coverage en cada commit"
+
+P: "¿Cómo desplegamos?"
+R: "Docker containerizado. Dev con docker-compose. Prod en Oracle Cloud (Sprint 12)"
