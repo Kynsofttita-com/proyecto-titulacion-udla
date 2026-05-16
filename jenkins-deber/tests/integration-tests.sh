@@ -7,15 +7,15 @@
 echo "[INTEGRATION TEST] Iniciando pruebas de integracion..."
 
 echo "[INTEGRATION TEST] Test 1: Verificar estructura de carpetas"
-if [ -d "src" ] && [ -d "tests" ] && [ -d "pipeline" ]; then
-    echo "  [PASS] Estructura del proyecto correcta (src, tests, pipeline)"
+if [ -d "src" ] && [ -d "jenkins-deber/tests" ] && [ -d "jenkins-deber/pipeline" ]; then
+    echo "  [PASS] Estructura del proyecto correcta (src, jenkins-deber/tests, jenkins-deber/pipeline)"
 else
     echo "  [FAIL] Falta alguna carpeta del proyecto"
     exit 1
 fi
 
-echo "[INTEGRATION TEST] Test 2: Verificar Jenkinsfile en raiz"
-if [ -f "Jenkinsfile" ]; then
+echo "[INTEGRATION TEST] Test 2: Verificar Jenkinsfile en jenkins-deber"
+if [ -f "jenkins-deber/Jenkinsfile" ]; then
     echo "  [PASS] Jenkinsfile encontrado"
 else
     echo "  [FAIL] Jenkinsfile no encontrado"

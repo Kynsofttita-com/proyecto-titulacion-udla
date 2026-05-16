@@ -1,0 +1,168 @@
+version: 2.1
+
+# =============================================================================
+# ORBS (Librerias reutilizables)
+# =============================================================================
+orbs:
+  node: circleci/node@5
+
+# =============================================================================
+# JOBS (Trabajos individuales)
+# =============================================================================
+jobs:
+  checkout_and_build:
+    docker:
+      - image: cimg/base:current
+    environment:
+      APP_NAME: "jenkins-deber-demo"
+      APP_VERSION: "1.0.${CIRCLE_BUILD_NUM}"
+    steps:
+      - checkout
+      - run:
+          name: "Display Build Info"
+          command: |
+            echo "================================================"
+            echo "  Pipeline iniciado"
+            echo "  Rama   : ${CIRCLE_BRANCH}"
+            echo "  Commit : ${CIRCLE_SHA1:0:8}"
+            echo "  Build #: ${CIRCLE_BUILD_NUM}"
+            echo "================================================"
+      - run:
+          name: "Build Stage"
+          command: |
+            echo "================================================"
+            echo "  ETAPA: BUILD"
+            echo "================================================"
+            echo ">> Compilando proyecto: ${APP_NAME}"
+            echo ">> Version: ${APP_VERSION}"
+            echo "[BUILD] Verificando estructura del proyecto..."
+            ls -la src/
+            echo "[BUILD] Compilacion finalizada (simulada)."
+            echo ">> Build completado correctamente."
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  unit_tests:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Unit Tests"
+          command: |
+            echo "================================================"
+            echo "  ETAPA: TEST [UNIT]"
+            echo "================================================"
+            chmod +x jenkins-deber/tests/unit-tests.sh
+            ./jenkins-deber/tests/unit-tests.sh
+
+  integration_tests:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Integration Tests"
+          command: |
+            echo "================================================"
+            echo "  ETAPA: TEST [INTEGRATION]"
+            echo "================================================"
+            chmod +x jenkins-deber/tests/integration-tests.sh
+            ./jenkins-deber/tests/integration-tests.sh
+
+  deploy_development:
+    docker:
+      - image: cimg/base:current
+    environment:
+      APP_NAME: "jenkins-deber-demo"
+      APP_VERSION: "1.0.${CIRCLE_BUILD_NUM}"
+    steps:
+      - checkout
+      - run:
+          name: "Deploy to Development"
+          command: |
+            echo ">> Desplegando ${APP_NAME} v${APP_VERSION} a entorno DEV (simulado)"
+            echo "   Branch: develop"
+            echo "   Commit: ${CIRCLE_SHA1:0:8}"
+
+  deploy_production:
+    docker:
+      - image: cimg/base:current
+    environment:
+      APP_NAME: "jenkins-deber-demo"
+      APP_VERSION: "1.0.${CIRCLE_BUILD_NUM}"
+    steps:
+      - checkout
+      - run:
+          name: "Deploy to Production"
+          command: |
+            echo ">> Desplegando ${APP_NAME} v${APP_VERSION} a entorno PROD (simulado)"
+            echo "   Branch: main"
+            echo "   Commit: ${CIRCLE_SHA1:0:8}"
+
+  report:
+    docker:
+      - image: cimg/base:current
+    environment:
+      APP_NAME: "jenkins-deber-demo"
+      APP_VERSION: "1.0.${CIRCLE_BUILD_NUM}"
+    steps:
+      - run:
+          name: "Final Report"
+          command: |
+            echo "================================================"
+            echo "  ETAPA: REPORTE FINAL"
+            echo "================================================"
+            echo ">> Aplicacion : ${APP_NAME}"
+            echo ">> Version    : ${APP_VERSION}"
+            echo ">> Rama       : ${CIRCLE_BRANCH}"
+            echo ">> Build      : #${CIRCLE_BUILD_NUM}"
+            echo ">> Commit     : ${CIRCLE_SHA1:0:8}"
+            echo ">> Resultado  : OK"
+            echo "================================================"
+
+# =============================================================================
+# WORKFLOWS (Orquestacion de trabajos)
+# =============================================================================
+workflows:
+  version: 2
+
+  pipeline_principal:
+    jobs:
+      # Paso 1: Checkout y Build
+      - checkout_and_build
+
+      # Paso 2: Tests en paralelo (dependen de checkout_and_build)
+      - unit_tests:
+          requires:
+            - checkout_and_build
+      - integration_tests:
+          requires:
+            - checkout_and_build
+
+      # Paso 3: Deploy condicional (depende de tests)
+      - deploy_development:
+          requires:
+            - unit_tests
+            - integration_tests
+          filters:
+            branches:
+              only: develop
+
+      - deploy_production:
+          requires:
+            - unit_tests
+            - integration_tests
+          filters:
+            branches:
+              only: main
+
+      # Paso 4: Reporte final (depende de todo)
+      - report:
+          requires:
+            - unit_tests
+            - integration_tests
