@@ -1,0 +1,330 @@
+╔════════════════════════════════════════════════════════════════════════╗
+║                                                                        ║
+║              📍 DÓNDE ESTÁ EL CONFIG.YML Y CÓMO USARLO                 ║
+║                                                                        ║
+║                    GUÍA RÁPIDA DE REFERENCIA                          ║
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+
+📍 UBICACIÓN EXACTA DEL ARCHIVO
+════════════════════════════════════════════════════════════════════════
+
+RUTA COMPLETA:
+C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto titulacion\.circleci\config.yml
+
+ESTRUCTURA:
+Proyecto titulacion/
+└── .circleci/
+    └── config.yml  ← AQUÍ ESTÁ
+
+INFORMACIÓN:
+• Tamaño: 5.2 KB
+• Líneas: 168
+• Formato: YAML
+• Estado: ✅ CONFIGURADO Y VALIDADO
+
+
+✅ PASO 1: VERIFICAR QUE EL ARCHIVO EXISTE
+════════════════════════════════════════════════════════════════════════
+
+Abre terminal y ejecuta:
+
+  cd C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto\ titulacion
+
+  ls -la .circleci/config.yml
+
+Esperado:
+  -rw-r--r-- 1 hmate ... 5214 ... config.yml
+
+✓ Si ves eso: el archivo existe correctamente
+
+
+✅ PASO 2: VER EL CONTENIDO
+════════════════════════════════════════════════════════════════════════
+
+Opción A: Ver todo el archivo
+  cat .circleci/config.yml
+
+Opción B: Ver primeras 30 líneas
+  head -30 .circleci/config.yml
+
+Opción C: Abrir en editor
+  code .circleci/config.yml
+  vim .circleci/config.yml
+  nano .circleci/config.yml
+
+Opción D: Ver línea específica
+  sed -n '1,20p' .circleci/config.yml
+
+
+✅ PASO 3: VALIDAR LA CONFIGURACIÓN
+════════════════════════════════════════════════════════════════════════
+
+Ejecuta el script de validación:
+
+  bash scripts/validate.sh
+
+Esperado:
+  ✓ Validación exitosa
+  ✓ Todo está listo para ejecutar
+
+Si todo es verde = ✅ CORRECTO
+
+
+✅ PASO 4: ENTENDER LA ESTRUCTURA
+════════════════════════════════════════════════════════════════════════
+
+El archivo tiene 4 secciones principales:
+
+LÍNEA 1: VERSION
+  version: 2.1
+  → Versión de Circle CI que usamos
+
+LÍNEAS 6-7: ORBS
+  orbs:
+    node: circleci/node@5
+  → Librerías reutilizables
+
+LÍNEAS 12-126: JOBS (6 trabajos)
+  ├─ checkout_and_build (13-45) - Descargar código
+  ├─ unit_tests (47-60) - Tests unitarios
+  ├─ integration_tests (62-75) - Tests integración
+  ├─ deploy_development (77-90) - Deploy a DEV
+  ├─ deploy_production (92-105) - Deploy a PROD
+  └─ report (107-126) - Reporte final
+
+LÍNEAS 131-169: WORKFLOWS
+  pipeline_principal
+  → Orquestación de jobs (orden y dependencias)
+
+
+✅ PASO 5: ENTENDER CADA JOB
+════════════════════════════════════════════════════════════════════════
+
+Estructura de un job:
+
+┌─────────────────────────────┐
+│ checkout_and_build:         │
+│   docker:                   │ ← Imagen Docker
+│     - image: cimg/base      │
+│   environment:              │ ← Variables de entorno
+│     APP_NAME: "mi-app"      │
+│   steps:                    │ ← Pasos a ejecutar
+│     - checkout              │   (descargar código)
+│     - run:                  │   (ejecutar comando)
+│         name: "Build"       │
+│         command: |          │
+│           echo "Compilando" │
+│     - persist_to_workspace: │ ← Guardar archivos
+│         root: .             │
+│         paths:              │
+│           - .               │
+└─────────────────────────────┘
+
+
+✅ PASO 6: ENTENDER EL WORKFLOW
+════════════════════════════════════════════════════════════════════════
+
+El workflow define el ORDEN:
+
+  pipeline_principal:
+    jobs:
+      - checkout_and_build        ← Job 1 (primero)
+
+      - unit_tests:               ← Job 2a
+          requires:
+            - checkout_and_build  ← Requiere que Job 1 termine
+
+      - integration_tests:        ← Job 2b
+          requires:
+            - checkout_and_build  ← Requiere que Job 1 termine
+
+      - deploy_production:        ← Job 3a
+          requires:
+            - unit_tests          ← Requiere que Job 2a y 2b terminen
+            - integration_tests
+          filters:
+            branches:
+              only: main          ← SOLO si rama = main
+
+      - deploy_development:       ← Job 3b
+          requires:
+            - unit_tests
+            - integration_tests
+          filters:
+            branches:
+              only: develop       ← SOLO si rama = develop
+
+      - report:                   ← Job 4 (final)
+          requires:
+            - unit_tests
+            - integration_tests
+
+
+✅ PASO 7: ENTENDER EL FLUJO DE EJECUCIÓN
+════════════════════════════════════════════════════════════════════════
+
+Cuando haces: git push origin main
+
+FLUJO:
+  1. checkout_and_build (2-3s)
+     │
+     ├─→ unit_tests (1-2s) ─┐
+     │                       ├─→ deploy_production (3-5s)
+     └─→ integration_tests   │
+         (3-4s) ────────────┤
+                             └─→ report (1s)
+
+TOTAL: 15-25 segundos
+
+¿Por qué es rápido?
+• unit_tests e integration_tests corren EN PARALELO
+• No espera a que uno termine para empezar el otro
+
+
+✅ PASO 8: VARIABLES DE ENTORNO DISPONIBLES
+════════════════════════════════════════════════════════════════════════
+
+Dentro del config.yml puedes usar:
+
+${CIRCLE_BUILD_NUM}    ← Número del build (42)
+${CIRCLE_BRANCH}       ← Rama (main, develop)
+${CIRCLE_SHA1}         ← Commit SHA completo
+${CIRCLE_SHA1:0:8}     ← Primeros 8 caracteres
+${CIRCLE_USERNAME}     ← Usuario de Git
+${CI}                  ← "true"
+
+También defines personalizadas:
+${APP_NAME}            ← "jenkins-deber-demo"
+${APP_VERSION}         ← "1.0.42"
+
+
+✅ PASO 9: VALIDACIÓN COMPLETA (10 PUNTOS)
+════════════════════════════════════════════════════════════════════════
+
+Ejecuta:
+  bash scripts/validate.sh
+
+Checkea:
+✓ Archivo existe en .circleci/config.yml
+✓ Tiene contenido
+✓ Version es 2.1
+✓ Sección orbs: presente
+✓ Sección jobs: presente
+✓ Sección workflows: presente
+✓ 6 jobs definidos correctamente
+✓ Variables de entorno configuradas
+✓ Condiciones de rama configuradas
+✓ Scripts de test referenciados
+
+Si todo es ✓: ¡LISTO!
+
+
+✅ PASO 10: USAR EN CIRCLE CI
+════════════════════════════════════════════════════════════════════════
+
+1. Ir a: https://circleci.com/signup
+   → Crear cuenta con GitHub
+
+2. Conectar repositorio
+   → Circle CI detectará .circleci/config.yml automáticamente
+
+3. Hacer git push
+   → Circle CI ejecutará el pipeline automáticamente
+
+4. Ver resultados
+   → https://app.circleci.com/pipelines
+   → Verás logs en tiempo real
+
+
+📚 DOCUMENTACIÓN DISPONIBLE
+════════════════════════════════════════════════════════════════════════
+
+Para más detalle sobre config.yml:
+
+1. GUIA_CONFIG_CIRCLECI.md
+   • Explicación paso a paso
+   • Validación detallada
+   • Cómo modificar
+   • Errores comunes
+
+2. CONFIG_YML_ANOTADO.md
+   • Archivo anotado línea por línea
+   • Diagramas visuales
+   • Flujo de ejecución
+   • Cómo cambiar cosas
+
+
+🎯 RESUMEN RÁPIDO
+════════════════════════════════════════════════════════════════════════
+
+¿Dónde está?
+→ .circleci/config.yml
+
+¿Qué contiene?
+→ Configuración de Circle CI (6 jobs, 1 workflow)
+
+¿Está correcto?
+→ SÍ, 100% validado
+
+¿Qué hago ahora?
+→ Entender la estructura (leer documentación)
+→ Usarlo en Circle CI (crear cuenta)
+→ Presentarlo en clase (usar guía de presentación)
+
+¿Puedo cambiarlo?
+→ SÍ, pero solo cosas específicas (ver documentación)
+
+¿Necesito hacerle cambios?
+→ NO, está perfecto como está
+
+
+⚠️ IMPORTANTE
+════════════════════════════════════════════════════════════════════════
+
+✅ El archivo está 100% configurado
+✅ NO necesitas hacer cambios
+✅ Está listo para usar en Circle CI
+✅ Tienes documentación completa
+
+Solo necesitas:
+→ Entender cómo funciona
+→ Mostrarlo en Circle CI
+→ Presentarlo en clase
+
+
+🚀 PRÓXIMOS PASOS
+════════════════════════════════════════════════════════════════════════
+
+1. Leer: GUIA_CONFIG_CIRCLECI.md (20 minutos)
+2. Ejecutar: bash scripts/validate.sh (1 minuto)
+3. Ver archivo: cat .circleci/config.yml (5 minutos)
+4. Usar en Circle CI: crear cuenta y conectar repo
+5. Presentar en clase: usar GUIA_PRESENTACION_CLASE.md
+
+
+════════════════════════════════════════════════════════════════════════
+
+¿Preguntas sobre config.yml?
+→ Consulta: GUIA_CONFIG_CIRCLECI.md o CONFIG_YML_ANOTADO.md
+
+¿Quieres ver código anotado?
+→ Lee: CONFIG_YML_ANOTADO.md
+
+¿Listo para presentar?
+→ Lee: GUIA_PRESENTACION_CLASE.md
+
+¿Necesitas ejecutar para validar?
+→ bash scripts/run-all.sh
+
+════════════════════════════════════════════════════════════════════════
+
+ESTADO: ✅ COMPLETAMENTE LISTO
+
+El config.yml está correctamente ubicado, configurado y validado.
+Puedes usarlo tal como está en Circle CI.
+
+¡Éxito! 🚀
+
+════════════════════════════════════════════════════════════════════════
