@@ -7,6 +7,46 @@
 
 ---
 
+## 🎨 DIAGRAMA ER VISUAL (Mermaid)
+
+```mermaid
+erDiagram
+    USUARIOS ||--o{ ROLES : "has"
+    USUARIOS ||--o{ REFRESH_TOKENS : "generate"
+    USUARIOS ||--o{ ESTUDIANTES : "links_to"
+    USUARIOS ||--o{ INSTRUCTORES : "links_to"
+    USUARIOS ||--o{ FACTURAS : "creates"
+    
+    ESTUDIANTES ||--o{ DOCUMENTOS : "has"
+    ESTUDIANTES ||--o{ CONTACTOS_EMERGENCIA : "has"
+    ESTUDIANTES ||--|| PROGRESO_ACADEMICO : "tracks"
+    ESTUDIANTES ||--o{ ASISTENCIA : "records"
+    ESTUDIANTES ||--o{ ASIGNACIONES : "attends"
+    
+    INSTRUCTORES ||--o{ CERTIFICACIONES : "has"
+    INSTRUCTORES ||--o{ DISPONIBILIDAD : "schedules"
+    INSTRUCTORES ||--o{ ASIGNACIONES : "teaches"
+    
+    VEHICULOS ||--o{ DOCUMENTOS_VEHICULO : "has"
+    VEHICULOS ||--o{ MANTENIMIENTOS : "requires"
+    VEHICULOS ||--o{ REGISTROS_COMBUSTIBLE : "tracks"
+    VEHICULOS ||--o{ ASIGNACIONES : "used_in"
+    
+    ASIGNACIONES ||--o{ CAMBIOS_ASIGNACION : "tracks"
+    ASIGNACIONES ||--o{ HISTORIAL_ESTADOS : "logs"
+    ASIGNACIONES ||--o{ ASISTENCIA : "generates"
+    
+    FACTURAS ||--o{ PAGOS : "receives"
+    PAGOS ||--o{ RECONCILIACION : "part_of"
+    
+    NOTIFICACIONES ||--o{ LOG_ENVIOS_EMAIL : "sends"
+    USUARIOS ||--|| PREFERENCIAS_NOTIFICACION : "configures"
+    
+    EJECUCIONES_REPORTE ||--o{ CACHE_REPORTES : "uses"
+```
+
+---
+
 ## 🏗️ Arquitectura de Schemas
 
 ```
@@ -73,6 +113,314 @@
 | `reportes_schema` | MS-Reportes | 2 | Cache y ejecución de reportes |
 
 **TOTAL**: 9 schemas, 38 tablas, 1 base de datos
+
+---
+
+## 📊 DIAGRAMAS POR SCHEMA
+
+### **Diagrama 1: shared_schema (Auditoría Centralizada)**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    shared_schema                            │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌────────────────────────────────┐                         │
+│  │     audit_log                  │                         │
+│  │    (Append-Only)               │                         │
+│  ├────────────────────────────────┤                         │
+│  │ id (PK)                        │                         │
+│  │ microservicio ──────┐          │                         │
+│  │ recurso             │          │                         │
+│  │ recurso_id          │          │                         │
+│  │ accion              │          │                         │
+│  │ usuario_id ─────────┼──────┐   │                         │
+│  │ usuario_email       │      │   │                         │
+│  │ ip                  │      │   │                         │
+│  │ user_agent          │      │   │                         │
+│  │ datos_anteriores    │      │   │                         │
+│  │ datos_nuevos        │      │   │  Registra cambios de:  │
+│  │ correlation_id      │      │   │  • estudiantes         │
+│  │ fecha (default NOW) │      │   │  • instructores        │
+│  │ Índices:            │      │   │  • vehículos           │
+│  │ • microservicio +fecha      │   │  • asignaciones        │
+│  │ • usuario_id + fecha        │   │  • cobros              │
+│  │ • recurso + id              │   │  • etc...              │
+│  └────────────────────────────────┘                         │
+│                                                              │
+│  ┌────────────────────────────────┐                         │
+│  │  processed_events              │                         │
+│  │  (Idempotencia RabbitMQ)       │                         │
+│  ├────────────────────────────────┤                         │
+│  │ id (PK)                        │                         │
+│  │ event_id (UUID UNIQUE) ◄──────────── Evento RabbitMQ    │
+│  │ microservicio_consumidor       │                         │
+│  │ tipo_evento                    │                         │
+│  │ processed_at                   │                         │
+│  │                                │  Previene procesar      │
+│  │ Índice: event_id (UNIQUE)      │  2x el mismo evento     │
+│  └────────────────────────────────┘                         │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### **Diagrama 2: auth_schema (Autenticación)**
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     auth_schema                              │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌──────────────────┐      ┌──────────────────┐             │
+│  │   usuarios       │      │   roles          │             │
+│  ├──────────────────┤      ├──────────────────┤             │
+│  │ id (PK)          │      │ id (PK)          │             │
+│  │ email (UNIQUE)◄─┐├─────►│ nombre (UNIQUE)  │             │
+│  │ password (bcrypt)│      │ descripcion      │             │
+│  │ nombre           │      │                  │             │
+│  │ apellido         │      │ Roles:           │             │
+│  │ telefono         │      │ • ADMIN          │             │
+│  │ activo           │      │ • STAFF          │             │
+│  │ locked           │      │ • INSTRUCTOR     │             │
+│  │ failed_attempts  │      │ • ESTUDIANTE     │             │
+│  │ last_login       │      │                  │             │
+│  │ lock_until       │      └──────────────────┘             │
+│  │                  │              ▲                         │
+│  └────────┬─────────┘              │                         │
+│           │                    M:M Junction                  │
+│           │              (usuario_roles)                     │
+│           │                                                  │
+│  ┌────────▼─────────────┐  ┌──────────────────┐             │
+│  │  refresh_tokens      │  │   permisos       │             │
+│  ├──────────────────────┤  ├──────────────────┤             │
+│  │ id (PK)              │  │ id (PK)          │             │
+│  │ usuario_id (FK)      │  │ codigo (UNIQUE)  │             │
+│  │ token (UNIQUE)       │  │ recurso          │             │
+│  │ expires_at           │  │ accion           │             │
+│  │ revoked              │  │ descripcion      │             │
+│  │ created_at           │  │                  │             │
+│  └──────────────────────┘  │ Ej: "estudian-   │             │
+│                            │ tes:create"      │             │
+│                            └──────────────────┘             │
+│                                    ▲                         │
+│                                    │                         │
+│                              M:M Junction                    │
+│                            (rol_permisos)                   │
+│                                                               │
+│  ┌──────────────────────────────────────────────┐           │
+│  │   categorias_licencia                        │           │
+│  ├──────────────────────────────────────────────┤           │
+│  │ id (PK)                                      │           │
+│  │ codigo (UNIQUE) ► Catalogo Ecuador: A,B,C,D│           │
+│  │ descripcion                                  │           │
+│  │ activa                                       │           │
+│  └──────────────────────────────────────────────┘           │
+│                                                               │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### **Diagrama 3: estudiantes_schema (Gestión de Estudiantes)**
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                  estudiantes_schema                          │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│                   ┌──────────────────────┐                   │
+│                   │   estudiantes        │                   │
+│                   ├──────────────────────┤                   │
+│                   │ id (PK)              │                   │
+│                   │ cedula (UNIQUE)  ◄───┼─── Validado      │
+│                   │ nombre               │   Ecuador (10)   │
+│                   │ apellido             │                   │
+│                   │ email (UNIQUE)       │                   │
+│                   │ telefono             │                   │
+│                   │ direccion            │                   │
+│                   │ fecha_nacimiento     │                   │
+│                   │ genero               │                   │
+│                   │ estado               │                   │
+│                   │ usuario_id FK────┐   │   Estados:       │
+│                   │ tipo_curso_id    │   │   • PREMATRIC   │
+│                   │ categoria_lic_id │   │   • ACTIVO      │
+│                   │ deleted_at       │   │   • COMPLETADO  │
+│                   │ audit_fields     │   │   • RETIRADO    │
+│                   └────────┬─────────┘   │                   │
+│                            │             │                   │
+│         ┌──────────────────┼─────────────┘                   │
+│         │                  │                                 │
+│    ┌────▼──────────┐  ┌───▼────────────────┐               │
+│    │  documentos   │  │ contactos_         │               │
+│    │  (1:M)        │  │ emergencia (1:M)   │               │
+│    ├───────────────┤  ├────────────────────┤               │
+│    │ id            │  │ id                 │               │
+│    │ estud_id(FK)  │  │ estud_id (FK)      │               │
+│    │ tipo          │  │ nombre             │               │
+│    │ url_archivo   │  │ telefono           │               │
+│    │ mime_type     │  │ parentesco         │               │
+│    │ tamaño_bytes  │  │ es_principal       │               │
+│    │               │  │                    │               │
+│    │ Tipos:        │  └────────────────────┘               │
+│    │ • CEDULA_FR   │                                        │
+│    │ • CEDULA_REV  │                                        │
+│    │ • FOTO        │                                        │
+│    │ • EXAMEN_MED  │                                        │
+│    │ • OTRO        │                                        │
+│    └───────────────┘                                        │
+│                                                               │
+│         ┌──────────────────────────────────────────┐         │
+│         │  progreso_academico (1:1)                │         │
+│         ├──────────────────────────────────────────┤         │
+│         │ id                                       │         │
+│         │ estudiante_id (UNIQUE FK)                │         │
+│         │ clases_planeadas                         │         │
+│         │ clases_completadas                       │         │
+│         │ clases_pendientes                        │         │
+│         │ clases_canceladas                        │         │
+│         │ calificacion_promedio (0-100)            │         │
+│         │ aprobado (BOOLEAN)                       │         │
+│         └──────────────────────────────────────────┘         │
+│                                                               │
+│         ┌──────────────────────────────────────────┐         │
+│         │  asistencia (1:M)                        │         │
+│         ├──────────────────────────────────────────┤         │
+│         │ id                                       │         │
+│         │ estudiante_id (FK)                       │         │
+│         │ asignacion_id (ref asignaciones_schema)  │         │
+│         │ fecha_clase                              │         │
+│         │ asistio (BOOLEAN)                        │         │
+│         │ justificacion                            │         │
+│         │ observaciones                            │         │
+│         └──────────────────────────────────────────┘         │
+│                                                               │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### **Diagrama 4: asignaciones_schema (Clases Tripartitas)**
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                asignaciones_schema                           │
+│         (La tabla central: Instructor + Estudiante + Auto)  │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│                 ┌──────────────────────┐                     │
+│                 │   asignaciones       │                     │
+│                 │  (Clase Tripartita)  │                     │
+│                 ├──────────────────────┤                     │
+│                 │ id (PK)              │                     │
+│                 │ instructor_id ──┐    │    Links a 3 MS:   │
+│                 │ estudiante_id ──┼──┐ │    • MS-Instruc   │
+│                 │ vehiculo_id ─────┼──┼─┼─► • MS-Estudian │
+│                 │ fecha_hora       │  │ │    • MS-Vehicul │
+│                 │ duracion_minutos │  │ │                  │
+│                 │ estado           │  │ │    Estados:      │
+│                 │ version (opt lock)  │ │    • CONFIRMADA  │
+│                 │ deleted_at       │  │ │    • REPROGRA.  │
+│                 │ audit_fields     │  │ │    • CANCELADA  │
+│                 └────────┬─────────┘  │ │    • COMPLETADA │
+│                          │            │ │    • NO_PRESENT │
+│         ┌────────────────┼────────────┘ │                  │
+│         │                │              │                  │
+│    ┌────▼──────────────────────┐   ┌───▼────────────────┐ │
+│    │  cambios_asignacion       │   │ historial_estados │ │
+│    │  (1:M - Reprogramaciones) │   │ (1:M - LOG)       │ │
+│    ├───────────────────────────┤   ├───────────────────┤ │
+│    │ id                        │   │ id                │ │
+│    │ asignacion_id (FK)        │   │ asignacion_id(FK) │ │
+│    │ tipo_cambio               │   │ estado_anterior   │ │
+│    │ fecha_cambio              │   │ estado_nuevo      │ │
+│    │ razon                     │   │ fecha_cambio      │ │
+│    │ usuario_id (quien cambió) │   │ razon             │ │
+│    │ datos_anteriores (JSONB)  │   │ usuario_id        │ │
+│    │ datos_nuevos (JSONB)      │   │                   │ │
+│    │                           │   │ (Auditoria de     │ │
+│    │ Tipos:                    │   │  cambios)         │ │
+│    │ • REPROGRAMACION          │   │                   │ │
+│    │ • CANCELACION             │   └───────────────────┘ │
+│    │ • CAMBIO_INSTRUCTOR       │                         │
+│    └───────────────────────────┘                         │
+│                                                               │
+│  RELACIONES (Sin FK, solo referencias):                     │
+│  ┌──────────────────────────────────────────┐              │
+│  │ asignacion.instructor_id ──────────────► │              │
+│  │   instructores_schema.instructores.id    │              │
+│  │                                          │              │
+│  │ asignacion.estudiante_id ──────────────► │              │
+│  │   estudiantes_schema.estudiantes.id      │              │
+│  │                                          │              │
+│  │ asignacion.vehiculo_id ────────────────► │              │
+│  │   vehiculos_schema.vehiculos.id          │              │
+│  └──────────────────────────────────────────┘              │
+│                                                               │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### **Diagrama 5: cobros_schema (Facturación)**
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    cobros_schema                             │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌──────────────────────────────────────────────────┐       │
+│  │         facturas                                │       │
+│  │    (Estados: PENDIENTE, PAGADA, VENCIDA, ANUL.)│       │
+│  ├──────────────────────────────────────────────────┤       │
+│  │ id (PK)                                          │       │
+│  │ numero_factura (UNIQUE) ◄─── SRI Format        │       │
+│  │ estudiante_id FK ──────┐                        │       │
+│  │ concepto               │                        │       │
+│  │ monto_bruto            │     Links a:           │       │
+│  │ impuestos              │     estudiantes_schema │       │
+│  │ monto_neto             │                        │       │
+│  │ descuentos             │                        │       │
+│  │ estado                 │                        │       │
+│  │ fecha_emision          │                        │       │
+│  │ fecha_vencimiento      │                        │       │
+│  │ fecha_pago             │                        │       │
+│  │ forma_pago             │                        │       │
+│  │ referencia_pago        │                        │       │
+│  │ version (opt lock)     │                        │       │
+│  └────────┬───────────────┘                        │       │
+│           │                                         │       │
+│    ┌──────▼──────────────────────────┐             │       │
+│    │  pagos (1:M)                    │             │       │
+│    │                                 │             │       │
+│    ├─────────────────────────────────┤             │       │
+│    │ id                              │             │       │
+│    │ factura_id (FK)                 │             │       │
+│    │ monto ◄─── Pago parcial OK     │             │       │
+│    │ fecha_pago                      │             │       │
+│    │ forma_pago (EFECTIVO, TRANS..)  │             │       │
+│    │ referencia (# transf)           │             │       │
+│    │ banco                           │             │       │
+│    │ comprobante_path (imagen)       │             │       │
+│    │                                 │             │       │
+│    └─────────────────────────────────┘             │       │
+│                                                     │       │
+│  ┌───────────────────────────────────────────────┐ │       │
+│  │  reconciliacion (1:M - Diario)                │ │       │
+│  │                                               │ │       │
+│  ├───────────────────────────────────────────────┤ │       │
+│  │ id                                            │ │       │
+│  │ fecha_reconciliacion                          │ │       │
+│  │ total_facturado         ◄─── Sumatorias     │ │       │
+│  │ total_pagado             diarias de:         │ │       │
+│  │ total_pendiente          • Facturas          │ │       │
+│  │ total_vencido            • Pagos             │ │       │
+│  │ discrepancias (JSONB)    • Vencidos          │ │       │
+│  │ estado (RECONCIL., DISC.)                     │ │       │
+│  │                                               │ │       │
+│  └───────────────────────────────────────────────┘ │       │
+│                                                     │       │
+│  FLUJO DE COBRO:                                   │       │
+│  1. Crear factura (estado=PENDIENTE)               │       │
+│  2. Registrar pago parcial (pago + factura)        │       │
+│  3. Reconciliar diariamente (totales)              │       │
+│  4. Cambiar estado a PAGADA cuando monto_neto=OK  │       │
+│                                                     │       │
+└──────────────────────────────────────────────────────────────┘
+```
 
 ---
 
