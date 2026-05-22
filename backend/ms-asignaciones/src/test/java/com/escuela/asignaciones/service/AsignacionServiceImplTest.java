@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -87,8 +88,10 @@ class AsignacionServiceImplTest {
                 LocalTime.of(11, 0), "CONFIRMADA", null, LocalDateTime.now(), LocalDateTime.now()
         );
 
-        when(repository.countByInstructorIdAndFechaAndEstadoAndDeletedAtIsNull(1L, LocalDate.now(), "CONFIRMADA")).thenReturn(0L);
-        when(repository.countByVehiculoIdAndFechaAndEstadoAndDeletedAtIsNull(1L, LocalDate.now(), "CONFIRMADA")).thenReturn(0L);
+        when(repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
+                eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"))).thenReturn(0L);
+        when(repository.countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
+                eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"))).thenReturn(0L);
         when(mapper.toEntity(request)).thenReturn(asignacion);
         when(repository.save(any())).thenReturn(asignacion);
         when(mapper.toResponse(asignacion)).thenReturn(response);
@@ -106,7 +109,8 @@ class AsignacionServiceImplTest {
                 1L, 1L, 1L, LocalDate.now(), LocalTime.of(10, 0), LocalTime.of(11, 0), null
         );
 
-        when(repository.countByInstructorIdAndFechaAndEstadoAndDeletedAtIsNull(1L, LocalDate.now(), "CONFIRMADA")).thenReturn(1L);
+        when(repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
+                eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"))).thenReturn(1L);
 
         assertThrows(DisponibilidadException.class, () -> service.create(request));
     }
