@@ -1,15 +1,19 @@
 package com.escuela.auth.repository;
 
 import com.escuela.auth.entity.TipoCurso;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-/**
- * Repositorio JPA para la entidad {@link TipoCurso}.
- *
- * <p>Esqueleto base. Las queries específicas (findBy*, @Query custom, etc.) se
- * agregarán en sprints posteriores cuando se implementen los CRUDs.</p>
- */
+import java.util.Optional;
+
 @Repository
 public interface TipoCursoRepository extends JpaRepository<TipoCurso, Long> {
+
+    Optional<TipoCurso> findByIdAndDeletedAtIsNull(Long id);
+
+    Optional<TipoCurso> findByNombreAndDeletedAtIsNull(String nombre);
+
+    Page<TipoCurso> findByDeletedAtIsNull(Pageable pageable);
 }
