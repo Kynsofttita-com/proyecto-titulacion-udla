@@ -159,6 +159,10 @@
             <groupId>com.escuela</groupId>
             <artifactId>common-jpa</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.escuela</groupId>
+            <artifactId>common-validation</artifactId>
+        </dependency>
 
         <!-- Tests -->
         <dependency>
