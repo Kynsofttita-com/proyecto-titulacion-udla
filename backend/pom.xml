@@ -38,6 +38,7 @@
         <module>shared/common-exceptions</module>
         <module>shared/common-security</module>
         <module>shared/common-jpa</module>
+        <module>shared/common-validation</module>
 
         <!-- Servicios de soporte -->
         <module>eureka-server</module>

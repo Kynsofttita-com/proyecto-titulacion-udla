@@ -34,6 +34,7 @@ COPY shared/common-events/pom.xml shared/common-events/
 COPY shared/common-exceptions/pom.xml shared/common-exceptions/
 COPY shared/common-security/pom.xml shared/common-security/
 COPY shared/common-jpa/pom.xml shared/common-jpa/
+COPY shared/common-validation/pom.xml shared/common-validation/
 COPY eureka-server/pom.xml eureka-server/
 COPY api-gateway/pom.xml api-gateway/
 COPY ms-auth/pom.xml ms-auth/
@@ -54,6 +55,7 @@ COPY shared/common-events/src shared/common-events/src
 COPY shared/common-exceptions/src shared/common-exceptions/src
 COPY shared/common-security/src shared/common-security/src
 COPY shared/common-jpa/src shared/common-jpa/src
+COPY shared/common-validation/src shared/common-validation/src
 COPY ${MODULE}/src ${MODULE}/src
 
 # Capa 4: Build del módulo (incluye sus dependencias internas con -am)
