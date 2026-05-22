@@ -350,9 +350,12 @@ proyecto-titulacion/
 
 ## 9. Convenciones de Git
 
-### 9.1 Branching strategy: GitHub Flow + 1 PR por sprint
+### 9.1 Branching strategy: GitHub Flow + 1 PR por commit/tarea
 
-> **Actualizado en Sprint 2.2:** evolucionado a "1 PR por sprint completo" en lugar de "1 PR por tarea". Razón: PRs más representativos del trabajo realizado, mejor para titulación (cada PR = milestone del sprint), menos overhead de mergear.
+> **Actualizado en Sprint 3 (2026-05-07):** evolucionado nuevamente a **"1 PR por cada commit/tarea"**. Razón: en Sprint 2 hubo problemas al cerrar el PR completo del sprint (los tests/CI fallaban al final y había muchos commits acumulados que arreglar). Cambio para detectar fallos de CI temprano por cada tarea, no esperar al final del sprint. Historial:
+> - Sprints 0–2.0: 1 PR por tarea
+> - Sprint 2.1–2.6: 1 PR por sprint completo (descartada)
+> - Sprint 3+: **1 PR por commit/tarea** (vigente)
 
 **Branches:**
 - `main` → branch principal, siempre estable, **protegida** (no se permite push directo)
@@ -361,15 +364,16 @@ proyecto-titulacion/
 - `docs/sprint-N-<descripcion-corta>` → para cambios solo de documentación
 - `chore/<descripcion-corta>` → para tareas de mantenimiento (deps, configs, CI)
 
-**Flujo (1 PR por sprint):**
-1. Crear branch desde `main` actualizado al inicio del sprint
-2. Implementar todas las tareas del sprint (T_N.1, T_N.2, T_N.3, ...)
-3. Hacer commits granulares por tarea con formato `Sprint N (Tarea descripcion)` (ver 9.2)
-4. Push del branch al remote conforme avanzan los commits
-5. Cuando el sprint está completo y validado, abrir UN solo Pull Request a `main`
+**Flujo (1 PR por commit/tarea — vigente desde Sprint 3):**
+1. Crear branch desde `main` actualizado al inicio de la tarea: `feature/sprint-N-X-descripcion-corta` (ej: `feature/sprint-5-2-estudiantes-crud`)
+2. Implementar UNA tarea (T_N.X) completa y probada localmente
+3. Commit único con formato `Sprint N (Tarea X descripcion)` (ver 9.2)
+4. Push al remote
+5. Abrir Pull Request pequeño a `main` (sin esperar a más tareas)
 6. Esperar a que CI pase (Backend CI + Docker Build si aplica)
-7. **Squash and merge** desde GitHub UI → todos los commits del sprint se consolidan en uno solo
+7. **Squash and merge** desde GitHub UI
 8. Eliminar el branch tras merge
+9. Pasar a la siguiente tarea (nuevo branch desde main actualizado)
 
 **Convenciones de naming de branches:**
 - Usar guiones: `feature/sprint-2-base-de-datos` (descripcion del sprint, no de la tarea)
@@ -381,12 +385,13 @@ proyecto-titulacion/
 - Sub-PRs dentro de un sprint si la pieza es independiente y arriesgada (ej: PR #1 del Sprint 2.0 movió `CONTRIBUTING.md`).
 - Sprints con sub-PRs (como Sprint 2.0 con CI/CD y luego mover docs) están permitidos cuando hay razones técnicas.
 
-**Ventajas de 1 PR por sprint:**
-- Cada PR es un "milestone" claro del sprint (perfecto para titulación)
-- Historia de `main` limpia: `Sprint N (descripcion)` por commit squashed
-- Menos overhead de mergear PRs chicos
-- El reviewer ve el trabajo completo del sprint en contexto
-- Para el jurado: cada sprint del SPRINTS_PLAN.xlsx se mapea a 1 PR mergeado
+**Ventajas de 1 PR por commit/tarea (vigente desde Sprint 3):**
+- Detección temprana de fallos en CI (cada tarea valida sola, no se acumulan errores)
+- PRs pequeños y revisables (foco en una sola tarea)
+- Historia de `main` muy limpia: `Sprint N (Tarea X descripcion)` por commit squashed
+- Bisect más preciso si aparece un bug semanas después
+- Cada PR representa una unidad de trabajo claramente trazable
+- Para el jurado: cada tarea del PLAN_FASES.md se mapea a 1 PR mergeado
 
 ### 9.1.1 Branch Protection Rules en `main`
 
@@ -772,24 +777,38 @@ Cada tarea, antes de hacerse commit y considerarse "done", debe cumplir:
 
 ---
 
-## 20. Plan de 12 Sprints (referencia)
+## 20. Plan de 12 Sprints (referencia histórica)
 
-| Sprint | Capa horizontal | Foco |
-|--------|----------------|------|
-| 1 | Estructura base | Esqueleto de los 7 MS + API Gateway + Eureka + Docker |
-| 2 | Bases de datos | Schemas + migraciones Flyway en TODOS los MS |
-| 3 | Mensajería | RabbitMQ + eventos asincrónos en TODOS los MS |
-| 4 | Seguridad | JWT en MS-Auth + filtro JWT en Gateway y todos + Rate limiting |
-| 5 | Lógica de negocio | CRUD Estudiantes (patrón replicable) |
-| 6 | Lógica de negocio | CRUD Instructores + Vehículos |
-| 7 | Lógica de negocio | CRUD Asignaciones (cross-MS) + Cobros |
-| 8 | Reportería | MS-Reportes + agregación + exportación PDF/Excel |
-| 9 | Frontend base | Vue 3 + Pinia + Router + Axios + componentes base |
-| 10 | Frontend CRUDs | UI Estudiantes/Instructores/Vehículos/Cobros |
-| 11 | Frontend cierre | UI Asignaciones + Reportes + Dashboard + E2E tests |
-| 12 | Cierre | Tests 80%+ + Deploy + Documentación final |
+> **⚠️ ACTUALIZACIÓN 2026-05-22:** Los Sprints 5-12 fueron **replanteados** del enfoque horizontal al enfoque **vertical por grupos** (ver sección 23 y `PLAN_FASES.md`). La tabla siguiente es la versión histórica original. Para los Sprints 5-12 vigentes, consultar `PLAN_FASES.md`.
 
-> Detalle completo en `SPRINTS_PLAN.xlsx` (pestaña "Sprints Detallado").
+### 20.1 Plan original (Sprints 0-4 ejecutados, Sprints 5-12 sustituidos por PLAN_FASES.md)
+
+| Sprint | Capa horizontal | Foco | Estado |
+|--------|----------------|------|--------|
+| 0-4 | Estructura, BD, mensajería, seguridad | ✅ Ejecutados horizontal (Sprints 1-4 cerrados) | ✅ Cerrado |
+| ~~5~~ | ~~Lógica de negocio~~ | ~~CRUD Estudiantes (patrón replicable)~~ | ❌ Sustituido por PLAN_FASES.md |
+| ~~6~~ | ~~Lógica de negocio~~ | ~~CRUD Instructores + Vehículos~~ | ❌ Sustituido |
+| ~~7~~ | ~~Lógica de negocio~~ | ~~CRUD Asignaciones (cross-MS) + Cobros~~ | ❌ Sustituido |
+| ~~8~~ | ~~Reportería~~ | ~~MS-Reportes + agregación + exportación PDF/Excel~~ | ❌ Sustituido |
+| ~~9~~ | ~~Frontend base~~ | ~~Vue 3 + Pinia + Router + Axios + componentes base~~ | ❌ Sustituido |
+| ~~10~~ | ~~Frontend CRUDs~~ | ~~UI Estudiantes/Instructores/Vehículos/Cobros~~ | ❌ Sustituido |
+| ~~11~~ | ~~Frontend cierre~~ | ~~UI Asignaciones + Reportes + Dashboard + E2E tests~~ | ❌ Sustituido |
+| ~~12~~ | ~~Cierre~~ | ~~Tests 80%+ + Deploy + Documentación final~~ | ✅ Mantiene foco de cierre |
+
+### 20.2 Plan vigente (Sprints 5-12)
+
+| Sprint | Fase | Foco |
+|--------|------|------|
+| 5 | Fase 1 — Grupo A | Backend A pt.1: CRUDs Auth+Estudiantes+Instructores+Vehículos |
+| 6 | Fase 1 — Grupo A | Backend A pt.2: CRUDs Asignaciones+Cobros |
+| 7 | Fase 1 — Grupo A | Frontend completo del Grupo A |
+| 8 | Fase 1 — Grupo A | Testing Grupo A (unit+IT+E2E) |
+| 9 | Fase 2 — Grupo B | Backend Grupo B: Notificaciones+Reportes |
+| 10 | Fase 2 — Grupo B | Frontend Grupo B (dashboard, reportes, notif) |
+| 11 | Fase 2 — Grupo B | Testing Grupo B |
+| 12 | Fase 3 — Cierre | E2E cruzado + Performance + OWASP + Deploy + Demo + Docs |
+
+> **Detalle completo, tareas, subtareas y criterios de aceptación en `PLAN_FASES.md`.**
 
 ---
 
@@ -826,7 +845,7 @@ Cada tarea, antes de hacerse commit y considerarse "done", debe cumplir:
 | 27 | Notificaciones | In-app + email |
 | 28 | Despliegue | Oracle Cloud Free Tier (fallback DigitalOcean $6) |
 | 29 | Validaciones | Cédula, RUC, placas, teléfono, USD (Ecuador) |
-| 30 | Sprints | 12 sprints de 1 semana, desarrollo horizontal |
+| 30 | Sprints | 12 sprints de 1 semana. **Sprints 1-4 horizontal (ejecutados). Sprints 5-12 vertical por grupos** (ver §23 y `PLAN_FASES.md`) |
 
 ---
 
@@ -836,9 +855,78 @@ Cada tarea, antes de hacerse commit y considerarse "done", debe cumplir:
 2. **Sprint 0 (no formalizado):** crear repositorio Git en GitHub, estructura de carpetas, archivos iniciales, docker-compose de infraestructura, validar que herramientas estén instaladas
 3. **Sprint 1 (oficial inicio):** implementar la estructura base de los 7 MS + API Gateway + Eureka según el plan en `SPRINTS_PLAN.xlsx`
 
-> **Este documento está cerrado.** Cambios futuros se registran como ADRs en `/docs/decisions/`.
+---
+
+## 23. ADR-2026-05-22 — Cambio de enfoque horizontal a vertical por grupos (Sprints 5-12)
+
+**Fecha:** 2026-05-22
+**Estado:** ✅ Aceptada
+**Decisor:** Hernán Mateo Jurado Moran (titular del desarrollo)
+
+### Contexto
+
+Los Sprints 0-4 se ejecutaron bajo desarrollo **horizontal** (todas las capas — estructura, BD, mensajería, seguridad — avanzaban a la par en TODOS los microservicios). Este enfoque fue acertado para la infraestructura base porque permitió tener:
+- Estructura Maven consistente en los 8 MS (Sprint 1)
+- 9 schemas + 38 tablas creados de una sola pasada (Sprint 2)
+- RabbitMQ topology con 8 exchanges + 16 queues en todos los MS (Sprint 3)
+- JWT framework + Gateway + Notificaciones funcionando E2E (Sprint 4)
+
+Sin embargo, al llegar a los Sprints 5-12 (lógica de negocio + frontend + testing), el enfoque horizontal ya no es óptimo porque:
+- Habría que avanzar el CRUD de los 8 MS en paralelo, sin entregables completos hasta el final.
+- El frontend tendría que esperar al Sprint 9 (en el plan original) para empezar, comprimiendo demasiado el cierre del proyecto.
+- El testing E2E quedaría al final, dejando bugs acumulados.
+
+### Decisión
+
+A partir del **Sprint 5**, cambiar al enfoque **vertical por grupos**:
+
+1. **Dividir los 8 MS en 2 grupos:**
+   - **Grupo A (6 MS principales):** Auth, Estudiantes, Instructores, Vehículos, Asignaciones, Cobros
+   - **Grupo B (2 MS secundarios):** Notificaciones, Reportes
+
+2. **Por cada grupo, completar todas las capas antes de pasar al siguiente:**
+   - Backend (CRUDs, lógica, eventos)
+   - Frontend (vistas, forms, stores)
+   - Testing (unit, integration, E2E)
+
+3. **Sprint 12 queda como cierre global** (E2E cruzado, performance, OWASP, deploy, demo, documentación final).
+
+### Justificación
+
+- **Entregables funcionales completos al cierre de cada fase:** al final del Sprint 8, el Grupo A está 100% usable. Al final del Sprint 11, todo el sistema funciona.
+- **Mejor para demos parciales:** el equipo (y eventualmente el jurado) puede ver el Grupo A funcionando antes de empezar el B.
+- **Reduce el riesgo de quedarse sin tiempo al final:** los 6 MS más importantes están terminados antes del Sprint 9.
+- **El frontend arranca antes:** en Sprint 7 ya hay UI funcional, no en Sprint 9 como el plan original.
+- **Testing distribuido en el tiempo:** unit+IT+E2E del Grupo A en Sprint 8, del Grupo B en Sprint 11 — bugs detectados más temprano, no todos al final.
+
+### Consecuencias
+
+**Positivas:**
+- Cada fase produce un sistema parcial pero funcional al 100%.
+- Riesgo de "todo a medias" eliminado.
+- Demos intermedias posibles tras Sprint 8 y Sprint 11.
+- Trazabilidad clara: cada sprint del PLAN_FASES.md → conjunto de PRs mergeados.
+
+**Negativas (mitigadas):**
+- MS-Asignaciones (Grupo A) necesita Instructores funcional. **Mitigación:** MS-Instructores se incluye en el Sprint 5 (parte del Grupo A), así Asignaciones (Sprint 6) puede consumir Feign al CRUD ya funcional.
+- Notificaciones y Reportes (Grupo B) reciben eventos del Grupo A. **Mitigación:** los eventos ya están publicados desde Sprint 6; el Grupo B los empieza a consumir desde Sprint 9 sin bloqueo.
+- Frontend del Grupo B (Sprint 10) reusa la base del Sprint 7. **Mitigación:** ya se planificó así en `PLAN_FASES.md`.
+
+### Documento de referencia
+
+Detalle completo de tareas, subtareas, criterios de aceptación y dependencias: **`PLAN_FASES.md`** (raíz del repo).
+
+### Actualizaciones derivadas
+
+- Sección 20 de este documento actualizada para marcar el plan horizontal de Sprints 5-12 como histórico.
+- Sección 21 #30 actualizada para reflejar enfoque híbrido.
+- `SPRINTS_PLAN.xlsx` queda como referencia histórica del plan original; PLAN_FASES.md es la fuente de verdad para Sprints 5-12.
+
+---
+
+> **Este documento está cerrado.** Cambios futuros se registran como ADRs en `/docs/decisions/` o como nuevas secciones aquí cuando son cambios estructurales.
 
 ---
 
 *Documento generado: 2026-05-06*
-*Última actualización: 2026-05-06*
+*Última actualización: 2026-05-22 — agregada sección 23 (cambio horizontal→vertical por grupos)*
