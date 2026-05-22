@@ -4,12 +4,15 @@ import com.escuela.estudiantes.entity.Documento;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-/**
- * Repositorio JPA para la entidad {@link Documento}.
- *
- * <p>Esqueleto base. Las queries específicas (findBy*, @Query custom, etc.) se
- * agregarán en sprints posteriores cuando se implementen los CRUDs.</p>
- */
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface DocumentoRepository extends JpaRepository<Documento, Long> {
+
+    Optional<Documento> findByIdAndDeletedAtIsNull(Long id);
+
+    List<Documento> findByEstudianteIdAndDeletedAtIsNullOrderByFechaSubidaDesc(Long estudianteId);
+
+    Optional<Documento> findByIdAndEstudianteIdAndDeletedAtIsNull(Long id, Long estudianteId);
 }
