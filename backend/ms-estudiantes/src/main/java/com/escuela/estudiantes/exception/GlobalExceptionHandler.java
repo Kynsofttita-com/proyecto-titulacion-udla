@@ -58,6 +58,18 @@ public class GlobalExceptionHandler {
                 "Cedula invalida", ex.getMessage());
     }
 
+    @ExceptionHandler(RecursoNotFoundException.class)
+    public ProblemDetail handleRecursoNotFound(RecursoNotFoundException ex) {
+        return build(HttpStatus.NOT_FOUND, "recurso-not-found",
+                "Recurso no encontrado", ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArg(IllegalArgumentException ex) {
+        return build(HttpStatus.BAD_REQUEST, "argumento-invalido",
+                "Argumento invalido", ex.getMessage());
+    }
+
     // -----------------------------------------------------------------------
     // Excepciones de seguridad del Controller
     // -----------------------------------------------------------------------
