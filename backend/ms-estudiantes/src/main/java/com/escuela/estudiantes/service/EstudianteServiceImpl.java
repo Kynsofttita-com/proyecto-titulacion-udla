@@ -1,5 +1,6 @@
 package com.escuela.estudiantes.service;
 
+import com.escuela.common.validation.core.CedulaEcuadorValidator;
 import com.escuela.common.events.estudiantes.EstudianteActualizadoEvent;
 import com.escuela.common.events.estudiantes.EstudianteCreadoEvent;
 import com.escuela.common.events.estudiantes.EstudianteEliminadoEvent;
@@ -34,7 +35,7 @@ import java.util.Objects;
  * <p>Responsabilidades:</p>
  * <ul>
  *   <li>Validacion de cedula ecuatoriana (digito verificador via
- *       {@link CedulaValidator}).</li>
+ *       {@link CedulaEcuadorValidator}).</li>
  *   <li>Validacion de unicidad de cedula y email (entre los no eliminados).</li>
  *   <li>Mapeo Entity &lt;-&gt; DTO via {@link EstudianteMapper}.</li>
  *   <li>Soft delete (no borra fisicamente).</li>
@@ -181,7 +182,7 @@ public class EstudianteServiceImpl implements EstudianteService {
     // -----------------------------------------------------------------------
 
     private void validarCedula(String cedula) {
-        if (!CedulaValidator.isValid(cedula)) {
+        if (!CedulaEcuadorValidator.isValid(cedula)) {
             throw new CedulaInvalidaException(cedula);
         }
     }
