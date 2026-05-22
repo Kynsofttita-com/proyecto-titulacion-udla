@@ -4,12 +4,15 @@ import com.escuela.instructores.entity.Certificacion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-/**
- * Repositorio JPA para la entidad {@link Certificacion}.
- *
- * <p>Esqueleto base. Las queries específicas (findBy*, @Query custom, etc.) se
- * agregarán en sprints posteriores cuando se implementen los CRUDs.</p>
- */
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface CertificacionRepository extends JpaRepository<Certificacion, Long> {
+
+    Optional<Certificacion> findByIdAndDeletedAtIsNull(Long id);
+
+    Optional<Certificacion> findByIdAndInstructorIdAndDeletedAtIsNull(Long id, Long instructorId);
+
+    List<Certificacion> findByInstructorIdAndDeletedAtIsNullOrderByFechaObtencionDesc(Long instructorId);
 }
