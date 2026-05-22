@@ -4,12 +4,15 @@ import com.escuela.vehiculos.entity.Mantenimiento;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-/**
- * Repositorio JPA para la entidad {@link Mantenimiento}.
- *
- * <p>Esqueleto base. Las queries específicas (findBy*, @Query custom, etc.) se
- * agregarán en sprints posteriores cuando se implementen los CRUDs.</p>
- */
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface MantenimientoRepository extends JpaRepository<Mantenimiento, Long> {
+
+    Optional<Mantenimiento> findByIdAndDeletedAtIsNull(Long id);
+
+    Optional<Mantenimiento> findByIdAndVehiculoIdAndDeletedAtIsNull(Long id, Long vehiculoId);
+
+    List<Mantenimiento> findByVehiculoIdAndDeletedAtIsNullOrderByFechaDesc(Long vehiculoId);
 }
