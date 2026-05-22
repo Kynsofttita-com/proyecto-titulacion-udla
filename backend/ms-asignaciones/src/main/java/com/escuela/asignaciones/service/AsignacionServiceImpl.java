@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Slf4j
 @Service
@@ -77,15 +78,18 @@ public class AsignacionServiceImpl implements AsignacionService {
     }
 
     private void validarDisponibilidad(CreateAsignacionRequest request) {
-        long conflictosInstructor = repository.countByInstructorIdAndFechaAndEstadoAndDeletedAtIsNull(
-                request.instructorId(), request.fecha(), "CONFIRMADA"
+        LocalDateTime inicioDia = request.fecha().atStartOfDay();
+        LocalDateTime finDia = request.fecha().atTime(LocalTime.MAX);
+
+        long conflictosInstructor = repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
+                request.instructorId(), inicioDia, finDia, "CONFIRMADA"
         );
         if (conflictosInstructor > 0) {
             throw new DisponibilidadException("Instructor no disponible en esa fecha y hora");
         }
 
-        long conflictosVehiculo = repository.countByVehiculoIdAndFechaAndEstadoAndDeletedAtIsNull(
-                request.vehiculoId(), request.fecha(), "CONFIRMADA"
+        long conflictosVehiculo = repository.countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
+                request.vehiculoId(), inicioDia, finDia, "CONFIRMADA"
         );
         if (conflictosVehiculo > 0) {
             throw new DisponibilidadException("Vehículo no disponible en esa fecha y hora");
