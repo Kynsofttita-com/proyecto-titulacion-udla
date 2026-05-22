@@ -29,6 +29,7 @@ class InstructorServiceTest {
 
     @Mock private InstructorRepository repository;
     @Mock private InstructorMapper mapper;
+    @Mock private InstructorEventDispatcher eventDispatcher;
 
     @InjectMocks
     private InstructorService service;

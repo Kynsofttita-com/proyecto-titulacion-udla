@@ -1,5 +1,6 @@
 package com.escuela.instructores.service;
 
+import com.escuela.common.events.instructores.InstructorCreadoEvent;
 import com.escuela.common.validation.core.CedulaEcuadorValidator;
 import com.escuela.instructores.dto.CreateInstructorRequest;
 import com.escuela.instructores.dto.InstructorListResponse;
@@ -27,10 +28,13 @@ public class InstructorService {
 
     private final InstructorRepository repository;
     private final InstructorMapper mapper;
+    private final InstructorEventDispatcher eventDispatcher;
 
-    public InstructorService(InstructorRepository repository, InstructorMapper mapper) {
+    public InstructorService(InstructorRepository repository, InstructorMapper mapper,
+                             InstructorEventDispatcher eventDispatcher) {
         this.repository = repository;
         this.mapper = mapper;
+        this.eventDispatcher = eventDispatcher;
     }
 
     @Transactional(readOnly = true)
@@ -62,6 +66,17 @@ public class InstructorService {
         entity.setEstado("ACTIVO");
         entity = repository.save(entity);
         log.info("Instructor creado id={} cedula={}", entity.getId(), entity.getCedula());
+
+        // Publica evento; MS-Auth lo consume y crea usuario, devolviendo
+        // UsuarioCreadoEvent que sera consumido por este MS para enlazar usuario_id.
+        eventDispatcher.publishCreado(InstructorCreadoEvent.builder()
+                .instructorId(entity.getId())
+                .cedula(entity.getCedula())
+                .email(entity.getEmail())
+                .nombre(entity.getNombre())
+                .apellido(entity.getApellido())
+                .build());
+
         return mapper.toResponse(entity);
     }
 
