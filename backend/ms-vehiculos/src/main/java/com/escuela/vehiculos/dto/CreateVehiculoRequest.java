@@ -1,10 +1,12 @@
 package com.escuela.vehiculos.dto;
 
+import com.escuela.common.validation.annotation.PlacaEcuador;
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
 public record CreateVehiculoRequest(
         @NotBlank(message = "Placa requerida")
+        @PlacaEcuador
         String placa,
 
         @NotBlank(message = "Marca requerida")

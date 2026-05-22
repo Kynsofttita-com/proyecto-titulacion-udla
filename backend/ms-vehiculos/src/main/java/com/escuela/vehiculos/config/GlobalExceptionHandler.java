@@ -2,6 +2,7 @@ package com.escuela.vehiculos.config;
 
 import com.escuela.vehiculos.controller.VehiculoController;
 import com.escuela.vehiculos.exception.PlacaDuplicadaException;
+import com.escuela.vehiculos.exception.RecursoNotFoundException;
 import com.escuela.vehiculos.exception.VehiculoNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -25,6 +26,24 @@ public class GlobalExceptionHandler {
         problem.setDetail(e.getMessage());
         problem.setProperty("timestamp", LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+
+    @ExceptionHandler(RecursoNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleRecursoNotFound(RecursoNotFoundException e) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problem.setTitle("Recurso no encontrado");
+        problem.setDetail(e.getMessage());
+        problem.setProperty("timestamp", LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalArg(IllegalArgumentException e) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setTitle("Argumento invalido");
+        problem.setDetail(e.getMessage());
+        problem.setProperty("timestamp", LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
     }
 
     @ExceptionHandler(PlacaDuplicadaException.class)
