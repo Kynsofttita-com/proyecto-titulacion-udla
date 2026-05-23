@@ -54,55 +54,55 @@ export interface PagoResponse {
 
 const cobrosService = {
   async obtenerEstadoCuenta(estudianteId: number): Promise<EstadoCuentaResponse> {
-    const response = await api.get<EstadoCuentaResponse>(`/cobros/estudiante/${estudianteId}`)
+    const response = await api.get<EstadoCuentaResponse>(`/facturas/estudiante/${estudianteId}`)
     return response.data
   },
 
   async obtenerFacturas(page: number = 0, size: number = 10): Promise<{ content: FacturaResponse[]; totalElements: number }> {
-    const response = await api.get<{ content: FacturaResponse[]; totalElements: number }>('/cobros/facturas', {
+    const response = await api.get<{ content: FacturaResponse[]; totalElements: number }>('/facturas', {
       params: { page, size }
     })
     return response.data
   },
 
   async obtenerFactura(id: number): Promise<FacturaResponse> {
-    const response = await api.get<FacturaResponse>(`/cobros/facturas/${id}`)
+    const response = await api.get<FacturaResponse>(`/facturas/${id}`)
     return response.data
   },
 
   async crearFactura(data: CreateFacturaRequest): Promise<FacturaResponse> {
-    const response = await api.post<FacturaResponse>('/cobros/facturas', data)
+    const response = await api.post<FacturaResponse>('/facturas', data)
     return response.data
   },
 
   async actualizarFactura(id: number, data: UpdateFacturaRequest): Promise<FacturaResponse> {
-    const response = await api.put<FacturaResponse>(`/cobros/facturas/${id}`, data)
+    const response = await api.put<FacturaResponse>(`/facturas/${id}`, data)
     return response.data
   },
 
   async eliminarFactura(id: number): Promise<void> {
-    await api.delete(`/cobros/facturas/${id}`)
+    await api.delete(`/facturas/${id}`)
   },
 
   async obtenerPagos(page: number = 0, size: number = 10): Promise<{ content: PagoResponse[]; totalElements: number }> {
-    const response = await api.get<{ content: PagoResponse[]; totalElements: number }>('/cobros/pagos', {
+    const response = await api.get<{ content: PagoResponse[]; totalElements: number }>('/pagos', {
       params: { page, size }
     })
     return response.data
   },
 
   async obtenerPago(id: number): Promise<PagoResponse> {
-    const response = await api.get<PagoResponse>(`/cobros/pagos/${id}`)
+    const response = await api.get<PagoResponse>(`/pagos/${id}`)
     return response.data
   },
 
   async crearPago(data: CreatePagoRequest): Promise<PagoResponse> {
-    const response = await api.post<PagoResponse>('/cobros/pagos', data)
+    const response = await api.post<PagoResponse>('/pagos', data)
     return response.data
   },
 
   async obtenerPagosPorFactura(facturaId: number): Promise<PagoResponse[]> {
-    const response = await api.get<PagoResponse[]>(`/cobros/facturas/${facturaId}/pagos`)
+    const response = await api.get<PagoResponse[]>(`/facturas/${facturaId}/pagos`)
     return response.data
   },
 

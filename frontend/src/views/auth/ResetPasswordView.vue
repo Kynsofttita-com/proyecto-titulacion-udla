@@ -1,99 +1,132 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-7">
     <div>
-      <p class="text-sm text-gray-600">
-        Ingresa tu nueva contraseña. Debe tener al menos 8 caracteres.
+      <h1 class="text-3xl font-bold text-ink-900 tracking-tight">Nueva contraseña</h1>
+      <p class="text-ink-500 mt-2">
+        Define una contraseña segura. Debe tener al menos 8 caracteres.
       </p>
     </div>
 
-    <form @submit.prevent="handleSubmit" class="space-y-4">
-      <div class="space-y-2">
-        <label for="password" class="block text-sm font-semibold text-gray-700">Nueva Contraseña</label>
+    <div v-if="!token" class="rounded-lg bg-warning-50 border border-warning-500/20 p-4 flex items-start gap-3">
+      <i class="pi pi-exclamation-triangle text-warning-600 mt-0.5" />
+      <div>
+        <p class="text-sm font-medium text-warning-700">Enlace inválido</p>
+        <p class="text-xs text-warning-700/80 mt-0.5">
+          El enlace de recuperación no es válido o ha expirado. Solicita uno nuevo.
+        </p>
+      </div>
+    </div>
+
+    <div v-if="success" class="rounded-lg bg-success-50 border border-success-500/20 p-4 flex items-start gap-3 animate-fade-up">
+      <i class="pi pi-check-circle text-success-600 mt-0.5" />
+      <div>
+        <p class="text-sm font-medium text-success-700">Contraseña actualizada</p>
+        <p class="text-xs text-success-700/80 mt-0.5">
+          Tu contraseña fue cambiada exitosamente. Ya puedes iniciar sesión.
+        </p>
+      </div>
+    </div>
+
+    <div v-if="error" class="rounded-lg bg-danger-50 border border-danger-500/20 p-4 flex items-start gap-3">
+      <i class="pi pi-exclamation-circle text-danger-600 mt-0.5" />
+      <div>
+        <p class="text-sm font-medium text-danger-600">No se pudo cambiar</p>
+        <p class="text-xs text-danger-600/80 mt-0.5">{{ error }}</p>
+      </div>
+    </div>
+
+    <form v-if="token && !success" @submit.prevent="handleSubmit" class="space-y-5">
+      <div>
+        <label class="label mb-1.5 block">Nueva contraseña</label>
         <Password
-          id="password"
           v-model="password"
           class="w-full"
-          input-class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          input-class="w-full"
           placeholder="••••••••"
           toggle-mask
+          :feedback="true"
           required
         />
-        <small v-if="password && password.length < 8" class="text-red-500">
+        <p v-if="password && password.length < 8" class="text-xs text-danger-600 mt-1">
           Mínimo 8 caracteres
-        </small>
+        </p>
       </div>
 
-      <div class="space-y-2">
-        <label for="confirmPassword" class="block text-sm font-semibold text-gray-700">Confirmar Contraseña</label>
+      <div>
+        <label class="label mb-1.5 block">Confirmar contraseña</label>
         <Password
-          id="confirmPassword"
           v-model="confirmPassword"
           class="w-full"
-          input-class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          input-class="w-full"
           placeholder="••••••••"
           :feedback="false"
           toggle-mask
           required
         />
-        <small v-if="confirmPassword && password !== confirmPassword" class="text-red-500">
+        <p v-if="confirmPassword && password !== confirmPassword" class="text-xs text-danger-600 mt-1">
           Las contraseñas no coinciden
-        </small>
-      </div>
-
-      <div v-if="error" class="p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p class="text-sm text-red-700">{{ error }}</p>
+        </p>
       </div>
 
       <Button
         type="submit"
-        label="Cambiar Contraseña"
-        class="w-full py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
         :loading="isLoading"
         :disabled="isLoading || password.length < 8 || password !== confirmPassword"
-      />
+        class="w-full !py-3 !text-base !font-semibold"
+      >
+        <span class="flex items-center gap-2">
+          Cambiar contraseña
+          <i class="pi pi-check text-sm" />
+        </span>
+      </Button>
     </form>
 
-    <RouterLink to="/login" class="text-sm text-blue-600 hover:text-blue-700 block text-center">
-      ← Volver al login
-    </RouterLink>
+    <div class="pt-4 border-t border-ink-200 text-center">
+      <RouterLink to="/login" class="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800">
+        <i class="pi pi-arrow-left text-xs" />
+        Volver al inicio de sesión
+      </RouterLink>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import api from '@/services/api'
 
 const route = useRoute()
+const router = useRouter()
 const password = ref('')
 const confirmPassword = ref('')
 const isLoading = ref(false)
 const error = ref('')
-const token = computed(() => route.query.token as string)
+const success = ref(false)
+const token = computed(() => (route.query.token as string) || '')
 
 const handleSubmit = async () => {
   if (password.value.length < 8) {
-    error.value = 'Contraseña debe tener al menos 8 caracteres'
+    error.value = 'La contraseña debe tener al menos 8 caracteres'
     return
   }
-
   if (password.value !== confirmPassword.value) {
     error.value = 'Las contraseñas no coinciden'
     return
   }
-
   isLoading.value = true
   error.value = ''
-
   try {
     await api.post('/auth/reset-password', {
       token: token.value,
       newPassword: password.value
     })
+    success.value = true
+    // Redirige al login después de 3 segundos
+    setTimeout(() => router.push('/login'), 3000)
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Error al cambiar contraseña'
+    error.value = err.response?.data?.detail || err.response?.data?.message || 'No se pudo cambiar la contraseña. El enlace puede haber expirado.'
   } finally {
     isLoading.value = false
   }
