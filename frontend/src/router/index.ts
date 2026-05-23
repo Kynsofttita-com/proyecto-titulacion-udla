@@ -109,18 +109,18 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/asignaciones/CalendarioAsignacionesView.vue'),
     meta: { requiresAuth: true }
   },
-  {
-    path: '/asignaciones-lista',
-    name: 'AsignacionesLista',
-    component: () => import('@/views/asignaciones/ListaAsignacionesView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/asignaciones/:id',
-    name: 'AsignacionDetalle',
-    component: () => import('@/views/asignaciones/AsignacionDetailView.vue'),
-    meta: { requiresAuth: true }
-  },
+  // {
+  //   path: '/asignaciones-lista',
+  //   name: 'AsignacionesLista',
+  //   component: () => import('@/views/asignaciones/ListaAsignacionesView.vue'),
+  //   meta: { requiresAuth: true }
+  // },
+  // {
+  //   path: '/asignaciones/:id',
+  //   name: 'AsignacionDetalle',
+  //   component: () => import('@/views/asignaciones/AsignacionDetailView.vue'),
+  //   meta: { requiresAuth: true }
+  // },
   {
     path: '/cobros',
     name: 'Cobros',
@@ -150,6 +150,12 @@ const routes: RouteRecordRaw[] = [
     name: 'Configuracion',
     component: () => import('@/views/configuracion/ConfiguracionView.vue'),
     meta: { requiresAuth: true, roles: ['ADMIN'] }
+  },
+  {
+    path: '/usuarios',
+    name: 'Usuarios',
+    component: () => import('@/views/configuracion/UsuariosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN'] }
   }
 ]
 
@@ -163,7 +169,8 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.meta.requiresAuth
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'Login', query: { redirect: to.fullPath } })
+    // Sin redirect query — siempre que vuelva al sistema irá al dashboard
+    next({ name: 'Login' })
   } else if (to.name === 'Login' && authStore.isAuthenticated) {
     next({ name: 'Dashboard' })
   } else if (to.meta.roles && !authStore.hasRole(to.meta.roles as string[])) {

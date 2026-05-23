@@ -2,52 +2,52 @@ import api from './api'
 
 export interface CreateEstudianteRequest {
   email: string
-  nombreCompleto: string
-  cédula: string
+  nombre: string
+  apellido: string
+  cedula: string
   fechaNacimiento: string
-  género: string
-  teléfono: string
-  dirección: string
+  genero: string
+  telefono: string
+  direccion: string
+  tipoSangre?: string
+  categoriaLicenciaSolicitada?: string
 }
 
-export interface UpdateEstudianteRequest extends CreateEstudianteRequest {
-  id: number
-}
+export interface UpdateEstudianteRequest extends Partial<CreateEstudianteRequest> {}
 
 export interface EstudianteResponse {
   id: number
   email: string
-  nombreCompleto: string
-  cédula: string
-  fechaNacimiento: string
-  género: string
-  teléfono: string
-  dirección: string
-  estado: 'ACTIVO' | 'INACTIVO'
-  fechaMatriculación: string
+  nombre?: string
+  apellido?: string
+  nombreCompleto?: string
+  cedula: string
+  fechaNacimiento?: string
+  genero?: string
+  telefono?: string
+  direccion?: string
+  estado: string
+  fechaMatricula?: string | null
+  tipoSangre?: string
 }
 
 export interface ProgresoAcademico {
   horasCompletadas: number
   horasRequeridas: number
-  porcentajeComplección: number
+  porcentajeComplecion: number
   asignacionesCompletadas: number
   asignacionesPendientes: number
 }
 
 const estudiantesService = {
-  async obtenerEstudiantes(page: number = 0, size: number = 10): Promise<{ content: EstudianteResponse[]; totalElements: number }> {
-    const response = await api.get<{ content: EstudianteResponse[]; totalElements: number }>('/estudiantes', {
-      params: { page, size }
-    })
+  async obtenerEstudiantes(page = 0, size = 10): Promise<{ content: EstudianteResponse[]; totalElements: number }> {
+    const response = await api.get('/estudiantes', { params: { page, size } })
     return response.data
   },
 
-  async buscarEstudiantes(término: string): Promise<EstudianteResponse[]> {
-    const response = await api.get<EstudianteResponse[]>('/estudiantes/buscar', {
-      params: { término }
-    })
-    return response.data
+  async buscarEstudiantes(termino: string): Promise<EstudianteResponse[]> {
+    const response = await api.get('/estudiantes', { params: { search: termino } })
+    return response.data?.content ?? response.data
   },
 
   async obtenerEstudiante(id: number): Promise<EstudianteResponse> {

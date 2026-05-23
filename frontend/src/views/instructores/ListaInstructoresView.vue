@@ -1,151 +1,130 @@
 <template>
   <div class="space-y-6">
-    <div class="flex justify-between items-center">
-      <h2 class="text-3xl font-bold">Instructores</h2>
-      <Button label="Nuevo Instructor" icon="pi pi-plus" @click="navigateToForm" />
+    <PageHeader
+      title="Instructores"
+      description="Gestión del personal docente de la escuela."
+      icon="pi pi-id-card"
+      :breadcrumbs="[{ label: 'Inicio', to: '/dashboard' }, { label: 'Instructores' }]"
+    >
+      <template #actions>
+        <Button label="Exportar" icon="pi pi-download" outlined />
+        <Button label="Nuevo instructor" icon="pi pi-plus" @click="navigateToForm()" />
+      </template>
+    </PageHeader>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <StatCard label="Total" :value="stats.total" icon="pi pi-id-card" color="brand" />
+      <StatCard label="Activos" :value="stats.activos" icon="pi pi-check-circle" color="success" />
+      <StatCard label="Categoría E" :value="stats.categoriaE" icon="pi pi-bookmark" color="info" />
+      <StatCard label="Licencia próx. a vencer" :value="stats.vencen" icon="pi pi-exclamation-triangle" color="warning" />
     </div>
 
-    <div class="p-4 bg-white rounded-lg shadow">
-      <div class="flex gap-4 mb-4">
-        <InputGroup class="flex-1">
-          <InputText
-            v-model="searchTerm"
-            placeholder="Buscar por nombre o cédula..."
-            @keyup.enter="buscar"
-          />
-          <Button icon="pi pi-search" @click="buscar" severity="primary" />
-        </InputGroup>
-        <Button
-          icon="pi pi-refresh"
-          text
-          severity="secondary"
-          @click="cargarInstructores"
-        />
-      </div>
+    <DataTableCard>
+      <template #toolbar>
+        <span class="p-input-icon-left">
+          <i class="pi pi-search text-ink-400" />
+          <InputText v-model="searchTerm" placeholder="Buscar instructor..." class="!pl-10 w-72" @keyup.enter="cargar" />
+        </span>
+        <Button icon="pi pi-filter-slash" outlined @click="limpiar" v-tooltip="'Limpiar'" />
+      </template>
 
-      <DataTable
-        :value="instructores"
-        striped-rows
-        table-style="min-width: 50rem"
-        paginator
-        :rows="10"
-        :total-records="totalInstructores"
-        :loading="isLoading"
-        @page="onPageChange"
+      <EmptyState
+        v-if="!loading && instructores.length === 0"
+        icon="pi pi-id-card"
+        title="Sin instructores registrados"
+        description="Agrega el primer instructor para empezar a programar clases."
       >
-        <Column field="nombreCompleto" header="Nombre Completo"></Column>
-        <Column field="email" header="Email"></Column>
-        <Column field="cédula" header="Cédula"></Column>
-        <Column field="especialidad" header="Especialidad"></Column>
-        <Column field="teléfono" header="Teléfono"></Column>
-        <Column field="estado" header="Estado">
-          <template #body="slotProps">
-            <span :class="slotProps.data.estado === 'ACTIVO' ? 'text-green-600' : 'text-red-600'">
-              {{ slotProps.data.estado }}
-            </span>
+        <template #action>
+          <Button label="Nuevo instructor" icon="pi pi-plus" @click="navigateToForm()" />
+        </template>
+      </EmptyState>
+
+      <DataTable v-else :value="instructores" :loading="loading" striped-rows :pt="{ table: { style: 'min-width: 60rem' } }">
+        <Column header="Instructor">
+          <template #body="{ data }">
+            <div class="flex items-center gap-3">
+              <Avatar :name="`${data.nombre} ${data.apellido}`" size="md" />
+              <div>
+                <p class="text-sm font-semibold text-ink-900">{{ data.nombre }} {{ data.apellido }}</p>
+                <p class="text-xs text-ink-500">{{ data.email }}</p>
+              </div>
+            </div>
           </template>
         </Column>
-        <Column field="horasImpartidas" header="Horas Impartidas"></Column>
-        <Column header="Acciones" style="width: 220px">
-          <template #body="slotProps">
-            <Button
-              icon="pi pi-eye"
-              class="p-button-rounded p-button-text p-button-sm mr-2"
-              @click="navigateToDetail(slotProps.data.id)"
-            />
-            <Button
-              icon="pi pi-pencil"
-              class="p-button-rounded p-button-text p-button-sm mr-2"
-              @click="navigateToForm(slotProps.data.id)"
-            />
-            <Button
-              icon="pi pi-trash"
-              class="p-button-rounded p-button-text p-button-sm p-button-danger"
-              @click="confirmarEliminar(slotProps.data.id)"
-            />
+        <Column field="cedula" header="Cédula" />
+        <Column header="Licencia">
+          <template #body="{ data }">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-brand-100 text-brand-700 text-xs font-bold">
+                {{ data.licenciaCategoria || '?' }}
+              </span>
+              <span class="text-sm text-ink-700">{{ data.licenciaNumero || '—' }}</span>
+            </div>
+          </template>
+        </Column>
+        <Column field="telefono" header="Teléfono" />
+        <Column header="Estado">
+          <template #body="{ data }">
+            <StatusBadge :status="data.estado" />
+          </template>
+        </Column>
+        <Column header="" style="width: 140px">
+          <template #body="{ data }">
+            <div class="flex items-center justify-end gap-1">
+              <Button icon="pi pi-eye" rounded text size="small" @click="$router.push(`/instructores/${data.id}`)" />
+              <Button icon="pi pi-pencil" rounded text size="small" @click="navigateToForm(data.id)" />
+              <Button icon="pi pi-trash" rounded text size="small" severity="danger" @click="eliminar(data)" />
+            </div>
           </template>
         </Column>
       </DataTable>
-    </div>
+    </DataTableCard>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
-import InputGroup from 'primevue/inputgroup'
-import instructoresService, { InstructorResponse } from '@/services/instructores'
+import Tooltip from 'primevue/tooltip'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import StatCard from '@/components/ui/StatCard.vue'
+import DataTableCard from '@/components/ui/DataTableCard.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import Avatar from '@/components/ui/Avatar.vue'
+import api from '@/services/api'
 
+const vTooltip = Tooltip
 const router = useRouter()
 
-const instructores = ref<InstructorResponse[]>([])
-const isLoading = ref(false)
+const instructores = ref<any[]>([])
+const loading = ref(false)
 const searchTerm = ref('')
-const totalInstructores = ref(0)
-const currentPage = ref(0)
-const pageSize = ref(10)
+const stats = reactive({ total: 0, activos: 0, categoriaE: 0, vencen: 0 })
 
-const cargarInstructores = async () => {
+const cargar = async () => {
   try {
-    isLoading.value = true
-    const response = await instructoresService.obtenerInstructores(currentPage.value, pageSize.value)
-    instructores.value = response.content
-    totalInstructores.value = response.totalElements
-  } catch (error) {
-    console.error('Error loading instructores:', error)
-  } finally {
-    isLoading.value = false
-  }
+    loading.value = true
+    const { data } = await api.get('/instructores', { params: { size: 100, search: searchTerm.value || undefined } })
+    instructores.value = data.content || []
+    stats.total = data.totalElements ?? instructores.value.length
+    stats.activos = instructores.value.filter(i => i.estado === 'ACTIVO').length
+    stats.categoriaE = instructores.value.filter(i => i.licenciaCategoria === 'E').length
+    const in60d = new Date(); in60d.setDate(in60d.getDate() + 60)
+    stats.vencen = instructores.value.filter(i => i.licenciaCaducidad && new Date(i.licenciaCaducidad) < in60d).length
+  } finally { loading.value = false }
 }
 
-const buscar = async () => {
-  if (searchTerm.value.trim()) {
-    try {
-      isLoading.value = true
-      instructores.value = await instructoresService.buscarInstructores(searchTerm.value)
-    } catch (error) {
-      console.error('Error searching:', error)
-    } finally {
-      isLoading.value = false
-    }
-  } else {
-    cargarInstructores()
-  }
+const limpiar = () => { searchTerm.value = ''; cargar() }
+const navigateToForm = (id?: number) => router.push(id ? `/instructores/${id}/editar` : '/instructores/nuevo')
+const eliminar = async (i: any) => {
+  if (!confirm(`¿Eliminar a ${i.nombre} ${i.apellido}?`)) return
+  await api.delete(`/instructores/${i.id}`); cargar()
 }
 
-const onPageChange = (event: any) => {
-  currentPage.value = event.page
-  cargarInstructores()
-}
-
-const confirmarEliminar = async (id: number) => {
-  if (confirm('¿Estás seguro de que deseas eliminar este instructor?')) {
-    try {
-      await instructoresService.eliminarInstructor(id)
-      await cargarInstructores()
-    } catch (error) {
-      console.error('Error deleting:', error)
-    }
-  }
-}
-
-const navigateToForm = (id?: number) => {
-  if (id) {
-    router.push(`/instructores/${id}/editar`)
-  } else {
-    router.push('/instructores/nuevo')
-  }
-}
-
-const navigateToDetail = (id: number) => {
-  router.push(`/instructores/${id}`)
-}
-
-onMounted(() => {
-  cargarInstructores()
-})
+onMounted(cargar)
 </script>
