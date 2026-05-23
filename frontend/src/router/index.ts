@@ -86,6 +86,24 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/vehiculos/nuevo',
+    name: 'NuevoVehiculo',
+    component: () => import('@/views/vehiculos/VehiculoFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/vehiculos/:id',
+    name: 'VehiculoDetalle',
+    component: () => import('@/views/vehiculos/VehiculoDetailView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/vehiculos/:id/editar',
+    name: 'EditarVehiculo',
+    component: () => import('@/views/vehiculos/VehiculoFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/asignaciones',
     name: 'Asignaciones',
     component: () => import('@/views/asignaciones/CalendarioAsignacionesView.vue'),
