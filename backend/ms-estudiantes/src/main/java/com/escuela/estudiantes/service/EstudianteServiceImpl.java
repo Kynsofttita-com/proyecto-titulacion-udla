@@ -17,6 +17,7 @@ import com.escuela.estudiantes.exception.CedulaInvalidaException;
 import com.escuela.estudiantes.exception.EmailDuplicadoException;
 import com.escuela.estudiantes.exception.EstudianteNotFoundException;
 import com.escuela.estudiantes.mapper.EstudianteMapper;
+import com.escuela.estudiantes.mapper.EstudianteMapperImpl;
 import com.escuela.estudiantes.repository.EstudianteRepository;
 import com.escuela.estudiantes.specification.EstudianteSpecifications;
 import org.slf4j.Logger;
@@ -58,15 +59,20 @@ public class EstudianteServiceImpl implements EstudianteService {
     private static final String ESTADO_ACTIVO = "ACTIVO";
 
     private final EstudianteRepository repository;
-    private final EstudianteMapper mapper;
     private final EstudianteEventDispatcher eventDispatcher;
+    private EstudianteMapper mapper;
 
     public EstudianteServiceImpl(EstudianteRepository repository,
-                                 EstudianteMapper mapper,
                                  EstudianteEventDispatcher eventDispatcher) {
         this.repository = repository;
-        this.mapper = mapper;
         this.eventDispatcher = eventDispatcher;
+    }
+
+    private EstudianteMapper getMapper() {
+        if (mapper == null) {
+            this.mapper = new EstudianteMapperImpl();
+        }
+        return mapper;
     }
 
     @Override
@@ -80,7 +86,7 @@ public class EstudianteServiceImpl implements EstudianteService {
             throw new EmailDuplicadoException(request.email());
         }
 
-        Estudiante estudiante = mapper.toEntity(request);
+        Estudiante estudiante = getMapper().toEntity(request);
         // Re-asignar el padre en los contactos hijos (MapStruct no lo hace solo
         // en relaciones bidireccionales)
         if (estudiante.getContactosEmergencia() != null) {
@@ -100,7 +106,7 @@ public class EstudianteServiceImpl implements EstudianteService {
                 .estado(guardado.getEstado())
                 .build());
 
-        return mapper.toResponse(guardado);
+        return getMapper().toResponse(guardado);
     }
 
     @Override
@@ -108,7 +114,7 @@ public class EstudianteServiceImpl implements EstudianteService {
     public EstudianteDetailResponse findById(Long id) {
         Estudiante estudiante = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new EstudianteNotFoundException(id));
-        return mapper.toDetailResponse(estudiante);
+        return getMapper().toDetailResponse(estudiante);
     }
 
     @Override
@@ -117,7 +123,7 @@ public class EstudianteServiceImpl implements EstudianteService {
         Specification<Estudiante> spec = Specification.where(EstudianteSpecifications.notDeleted())
                 .and(EstudianteSpecifications.estado(estado))
                 .and(EstudianteSpecifications.searchTerm(search));
-        return repository.findAll(spec, pageable).map(mapper::toListResponse);
+        return repository.findAll(spec, pageable).map(getMapper()::toListResponse);
     }
 
     @Override
@@ -135,7 +141,7 @@ public class EstudianteServiceImpl implements EstudianteService {
             throw new EmailDuplicadoException(request.email());
         }
 
-        mapper.updateEntity(estudiante, request);
+        getMapper().updateEntity(estudiante, request);
         Estudiante actualizado = repository.save(estudiante);
         log.info("Estudiante actualizado id={}", actualizado.getId());
 
@@ -159,7 +165,7 @@ public class EstudianteServiceImpl implements EstudianteService {
                     .build());
         }
 
-        return mapper.toResponse(actualizado);
+        return getMapper().toResponse(actualizado);
     }
 
     @Override
