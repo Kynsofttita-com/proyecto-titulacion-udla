@@ -154,6 +154,15 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 3
         wait-duration-in-open-state: 30s
         failure-rate-threshold: 50
+
+      # Instancia específica para EstudianteClient
+      estudianteClientCB:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        wait-duration-in-open-state: 30s
+        failure-rate-threshold: 50
+
   retry:
     instances:
       default:

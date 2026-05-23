@@ -195,6 +195,18 @@
                 <artifactId>minio</artifactId>
                 <version>${minio.version}</version>
             </dependency>
+
+            <!-- ===== Resilience4j OpenFeign Bridge ===== -->
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-feign</artifactId>
+            </dependency>
+
+            <!-- ===== HTTP Client 5 (para Feign circuit breaker) ===== -->
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
