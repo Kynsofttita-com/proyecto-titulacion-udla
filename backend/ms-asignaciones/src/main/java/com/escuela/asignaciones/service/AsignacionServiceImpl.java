@@ -5,8 +5,10 @@ import com.escuela.asignaciones.dto.UpdateAsignacionRequest;
 import com.escuela.asignaciones.dto.AsignacionListResponse;
 import com.escuela.asignaciones.dto.AsignacionResponse;
 import com.escuela.asignaciones.entity.Asignacion;
-import com.escuela.asignaciones.exception.AsignacionNotFoundException;
-import com.escuela.asignaciones.exception.DisponibilidadException;
+import com.escuela.asignaciones.exception.*;
+import com.escuela.asignaciones.feign.EstudianteClient;
+import com.escuela.asignaciones.feign.InstructorClient;
+import com.escuela.asignaciones.feign.VehiculoClient;
 import com.escuela.asignaciones.mapper.AsignacionMapper;
 import com.escuela.asignaciones.repository.AsignacionRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -25,10 +27,20 @@ public class AsignacionServiceImpl implements AsignacionService {
 
     private final AsignacionRepository repository;
     private final AsignacionMapper mapper;
+    private final EstudianteClient estudianteClient;
+    private final InstructorClient instructorClient;
+    private final VehiculoClient vehiculoClient;
+    private final AsignacionEventDispatcher eventDispatcher;
 
-    public AsignacionServiceImpl(AsignacionRepository repository, AsignacionMapper mapper) {
+    public AsignacionServiceImpl(AsignacionRepository repository, AsignacionMapper mapper,
+                                EstudianteClient estudianteClient, InstructorClient instructorClient,
+                                VehiculoClient vehiculoClient, AsignacionEventDispatcher eventDispatcher) {
         this.repository = repository;
         this.mapper = mapper;
+        this.estudianteClient = estudianteClient;
+        this.instructorClient = instructorClient;
+        this.vehiculoClient = vehiculoClient;
+        this.eventDispatcher = eventDispatcher;
     }
 
     @Override
@@ -47,11 +59,15 @@ public class AsignacionServiceImpl implements AsignacionService {
 
     @Override
     public AsignacionResponse create(CreateAsignacionRequest request) {
-        validarDisponibilidad(request);
+        validarEntidadesExisten(request);
+        validarConflictosTemporales(request);
 
         Asignacion asignacion = mapper.toEntity(request);
         asignacion.setEstado("CONFIRMADA");
         asignacion = repository.save(asignacion);
+
+        eventDispatcher.publishCreada(asignacion);
+
         log.info("Asignación creada id={}", asignacion.getId());
         return mapper.toResponse(asignacion);
     }
@@ -77,19 +93,51 @@ public class AsignacionServiceImpl implements AsignacionService {
         log.info("Asignación soft-deleted id={}", id);
     }
 
-    private void validarDisponibilidad(CreateAsignacionRequest request) {
-        LocalDateTime inicioDia = request.fecha().atStartOfDay();
-        LocalDateTime finDia = request.fecha().atTime(LocalTime.MAX);
+    private void validarEntidadesExisten(CreateAsignacionRequest request) {
+        try {
+            var estudiante = estudianteClient.obtenerEstudiante(request.estudianteId());
+            if (!estudiante.estado().equals("ACTIVO")) {
+                throw new EstudianteInactivoException(request.estudianteId());
+            }
+        } catch (Exception e) {
+            if (e instanceof EstudianteInactivoException) throw e;
+            throw new EstudianteNoEncontradoException(request.estudianteId());
+        }
+
+        try {
+            var instructor = instructorClient.obtenerInstructor(request.instructorId());
+            if (!instructor.estado().equals("ACTIVO")) {
+                throw new InstructorInactivoException(request.instructorId());
+            }
+        } catch (Exception e) {
+            if (e instanceof InstructorInactivoException) throw e;
+            throw new InstructorNoEncontradoException(request.instructorId());
+        }
+
+        try {
+            var vehiculo = vehiculoClient.obtenerVehiculo(request.vehiculoId());
+            if (vehiculo.deletedAt() != null) {
+                throw new VehiculoEliminadoException(request.vehiculoId());
+            }
+        } catch (Exception e) {
+            if (e instanceof VehiculoEliminadoException) throw e;
+            throw new VehiculoNoEncontradoException(request.vehiculoId());
+        }
+    }
+
+    private void validarConflictosTemporales(CreateAsignacionRequest request) {
+        LocalDateTime fechaHora = request.fecha().atTime(request.horaInicio());
+        LocalDateTime horaFin = request.fecha().atTime(request.horaFin());
 
         long conflictosInstructor = repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
-                request.instructorId(), inicioDia, finDia, "CONFIRMADA"
+                request.instructorId(), fechaHora, horaFin, "CONFIRMADA"
         );
         if (conflictosInstructor > 0) {
             throw new DisponibilidadException("Instructor no disponible en esa fecha y hora");
         }
 
         long conflictosVehiculo = repository.countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
-                request.vehiculoId(), inicioDia, finDia, "CONFIRMADA"
+                request.vehiculoId(), fechaHora, horaFin, "CONFIRMADA"
         );
         if (conflictosVehiculo > 0) {
             throw new DisponibilidadException("Vehículo no disponible en esa fecha y hora");

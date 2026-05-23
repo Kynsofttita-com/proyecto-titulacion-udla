@@ -2,9 +2,14 @@ package com.escuela.asignaciones.service;
 
 import com.escuela.asignaciones.dto.AsignacionResponse;
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
+import com.escuela.asignaciones.dto.feign.EstudianteDetailDTO;
+import com.escuela.asignaciones.dto.feign.InstructorDetailDTO;
+import com.escuela.asignaciones.dto.feign.VehiculoDetailDTO;
 import com.escuela.asignaciones.entity.Asignacion;
-import com.escuela.asignaciones.exception.AsignacionNotFoundException;
-import com.escuela.asignaciones.exception.DisponibilidadException;
+import com.escuela.asignaciones.exception.*;
+import com.escuela.asignaciones.feign.EstudianteClient;
+import com.escuela.asignaciones.feign.InstructorClient;
+import com.escuela.asignaciones.feign.VehiculoClient;
 import com.escuela.asignaciones.mapper.AsignacionMapper;
 import com.escuela.asignaciones.repository.AsignacionRepository;
 import org.junit.jupiter.api.Test;
@@ -31,6 +36,18 @@ class AsignacionServiceImplTest {
 
     @Mock
     private AsignacionMapper mapper;
+
+    @Mock
+    private EstudianteClient estudianteClient;
+
+    @Mock
+    private InstructorClient instructorClient;
+
+    @Mock
+    private VehiculoClient vehiculoClient;
+
+    @Mock
+    private AsignacionEventDispatcher eventDispatcher;
 
     @InjectMocks
     private AsignacionServiceImpl service;
@@ -72,8 +89,9 @@ class AsignacionServiceImplTest {
 
     @Test
     void testCreate_Success() {
+        LocalDate hoy = LocalDate.now();
         CreateAsignacionRequest request = new CreateAsignacionRequest(
-                1L, 1L, 1L, LocalDate.now(), LocalTime.of(10, 0), LocalTime.of(11, 0), null
+                1L, 1L, 1L, hoy, LocalTime.of(10, 0), LocalTime.of(11, 0), null
         );
 
         Asignacion asignacion = Asignacion.builder()
@@ -81,13 +99,22 @@ class AsignacionServiceImplTest {
                 .estudianteId(1L)
                 .instructorId(1L)
                 .vehiculoId(1L)
+                .fechaHora(hoy.atTime(LocalTime.of(10, 0)))
+                .duracionMinutos((short)60)
+                .estado("CONFIRMADA")
                 .build();
 
         AsignacionResponse response = new AsignacionResponse(
-                1L, 1L, 1L, 1L, LocalDate.now(), LocalTime.of(10, 0),
+                1L, 1L, 1L, 1L, hoy, LocalTime.of(10, 0),
                 LocalTime.of(11, 0), "CONFIRMADA", null, LocalDateTime.now(), LocalDateTime.now()
         );
 
+        when(estudianteClient.obtenerEstudiante(1L))
+                .thenReturn(new EstudianteDetailDTO(1L, "ACTIVO"));
+        when(instructorClient.obtenerInstructor(1L))
+                .thenReturn(new InstructorDetailDTO(1L, "ACTIVO"));
+        when(vehiculoClient.obtenerVehiculo(1L))
+                .thenReturn(new VehiculoDetailDTO(1L, null));
         when(repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
                 eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"))).thenReturn(0L);
         when(repository.countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
@@ -101,14 +128,46 @@ class AsignacionServiceImplTest {
         assertNotNull(result);
         assertEquals(1L, result.id());
         verify(repository, times(1)).save(any());
+        verify(eventDispatcher, times(1)).publishCreada(any());
     }
 
     @Test
-    void testCreate_InstructorNoDisponible() {
+    void testCreate_EstudianteNoEncontrado() {
+        CreateAsignacionRequest request = new CreateAsignacionRequest(
+                999L, 1L, 1L, LocalDate.now(), LocalTime.of(10, 0), LocalTime.of(11, 0), null
+        );
+
+        when(estudianteClient.obtenerEstudiante(999L))
+                .thenThrow(new RuntimeException("Not found"));
+
+        assertThrows(EstudianteNoEncontradoException.class, () -> service.create(request));
+    }
+
+    @Test
+    void testCreate_EstudianteInactivo() {
         CreateAsignacionRequest request = new CreateAsignacionRequest(
                 1L, 1L, 1L, LocalDate.now(), LocalTime.of(10, 0), LocalTime.of(11, 0), null
         );
 
+        when(estudianteClient.obtenerEstudiante(1L))
+                .thenReturn(new EstudianteDetailDTO(1L, "INACTIVO"));
+
+        assertThrows(EstudianteInactivoException.class, () -> service.create(request));
+    }
+
+    @Test
+    void testCreate_InstructorNoDisponible() {
+        LocalDate hoy = LocalDate.now();
+        CreateAsignacionRequest request = new CreateAsignacionRequest(
+                1L, 1L, 1L, hoy, LocalTime.of(10, 0), LocalTime.of(11, 0), null
+        );
+
+        when(estudianteClient.obtenerEstudiante(1L))
+                .thenReturn(new EstudianteDetailDTO(1L, "ACTIVO"));
+        when(instructorClient.obtenerInstructor(1L))
+                .thenReturn(new InstructorDetailDTO(1L, "ACTIVO"));
+        when(vehiculoClient.obtenerVehiculo(1L))
+                .thenReturn(new VehiculoDetailDTO(1L, null));
         when(repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
                 eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"))).thenReturn(1L);
 

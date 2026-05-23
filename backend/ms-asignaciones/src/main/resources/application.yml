@@ -159,3 +159,18 @@ resilience4j:
       default:
         max-attempts: 3
         wait-duration: 1s
+
+# -----------------------------------------------------------------------------
+# Feign Clients (llamadas síncronas a otros MS)
+# -----------------------------------------------------------------------------
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 5000
+        read-timeout: 10000
+
+# URLs de los microservicios (override via variables de entorno)
+FEIGN_MS_ESTUDIANTES_URL: ${MS_ESTUDIANTES_URL:http://localhost:8082}
+FEIGN_MS_INSTRUCTORES_URL: ${MS_INSTRUCTORES_URL:http://localhost:8083}
+FEIGN_MS_VEHICULOS_URL: ${MS_VEHICULOS_URL:http://localhost:8084}
