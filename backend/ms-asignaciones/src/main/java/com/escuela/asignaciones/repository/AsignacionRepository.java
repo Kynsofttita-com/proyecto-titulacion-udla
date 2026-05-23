@@ -17,4 +17,8 @@ public interface AsignacionRepository extends JpaRepository<Asignacion, Long> {
             Long instructorId, LocalDateTime inicio, LocalDateTime fin, String estado);
     long countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
             Long vehiculoId, LocalDateTime inicio, LocalDateTime fin, String estado);
+    long countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
+            Long instructorId, LocalDateTime inicio, LocalDateTime fin, String estado, Long id);
+    long countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
+            Long vehiculoId, LocalDateTime inicio, LocalDateTime fin, String estado, Long id);
 }
