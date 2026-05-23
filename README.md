@@ -38,15 +38,12 @@
 | **Sprint 5** | CRUDs por dominio | 📋 Próximo |
 | Sprints 6–12 | Frontend Vue, Reportes, QA, Deploy | 📋 Planificado |
 
-### Validación funcional Sprint 4 (suites reusables)
+### Validación funcional
 
-```bash
-# Suite exhaustiva (T4.1 JWT + T4.2 MS-Auth + T4.3 Gateway + T4.4 Eureka + T4.5 RabbitMQ)
-bash infrastructure/docker/test_sprint4_exhaustivo.sh   # 71/71
-
-# Suite avanzada (lockout, forgot/reset E2E, JWT spoofing, DLX, failover, métricas)
-bash infrastructure/docker/test_sprint4_avanzado.sh     # 45/45 + 1 skip
-```
+Los flujos críticos (login JWT, CRUDs, asignación tripartita, forgot-password,
+reset, reconciliación de pagos) se validan E2E desde el frontend en
+`http://localhost:5173`. Las suites de testing de Sprint 4 (bash) fueron
+reemplazadas por validación end-to-end vía la UI rediseñada.
 
 ---
 
