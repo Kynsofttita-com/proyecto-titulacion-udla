@@ -3,6 +3,7 @@ package com.escuela.asignaciones.controller;
 import com.escuela.common.security.headers.UserHeaders;
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
 import com.escuela.asignaciones.dto.UpdateAsignacionRequest;
+import com.escuela.asignaciones.dto.UpdateAsignacionReprogramarRequest;
 import com.escuela.asignaciones.dto.AsignacionListResponse;
 import com.escuela.asignaciones.dto.AsignacionResponse;
 import com.escuela.asignaciones.service.AsignacionService;
@@ -80,6 +81,18 @@ public class AsignacionController {
         validarAutenticacion(userEmail);
         validarRoles(userRoles, ROLES_ESCRITURA);
         return ResponseEntity.ok(service.update(id, request));
+    }
+
+    @PutMapping("/{id}/reprogramar")
+    @Operation(summary = "Reprogramar una asignación")
+    public ResponseEntity<AsignacionResponse> reprogramar(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateAsignacionReprogramarRequest request) {
+        validarAutenticacion(userEmail);
+        validarRoles(userRoles, ROLES_ESCRITURA);
+        return ResponseEntity.ok(service.reprogramar(id, request));
     }
 
     @DeleteMapping("/{id}")
