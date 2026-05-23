@@ -110,6 +110,18 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/asignaciones-lista',
+    name: 'AsignacionesLista',
+    component: () => import('@/views/asignaciones/ListaAsignacionesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/asignaciones/:id',
+    name: 'AsignacionDetalle',
+    component: () => import('@/views/asignaciones/AsignacionDetailView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/cobros',
     name: 'Cobros',
     component: () => import('@/views/cobros/EstadoCuentaView.vue'),
