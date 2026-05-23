@@ -62,6 +62,24 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/instructores/nuevo',
+    name: 'NuevoInstructor',
+    component: () => import('@/views/instructores/InstructorFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/instructores/:id',
+    name: 'InstructorDetalle',
+    component: () => import('@/views/instructores/InstructorDetailView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/instructores/:id/editar',
+    name: 'EditarInstructor',
+    component: () => import('@/views/instructores/InstructorFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/vehiculos',
     name: 'Vehiculos',
     component: () => import('@/views/vehiculos/ListaVehiculosView.vue'),
