@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
+import api from '@/services/api'
 
 interface User {
   id: number
@@ -27,10 +27,10 @@ export const useAuthStore = defineStore(
       isLoading.value = true
       error.value = null
       try {
-        const response = await axios.post('/auth/login', { email, password })
+        const response = await api.post('/auth/login', { email, password })
         token.value = response.data.token
         user.value = response.data.user
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+        api.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
       } catch (err: any) {
         error.value = err.response?.data?.message || 'Error al iniciar sesión'
         throw err
@@ -41,19 +41,19 @@ export const useAuthStore = defineStore(
 
     const logout = async () => {
       try {
-        await axios.post('/auth/logout')
+        await api.post('/auth/logout')
       } finally {
         token.value = null
         user.value = null
-        delete axios.defaults.headers.common['Authorization']
+        delete api.defaults.headers.common['Authorization']
       }
     }
 
     const refreshToken = async () => {
       try {
-        const response = await axios.post('/auth/refresh')
+        const response = await api.post('/auth/refresh')
         token.value = response.data.token
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+        api.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
       } catch (err) {
         logout()
       }
