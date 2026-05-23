@@ -8,6 +8,7 @@ import com.escuela.vehiculos.entity.Vehiculo;
 import com.escuela.vehiculos.exception.PlacaDuplicadaException;
 import com.escuela.vehiculos.exception.VehiculoNotFoundException;
 import com.escuela.vehiculos.mapper.VehiculoMapper;
+import com.escuela.vehiculos.mapper.VehiculoMapperImpl;
 import com.escuela.vehiculos.repository.VehiculoRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,17 +24,23 @@ import java.time.LocalDateTime;
 public class VehiculoServiceImpl implements VehiculoService {
 
     private final VehiculoRepository repository;
-    private final VehiculoMapper mapper;
+    private VehiculoMapper mapper;
 
-    public VehiculoServiceImpl(VehiculoRepository repository, VehiculoMapper mapper) {
+    public VehiculoServiceImpl(VehiculoRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
+    }
+
+    private VehiculoMapper getMapper() {
+        if (mapper == null) {
+            this.mapper = new VehiculoMapperImpl();
+        }
+        return mapper;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<VehiculoListResponse> findAll(Pageable pageable) {
-        return repository.findByDeletedAtIsNull(pageable).map(mapper::toListResponse);
+        return repository.findByDeletedAtIsNull(pageable).map(getMapper()::toListResponse);
     }
 
     @Override
@@ -41,7 +48,7 @@ public class VehiculoServiceImpl implements VehiculoService {
     public VehiculoResponse findById(Long id) {
         Vehiculo vehiculo = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new VehiculoNotFoundException(id));
-        return mapper.toResponse(vehiculo);
+        return getMapper().toResponse(vehiculo);
     }
 
     @Override
@@ -50,10 +57,13 @@ public class VehiculoServiceImpl implements VehiculoService {
             throw new PlacaDuplicadaException(request.placa());
         }
 
-        Vehiculo vehiculo = mapper.toEntity(request);
+        Vehiculo vehiculo = getMapper().toEntity(request);
+        if (vehiculo.getEstado() == null) {
+            vehiculo.setEstado("ACTIVO");
+        }
         vehiculo = repository.save(vehiculo);
         log.info("Vehículo creado id={} placa={}", vehiculo.getId(), vehiculo.getPlaca());
-        return mapper.toResponse(vehiculo);
+        return getMapper().toResponse(vehiculo);
     }
 
     @Override
@@ -61,11 +71,11 @@ public class VehiculoServiceImpl implements VehiculoService {
         Vehiculo vehiculo = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new VehiculoNotFoundException(id));
 
-        mapper.updateEntity(request, vehiculo);
+        getMapper().updateEntity(request, vehiculo);
         vehiculo.setUpdatedAt(LocalDateTime.now());
         vehiculo = repository.save(vehiculo);
         log.info("Vehículo actualizado id={}", id);
-        return mapper.toResponse(vehiculo);
+        return getMapper().toResponse(vehiculo);
     }
 
     @Override

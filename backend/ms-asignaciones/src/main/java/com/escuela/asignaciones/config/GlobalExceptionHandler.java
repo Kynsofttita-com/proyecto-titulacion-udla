@@ -3,6 +3,13 @@ package com.escuela.asignaciones.config;
 import com.escuela.asignaciones.controller.AsignacionController;
 import com.escuela.asignaciones.exception.AsignacionNotFoundException;
 import com.escuela.asignaciones.exception.DisponibilidadException;
+import com.escuela.asignaciones.exception.EstudianteInactivoException;
+import com.escuela.asignaciones.exception.EstudianteNoEncontradoException;
+import com.escuela.asignaciones.exception.InstructorInactivoException;
+import com.escuela.asignaciones.exception.InstructorNoEncontradoException;
+import com.escuela.asignaciones.exception.VehiculoEliminadoException;
+import com.escuela.asignaciones.exception.VehiculoNoEncontradoException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +22,27 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler({EstudianteNoEncontradoException.class, InstructorNoEncontradoException.class, VehiculoNoEncontradoException.class})
+    public ResponseEntity<ProblemDetail> handleEntidadNoEncontrada(RuntimeException e) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problem.setTitle("Entidad referenciada no encontrada");
+        problem.setDetail(e.getMessage());
+        problem.setProperty("timestamp", LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+
+    @ExceptionHandler({EstudianteInactivoException.class, InstructorInactivoException.class, VehiculoEliminadoException.class})
+    public ResponseEntity<ProblemDetail> handleEntidadInactiva(RuntimeException e) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setTitle("Entidad referenciada inactiva");
+        problem.setDetail(e.getMessage());
+        problem.setProperty("timestamp", LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+    }
 
     @ExceptionHandler(AsignacionNotFoundException.class)
     public ResponseEntity<ProblemDetail> handleNotFound(AsignacionNotFoundException e) {
@@ -73,9 +99,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleGeneric(Exception e) {
+        log.error("Unhandled exception in MS-Asignaciones: {} - {}", e.getClass().getName(), e.getMessage(), e);
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         problem.setTitle("Error interno");
-        problem.setDetail("Ocurrió un error inesperado");
+        problem.setDetail("Ocurrió un error inesperado: " + e.getMessage());
         problem.setProperty("timestamp", LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
     }

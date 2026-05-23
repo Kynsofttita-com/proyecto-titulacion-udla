@@ -10,6 +10,7 @@ import com.escuela.instructores.entity.Instructor;
 import com.escuela.instructores.exception.DuplicateResourceException;
 import com.escuela.instructores.exception.InstructorNotFoundException;
 import com.escuela.instructores.mapper.InstructorMapper;
+import com.escuela.instructores.mapper.InstructorMapperImpl;
 import com.escuela.instructores.repository.InstructorRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,24 +28,30 @@ public class InstructorService {
     private static final Logger log = LoggerFactory.getLogger(InstructorService.class);
 
     private final InstructorRepository repository;
-    private final InstructorMapper mapper;
     private final InstructorEventDispatcher eventDispatcher;
+    private InstructorMapper mapper;
 
-    public InstructorService(InstructorRepository repository, InstructorMapper mapper,
+    public InstructorService(InstructorRepository repository,
                              InstructorEventDispatcher eventDispatcher) {
         this.repository = repository;
-        this.mapper = mapper;
         this.eventDispatcher = eventDispatcher;
+    }
+
+    private InstructorMapper getMapper() {
+        if (mapper == null) {
+            this.mapper = new InstructorMapperImpl();
+        }
+        return mapper;
     }
 
     @Transactional(readOnly = true)
     public Page<InstructorListResponse> listar(Pageable pageable, String search, String estado) {
-        return repository.buscar(search, estado, pageable).map(mapper::toListResponse);
+        return repository.buscar(search, estado, pageable).map(getMapper()::toListResponse);
     }
 
     @Transactional(readOnly = true)
     public InstructorResponse obtener(Long id) {
-        return mapper.toResponse(buscarOFallar(id));
+        return getMapper().toResponse(buscarOFallar(id));
     }
 
     public InstructorResponse crear(CreateInstructorRequest request) {
@@ -62,7 +69,7 @@ public class InstructorService {
                     "Ya existe instructor con licencia " + request.licenciaNumero());
         });
 
-        Instructor entity = mapper.toEntity(request);
+        Instructor entity = getMapper().toEntity(request);
         entity.setEstado("ACTIVO");
         entity = repository.save(entity);
         log.info("Instructor creado id={} cedula={}", entity.getId(), entity.getCedula());
@@ -77,7 +84,7 @@ public class InstructorService {
                 .apellido(entity.getApellido())
                 .build());
 
-        return mapper.toResponse(entity);
+        return getMapper().toResponse(entity);
     }
 
     public InstructorResponse actualizar(Long id, UpdateInstructorRequest request) {
@@ -115,7 +122,7 @@ public class InstructorService {
 
         repository.save(i);
         log.info("Instructor actualizado id={}", id);
-        return mapper.toResponse(i);
+        return getMapper().toResponse(i);
     }
 
     public void eliminar(Long id) {
