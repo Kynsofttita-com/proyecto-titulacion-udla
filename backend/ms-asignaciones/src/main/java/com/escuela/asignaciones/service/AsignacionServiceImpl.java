@@ -2,15 +2,18 @@ package com.escuela.asignaciones.service;
 
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
 import com.escuela.asignaciones.dto.UpdateAsignacionRequest;
+import com.escuela.asignaciones.dto.UpdateAsignacionReprogramarRequest;
 import com.escuela.asignaciones.dto.AsignacionListResponse;
 import com.escuela.asignaciones.dto.AsignacionResponse;
 import com.escuela.asignaciones.entity.Asignacion;
+import com.escuela.asignaciones.entity.HistorialEstado;
 import com.escuela.asignaciones.exception.*;
 import com.escuela.asignaciones.feign.EstudianteClient;
 import com.escuela.asignaciones.feign.InstructorClient;
 import com.escuela.asignaciones.feign.VehiculoClient;
 import com.escuela.asignaciones.mapper.AsignacionMapper;
 import com.escuela.asignaciones.repository.AsignacionRepository;
+import com.escuela.asignaciones.repository.HistorialEstadoRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 
 @Slf4j
 @Service
@@ -26,16 +30,19 @@ import java.time.LocalTime;
 public class AsignacionServiceImpl implements AsignacionService {
 
     private final AsignacionRepository repository;
+    private final HistorialEstadoRepository historialRepository;
     private final AsignacionMapper mapper;
     private final EstudianteClient estudianteClient;
     private final InstructorClient instructorClient;
     private final VehiculoClient vehiculoClient;
     private final AsignacionEventDispatcher eventDispatcher;
 
-    public AsignacionServiceImpl(AsignacionRepository repository, AsignacionMapper mapper,
-                                EstudianteClient estudianteClient, InstructorClient instructorClient,
-                                VehiculoClient vehiculoClient, AsignacionEventDispatcher eventDispatcher) {
+    public AsignacionServiceImpl(AsignacionRepository repository, HistorialEstadoRepository historialRepository,
+                                AsignacionMapper mapper, EstudianteClient estudianteClient,
+                                InstructorClient instructorClient, VehiculoClient vehiculoClient,
+                                AsignacionEventDispatcher eventDispatcher) {
         this.repository = repository;
+        this.historialRepository = historialRepository;
         this.mapper = mapper;
         this.estudianteClient = estudianteClient;
         this.instructorClient = instructorClient;
@@ -93,6 +100,32 @@ public class AsignacionServiceImpl implements AsignacionService {
         log.info("Asignación soft-deleted id={}", id);
     }
 
+    @Override
+    public AsignacionResponse reprogramar(Long id, UpdateAsignacionReprogramarRequest request) {
+        Asignacion asignacion = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new AsignacionNotFoundException(id));
+
+        LocalDateTime fechaHoraAnterior = asignacion.getFechaHora();
+
+        LocalDateTime nuevaFechaHora = request.fecha().atTime(request.horaInicio());
+        Short nuevaDuracion = (short) ChronoUnit.MINUTES.between(request.horaInicio(), request.horaFin());
+
+        validarConflictosTemporalesParaReprogramacion(id, asignacion, request.fecha(), request.horaInicio(), request.horaFin());
+
+        asignacion.setFechaHora(nuevaFechaHora);
+        asignacion.setDuracionMinutos(nuevaDuracion);
+        asignacion.setUpdatedAt(LocalDateTime.now());
+
+        asignacion = repository.save(asignacion);
+
+        registrarHistorial(asignacion, "CONFIRMADA", "CONFIRMADA", "Reprogramación de clase");
+
+        eventDispatcher.publishReprogramada(asignacion, fechaHoraAnterior);
+
+        log.info("Asignación reprogramada id={}", id);
+        return mapper.toResponse(asignacion);
+    }
+
     private void validarEntidadesExisten(CreateAsignacionRequest request) {
         try {
             var estudiante = estudianteClient.obtenerEstudiante(request.estudianteId());
@@ -142,5 +175,37 @@ public class AsignacionServiceImpl implements AsignacionService {
         if (conflictosVehiculo > 0) {
             throw new DisponibilidadException("Vehículo no disponible en esa fecha y hora");
         }
+    }
+
+    private void validarConflictosTemporalesParaReprogramacion(Long asignacionId, Asignacion asignacion,
+                                                                java.time.LocalDate fecha,
+                                                                LocalTime horaInicio, LocalTime horaFin) {
+        LocalDateTime nuevaFechaHora = fecha.atTime(horaInicio);
+        LocalDateTime nuevaHoraFin = fecha.atTime(horaFin);
+
+        long conflictosInstructor = repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
+                asignacion.getInstructorId(), nuevaFechaHora, nuevaHoraFin, "CONFIRMADA", asignacionId
+        );
+        if (conflictosInstructor > 0) {
+            throw new DisponibilidadException("Instructor no disponible en esa fecha y hora");
+        }
+
+        long conflictosVehiculo = repository.countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
+                asignacion.getVehiculoId(), nuevaFechaHora, nuevaHoraFin, "CONFIRMADA", asignacionId
+        );
+        if (conflictosVehiculo > 0) {
+            throw new DisponibilidadException("Vehículo no disponible en esa fecha y hora");
+        }
+    }
+
+    private void registrarHistorial(Asignacion asignacion, String estadoAnterior, String estadoNuevo, String observaciones) {
+        HistorialEstado historial = HistorialEstado.builder()
+                .asignacion(asignacion)
+                .estadoAnterior(estadoAnterior)
+                .estadoNuevo(estadoNuevo)
+                .fechaCambio(LocalDateTime.now())
+                .observaciones(observaciones)
+                .build();
+        historialRepository.save(historial);
     }
 }

@@ -2,6 +2,7 @@ package com.escuela.asignaciones.service;
 
 import com.escuela.asignaciones.dto.AsignacionResponse;
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
+import com.escuela.asignaciones.dto.UpdateAsignacionReprogramarRequest;
 import com.escuela.asignaciones.dto.feign.EstudianteDetailDTO;
 import com.escuela.asignaciones.dto.feign.InstructorDetailDTO;
 import com.escuela.asignaciones.dto.feign.VehiculoDetailDTO;
@@ -12,6 +13,7 @@ import com.escuela.asignaciones.feign.InstructorClient;
 import com.escuela.asignaciones.feign.VehiculoClient;
 import com.escuela.asignaciones.mapper.AsignacionMapper;
 import com.escuela.asignaciones.repository.AsignacionRepository;
+import com.escuela.asignaciones.repository.HistorialEstadoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,6 +35,9 @@ class AsignacionServiceImplTest {
 
     @Mock
     private AsignacionRepository repository;
+
+    @Mock
+    private HistorialEstadoRepository historialRepository;
 
     @Mock
     private AsignacionMapper mapper;
@@ -182,5 +187,105 @@ class AsignacionServiceImplTest {
         service.softDelete(1L);
 
         verify(repository, times(1)).save(any());
+    }
+
+    @Test
+    void testReprogramar_Success() {
+        LocalDateTime fechaHoraAnterior = LocalDateTime.of(2026, 6, 1, 9, 0);
+        Asignacion asignacion = Asignacion.builder()
+                .id(1L)
+                .estudianteId(1L)
+                .instructorId(1L)
+                .vehiculoId(1L)
+                .fechaHora(fechaHoraAnterior)
+                .duracionMinutos((short)60)
+                .estado("CONFIRMADA")
+                .build();
+
+        UpdateAsignacionReprogramarRequest request = new UpdateAsignacionReprogramarRequest(
+                LocalDate.of(2026, 6, 5), LocalTime.of(10, 0), LocalTime.of(11, 0), null
+        );
+
+        AsignacionResponse response = new AsignacionResponse(
+                1L, 1L, 1L, 1L, LocalDate.of(2026, 6, 5), LocalTime.of(10, 0),
+                LocalTime.of(11, 0), "CONFIRMADA", null, LocalDateTime.now(), LocalDateTime.now()
+        );
+
+        when(repository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(asignacion));
+        when(repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
+                eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"), eq(1L))).thenReturn(0L);
+        when(repository.countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
+                eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"), eq(1L))).thenReturn(0L);
+        when(repository.save(any())).thenReturn(asignacion);
+        when(mapper.toResponse(asignacion)).thenReturn(response);
+        when(historialRepository.save(any())).thenReturn(null);
+
+        AsignacionResponse result = service.reprogramar(1L, request);
+
+        assertNotNull(result);
+        assertEquals(1L, result.id());
+        verify(repository, times(1)).save(any());
+        verify(eventDispatcher, times(1)).publishReprogramada(eq(asignacion), eq(fechaHoraAnterior));
+        verify(historialRepository, times(1)).save(any());
+    }
+
+    @Test
+    void testReprogramar_NotFound() {
+        UpdateAsignacionReprogramarRequest request = new UpdateAsignacionReprogramarRequest(
+                LocalDate.of(2026, 6, 5), LocalTime.of(10, 0), LocalTime.of(11, 0), null
+        );
+        when(repository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.empty());
+
+        assertThrows(AsignacionNotFoundException.class, () -> service.reprogramar(1L, request));
+    }
+
+    @Test
+    void testReprogramar_ConflictInstructor() {
+        LocalDateTime fechaHoraAnterior = LocalDateTime.of(2026, 6, 1, 9, 0);
+        Asignacion asignacion = Asignacion.builder()
+                .id(1L)
+                .estudianteId(1L)
+                .instructorId(1L)
+                .vehiculoId(1L)
+                .fechaHora(fechaHoraAnterior)
+                .duracionMinutos((short)60)
+                .estado("CONFIRMADA")
+                .build();
+
+        UpdateAsignacionReprogramarRequest request = new UpdateAsignacionReprogramarRequest(
+                LocalDate.of(2026, 6, 5), LocalTime.of(10, 0), LocalTime.of(11, 0), null
+        );
+
+        when(repository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(asignacion));
+        when(repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
+                eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"), eq(1L))).thenReturn(1L);
+
+        assertThrows(DisponibilidadException.class, () -> service.reprogramar(1L, request));
+    }
+
+    @Test
+    void testReprogramar_ConflictVehiculo() {
+        LocalDateTime fechaHoraAnterior = LocalDateTime.of(2026, 6, 1, 9, 0);
+        Asignacion asignacion = Asignacion.builder()
+                .id(1L)
+                .estudianteId(1L)
+                .instructorId(1L)
+                .vehiculoId(1L)
+                .fechaHora(fechaHoraAnterior)
+                .duracionMinutos((short)60)
+                .estado("CONFIRMADA")
+                .build();
+
+        UpdateAsignacionReprogramarRequest request = new UpdateAsignacionReprogramarRequest(
+                LocalDate.of(2026, 6, 5), LocalTime.of(10, 0), LocalTime.of(11, 0), null
+        );
+
+        when(repository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(asignacion));
+        when(repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
+                eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"), eq(1L))).thenReturn(0L);
+        when(repository.countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
+                eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"), eq(1L))).thenReturn(1L);
+
+        assertThrows(DisponibilidadException.class, () -> service.reprogramar(1L, request));
     }
 }
