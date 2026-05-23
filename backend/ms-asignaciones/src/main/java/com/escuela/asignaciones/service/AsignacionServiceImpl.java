@@ -12,6 +12,7 @@ import com.escuela.asignaciones.feign.EstudianteClient;
 import com.escuela.asignaciones.feign.InstructorClient;
 import com.escuela.asignaciones.feign.VehiculoClient;
 import com.escuela.asignaciones.mapper.AsignacionMapper;
+import com.escuela.asignaciones.mapper.AsignacionMapperImpl;
 import com.escuela.asignaciones.repository.AsignacionRepository;
 import com.escuela.asignaciones.repository.HistorialEstadoRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -31,29 +32,35 @@ public class AsignacionServiceImpl implements AsignacionService {
 
     private final AsignacionRepository repository;
     private final HistorialEstadoRepository historialRepository;
-    private final AsignacionMapper mapper;
+    private AsignacionMapper mapper;
     private final EstudianteClient estudianteClient;
     private final InstructorClient instructorClient;
     private final VehiculoClient vehiculoClient;
     private final AsignacionEventDispatcher eventDispatcher;
 
     public AsignacionServiceImpl(AsignacionRepository repository, HistorialEstadoRepository historialRepository,
-                                AsignacionMapper mapper, EstudianteClient estudianteClient,
+                                EstudianteClient estudianteClient,
                                 InstructorClient instructorClient, VehiculoClient vehiculoClient,
                                 AsignacionEventDispatcher eventDispatcher) {
         this.repository = repository;
         this.historialRepository = historialRepository;
-        this.mapper = mapper;
         this.estudianteClient = estudianteClient;
         this.instructorClient = instructorClient;
         this.vehiculoClient = vehiculoClient;
         this.eventDispatcher = eventDispatcher;
     }
 
+    private AsignacionMapper getMapper() {
+        if (mapper == null) {
+            this.mapper = new AsignacionMapperImpl();
+        }
+        return mapper;
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Page<AsignacionListResponse> findAll(Pageable pageable) {
-        return repository.findByDeletedAtIsNull(pageable).map(mapper::toListResponse);
+        return repository.findByDeletedAtIsNull(pageable).map(getMapper()::toListResponse);
     }
 
     @Override
@@ -61,7 +68,7 @@ public class AsignacionServiceImpl implements AsignacionService {
     public AsignacionResponse findById(Long id) {
         Asignacion asignacion = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new AsignacionNotFoundException(id));
-        return mapper.toResponse(asignacion);
+        return getMapper().toResponse(asignacion);
     }
 
     @Override
@@ -69,14 +76,17 @@ public class AsignacionServiceImpl implements AsignacionService {
         validarEntidadesExisten(request);
         validarConflictosTemporales(request);
 
-        Asignacion asignacion = mapper.toEntity(request);
+        Asignacion asignacion = getMapper().toEntity(request);
         asignacion.setEstado("CONFIRMADA");
+        if (asignacion.getTipoClase() == null) {
+            asignacion.setTipoClase("PRACTICA");
+        }
         asignacion = repository.save(asignacion);
 
         eventDispatcher.publishCreada(asignacion);
 
         log.info("Asignación creada id={}", asignacion.getId());
-        return mapper.toResponse(asignacion);
+        return getMapper().toResponse(asignacion);
     }
 
     @Override
@@ -84,11 +94,11 @@ public class AsignacionServiceImpl implements AsignacionService {
         Asignacion asignacion = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new AsignacionNotFoundException(id));
 
-        mapper.updateEntity(request, asignacion);
+        getMapper().updateEntity(request, asignacion);
         asignacion.setUpdatedAt(LocalDateTime.now());
         asignacion = repository.save(asignacion);
         log.info("Asignación actualizada id={}", id);
-        return mapper.toResponse(asignacion);
+        return getMapper().toResponse(asignacion);
     }
 
     @Override
@@ -123,7 +133,7 @@ public class AsignacionServiceImpl implements AsignacionService {
         eventDispatcher.publishReprogramada(asignacion, fechaHoraAnterior);
 
         log.info("Asignación reprogramada id={}", id);
-        return mapper.toResponse(asignacion);
+        return getMapper().toResponse(asignacion);
     }
 
     private void validarEntidadesExisten(CreateAsignacionRequest request) {

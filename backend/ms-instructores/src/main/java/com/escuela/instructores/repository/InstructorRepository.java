@@ -26,12 +26,12 @@ public interface InstructorRepository extends JpaRepository<Instructor, Long> {
     @Query("""
         SELECT i FROM Instructor i
         WHERE i.deletedAt IS NULL
-          AND (:estado IS NULL OR i.estado = :estado)
-          AND (:search IS NULL OR
-               LOWER(i.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR
-               LOWER(i.apellido) LIKE LOWER(CONCAT('%', :search, '%')) OR
-               i.cedula LIKE CONCAT('%', :search, '%') OR
-               LOWER(i.email) LIKE LOWER(CONCAT('%', :search, '%')))
+          AND (CAST(:estado AS string) IS NULL OR i.estado = :estado)
+          AND (CAST(:search AS string) IS NULL OR
+               LOWER(i.nombre) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR
+               LOWER(i.apellido) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR
+               i.cedula LIKE CONCAT('%', CAST(:search AS string), '%') OR
+               LOWER(i.email) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
     """)
     Page<Instructor> buscar(@Param("search") String search,
                              @Param("estado") String estado,

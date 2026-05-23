@@ -73,6 +73,10 @@ public class PagoServiceImpl implements PagoService {
         Pago pago = pagoMapper.toEntity(request);
         pago.setFactura(factura);
         pago.setFechaPago(java.time.LocalDateTime.now());
+        if (pago.getUsuarioRegistroId() == null) {
+            Long uid = getUsuarioActualId();
+            pago.setUsuarioRegistroId(uid != null ? uid : 1L);
+        }
 
         Pago pagGuardado = pagoRepository.save(pago);
         log.debug("Pago guardado con ID: {}", pagGuardado.getId());
@@ -98,6 +102,18 @@ public class PagoServiceImpl implements PagoService {
                 monto, factura.getSaldo(), factura.getId());
             throw new SaldoInsuficienteException(monto, factura.getSaldo());
         }
+    }
+
+    private Long getUsuarioActualId() {
+        try {
+            var attrs = (org.springframework.web.context.request.ServletRequestAttributes)
+                    org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                String uid = attrs.getRequest().getHeader("X-User-Id");
+                if (uid != null && !uid.isBlank()) return Long.parseLong(uid);
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     private void actualizarFacturaYEstado(Factura factura, BigDecimal montoPago) {
