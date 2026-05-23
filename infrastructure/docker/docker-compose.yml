@@ -272,7 +272,11 @@ services:
     restart: unless-stopped
     ports:
       - "8085:8085"
-    environment: *ms-environment
+    environment:
+      <<: *ms-environment
+      FEIGN_MS_ESTUDIANTES_URL: http://ms-estudiantes:8082
+      FEIGN_MS_INSTRUCTORES_URL: http://ms-instructores:8083
+      FEIGN_MS_VEHICULOS_URL: http://ms-vehiculos:8084
     depends_on: *ms-depends_on
     networks:
       - escuela-network
@@ -289,7 +293,9 @@ services:
     restart: unless-stopped
     ports:
       - "8086:8086"
-    environment: *ms-environment
+    environment:
+      <<: *ms-environment
+      FEIGN_MS_ESTUDIANTES_URL: http://ms-estudiantes:8082
     depends_on: *ms-depends_on
     networks:
       - escuela-network

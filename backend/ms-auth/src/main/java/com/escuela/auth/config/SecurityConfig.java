@@ -57,8 +57,10 @@ public class SecurityConfig {
                         // Actuator y Swagger
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        // Resto rechaza (en caso de otros endpoints)
-                        .anyRequest().authenticated()
+                        // Endpoints de dominio: el Gateway valida JWT y agrega headers X-User-*.
+                        // MS-Auth confia en esa validacion y aplica autorizacion via AuthHeaderGuard
+                        // en cada controller (requireAuth + requireAnyRole).
+                        .anyRequest().permitAll()
                 )
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable());

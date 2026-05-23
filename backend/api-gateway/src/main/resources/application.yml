@@ -25,7 +25,7 @@ spring:
         - id: ms-auth
           uri: lb://ms-auth
           predicates:
-            - Path=/auth/**, /usuarios/**, /roles/**, /configuracion/**
+            - Path=/auth/**, /usuarios/**, /roles/**, /configuracion/**, /categorias-licencia/**, /tipos-curso/**, /conceptos-facturacion/**, /plantillas-email/**
 
         - id: ms-estudiantes
           uri: lb://ms-estudiantes
@@ -50,7 +50,7 @@ spring:
         - id: ms-cobros
           uri: lb://ms-cobros
           predicates:
-            - Path=/cobros/**, /facturas/**
+            - Path=/cobros/**, /facturas/**, /pagos/**
 
         - id: ms-reportes
           uri: lb://ms-reportes

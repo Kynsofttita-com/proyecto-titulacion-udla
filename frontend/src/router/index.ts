@@ -50,9 +50,33 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/estudiantes/:id/editar',
+    name: 'EditarEstudiante',
+    component: () => import('@/views/estudiantes/EstudianteFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/instructores',
     name: 'Instructores',
     component: () => import('@/views/instructores/ListaInstructoresView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/instructores/nuevo',
+    name: 'NuevoInstructor',
+    component: () => import('@/views/instructores/InstructorFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/instructores/:id',
+    name: 'InstructorDetalle',
+    component: () => import('@/views/instructores/InstructorDetailView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/instructores/:id/editar',
+    name: 'EditarInstructor',
+    component: () => import('@/views/instructores/InstructorFormView.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -62,11 +86,41 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/vehiculos/nuevo',
+    name: 'NuevoVehiculo',
+    component: () => import('@/views/vehiculos/VehiculoFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/vehiculos/:id',
+    name: 'VehiculoDetalle',
+    component: () => import('@/views/vehiculos/VehiculoDetailView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/vehiculos/:id/editar',
+    name: 'EditarVehiculo',
+    component: () => import('@/views/vehiculos/VehiculoFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/asignaciones',
     name: 'Asignaciones',
     component: () => import('@/views/asignaciones/CalendarioAsignacionesView.vue'),
     meta: { requiresAuth: true }
   },
+  // {
+  //   path: '/asignaciones-lista',
+  //   name: 'AsignacionesLista',
+  //   component: () => import('@/views/asignaciones/ListaAsignacionesView.vue'),
+  //   meta: { requiresAuth: true }
+  // },
+  // {
+  //   path: '/asignaciones/:id',
+  //   name: 'AsignacionDetalle',
+  //   component: () => import('@/views/asignaciones/AsignacionDetailView.vue'),
+  //   meta: { requiresAuth: true }
+  // },
   {
     path: '/cobros',
     name: 'Cobros',
@@ -74,9 +128,33 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/cobros/factura/nuevo',
+    name: 'NuevaFactura',
+    component: () => import('@/views/cobros/FacturaFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cobros/factura/:id',
+    name: 'EditarFactura',
+    component: () => import('@/views/cobros/FacturaFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cobros/pago/nueva',
+    name: 'NuevoPago',
+    component: () => import('@/views/cobros/PagoFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/configuracion',
     name: 'Configuracion',
     component: () => import('@/views/configuracion/ConfiguracionView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN'] }
+  },
+  {
+    path: '/usuarios',
+    name: 'Usuarios',
+    component: () => import('@/views/configuracion/UsuariosView.vue'),
     meta: { requiresAuth: true, roles: ['ADMIN'] }
   }
 ]
@@ -91,7 +169,8 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.meta.requiresAuth
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'Login', query: { redirect: to.fullPath } })
+    // Sin redirect query — siempre que vuelva al sistema irá al dashboard
+    next({ name: 'Login' })
   } else if (to.name === 'Login' && authStore.isAuthenticated) {
     next({ name: 'Dashboard' })
   } else if (to.meta.roles && !authStore.hasRole(to.meta.roles as string[])) {

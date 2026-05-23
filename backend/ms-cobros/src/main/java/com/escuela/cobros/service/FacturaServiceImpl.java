@@ -67,6 +67,12 @@ public class FacturaServiceImpl implements FacturaService {
         Factura factura = facturaMapper.toEntity(request);
         factura.setNumeroFactura(numeroFactura);
         factura.setEstado("PENDIENTE");
+        if (factura.getMontoPagado() == null) {
+            factura.setMontoPagado(java.math.BigDecimal.ZERO);
+        }
+        if (factura.getFechaEmision() == null) {
+            factura.setFechaEmision(java.time.LocalDate.now());
+        }
 
         Factura guardada = facturaRepository.save(factura);
         log.info("Factura creada con ID: {} y número: {}", guardada.getId(), numeroFactura);
