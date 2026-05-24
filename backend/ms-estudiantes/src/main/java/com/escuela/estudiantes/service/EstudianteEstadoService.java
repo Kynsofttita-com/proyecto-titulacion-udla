@@ -128,7 +128,7 @@ public class EstudianteEstadoService {
         for (Estudiante e : todos) {
             try {
                 Map<String, String> resp = cobros.obtenerSituacionPago(e.getId());
-                String nueva = resp != null ? resp.get("situacionPago") : null;
+                String nueva = ajustarSegunEstado(e, resp != null ? resp.get("situacionPago") : null);
                 if (nueva != null && !nueva.equals(e.getSituacionPago())) {
                     String anterior = e.getSituacionPago();
                     e.setSituacionPago(nueva);
@@ -153,16 +153,30 @@ public class EstudianteEstadoService {
         if (cobros == null) return null;
         Optional<Estudiante> opt = repository.findByIdAndDeletedAtIsNull(estudianteId);
         if (opt.isEmpty()) return null;
-        Map<String, String> resp = cobros.obtenerSituacionPago(estudianteId);
-        String nueva = resp != null ? resp.get("situacionPago") : null;
-        if (nueva == null) return opt.get().getSituacionPago();
         Estudiante e = opt.get();
+        Map<String, String> resp = cobros.obtenerSituacionPago(estudianteId);
+        String nueva = ajustarSegunEstado(e, resp != null ? resp.get("situacionPago") : null);
+        if (nueva == null) return e.getSituacionPago();
         if (!nueva.equals(e.getSituacionPago())) {
             e.setSituacionPago(nueva);
             repository.save(e);
             log.info("Estudiante {} situacion_pago sincronizada → {}", estudianteId, nueva);
         }
         return nueva;
+    }
+
+    /**
+     * Combina la situacion calculada por MS-Cobros con el estado academico
+     * del estudiante. La regla especial: PRE_MATRICULADO + SIN_DEUDA significa
+     * "registrado pero falta cobrarle matricula" — lo mapeamos a
+     * PENDIENTE_MATRICULA para que destaque en la UI.
+     */
+    private String ajustarSegunEstado(Estudiante e, String situacionCobros) {
+        if (situacionCobros == null) return null;
+        if ("SIN_DEUDA".equals(situacionCobros) && "PRE_MATRICULADO".equals(e.getEstado())) {
+            return "PENDIENTE_MATRICULA";
+        }
+        return situacionCobros;
     }
 
     private String mapearSituacionPago(String estadoFactura) {
