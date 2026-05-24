@@ -98,25 +98,65 @@
 
       <FormCard
         title="Plan académico"
-        description="Categoría de licencia que el estudiante desea obtener."
+        description="Curso que el estudiante va a tomar. El precio del curso determina cuánto debe pagar."
         icon="pi pi-graduation-cap"
       >
-        <Field label="Categoría de licencia">
-          <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
-            <button
-              v-for="cat in ['A', 'B', 'C', 'D', 'E', 'F']"
-              :key="cat"
-              type="button"
-              @click="form.categoriaLicenciaSolicitada = form.categoriaLicenciaSolicitada === cat ? undefined : cat"
-              :class="[
-                'h-14 rounded-lg border-2 font-bold transition-all',
-                form.categoriaLicenciaSolicitada === cat
-                  ? 'border-brand-600 bg-brand-50 text-brand-700 shadow-card'
-                  : 'border-ink-200 bg-white text-ink-600 hover:border-brand-300 hover:bg-brand-50/50'
-              ]"
-            >{{ cat }}</button>
-          </div>
+        <Field label="Tipo de curso" hint="Cada curso está vinculado a una categoría de licencia (A, B, C, etc.) y tiene un precio base que se usará para calcular los pagos.">
+          <Dropdown
+            v-model="form.tipoCursoId"
+            :options="tiposCurso"
+            optionValue="id"
+            optionLabel="nombre"
+            placeholder="Selecciona un curso"
+            class="w-full"
+            :loading="cargandoCursos"
+            showClear
+            @change="onTipoCursoChange"
+          >
+            <template #value="{ value, placeholder }">
+              <span v-if="!value" class="text-ink-500">{{ placeholder }}</span>
+              <span v-else class="text-sm">
+                <span class="font-medium">{{ cursoSeleccionado?.nombre }}</span>
+                <span class="text-ink-500"> · Cat. {{ cursoSeleccionado?.categoriaLicenciaCodigo }} · {{ cursoSeleccionado?.duracionTotalHoras }}h ·</span>
+                <span class="font-semibold text-brand-700 ml-1">${{ Number(cursoSeleccionado?.precioBase || 0).toFixed(2) }}</span>
+              </span>
+            </template>
+            <template #option="{ option }">
+              <div class="flex items-center justify-between gap-3 w-full py-1">
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-ink-900">{{ option.nombre }}</p>
+                  <p class="text-[11px] text-ink-500">
+                    Cat. <span class="font-semibold">{{ option.categoriaLicenciaCodigo }}</span>
+                    · {{ option.duracionTotalHoras }} h
+                  </p>
+                </div>
+                <span class="text-sm font-semibold text-brand-700">${{ Number(option.precioBase).toFixed(2) }}</span>
+              </div>
+            </template>
+            <template #empty>
+              <p class="px-3 py-2 text-sm text-ink-500">No hay tipos de curso configurados. Crea uno en Configuración → Catálogos.</p>
+            </template>
+          </Dropdown>
         </Field>
+
+        <div v-if="cursoSeleccionado" class="mt-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4 animate-fade-up">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-lg bg-brand-600 text-white flex items-center justify-center flex-shrink-0">
+              <i class="pi pi-graduation-cap" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-ink-900">{{ cursoSeleccionado.nombre }}</p>
+              <p class="text-xs text-ink-600 mt-0.5">
+                Licencia categoría <strong>{{ cursoSeleccionado.categoriaLicenciaCodigo }}</strong>
+                · {{ cursoSeleccionado.duracionTotalHoras }} horas de instrucción
+              </p>
+              <p class="text-xs text-ink-500 mt-2 flex items-start gap-1.5">
+                <i class="pi pi-info-circle mt-0.5" />
+                <span>Al matricular, el sistema te permitirá emitir facturas que sumen hasta <strong class="text-brand-700">${{ Number(cursoSeleccionado.precioBase).toFixed(2) }}</strong>. Puedes facturar de una vez o en partes.</span>
+              </p>
+            </div>
+          </div>
+        </div>
       </FormCard>
 
       <div class="flex items-center justify-end gap-3">
@@ -138,6 +178,7 @@ import Dropdown from 'primevue/dropdown'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import FormCard from '@/components/ui/FormCard.vue'
 import estudiantesService, { type CreateEstudianteRequest } from '@/services/estudiantes'
+import api from '@/services/api'
 
 const router = useRouter()
 const route = useRoute()
@@ -168,8 +209,33 @@ const isEditing = computed(() => !!estudianteId.value)
 const form = reactive<CreateEstudianteRequest & { fechaNacimiento: string | Date }>({
   nombre: '', apellido: '', email: '', cedula: '',
   fechaNacimiento: '', genero: '', telefono: '', direccion: '',
-  tipoSangre: undefined, categoriaLicenciaSolicitada: undefined
+  tipoSangre: undefined,
+  tipoCursoId: null,
+  categoriaLicenciaId: null
 })
+
+const tiposCurso = ref<any[]>([])
+const cargandoCursos = ref(false)
+const cursoSeleccionado = computed(() =>
+  tiposCurso.value.find(c => c.id === form.tipoCursoId) || null
+)
+
+const cargarTiposCurso = async () => {
+  cargandoCursos.value = true
+  try {
+    const { data } = await api.get('/tipos-curso', { params: { size: 100 } })
+    tiposCurso.value = (data.content || []).filter((c: any) => c.activo !== false)
+  } catch (e) {
+    console.warn('No se pudieron cargar tipos de curso', e)
+  } finally { cargandoCursos.value = false }
+}
+
+const onTipoCursoChange = () => {
+  // Al cambiar el tipo de curso, auto-setea categoriaLicenciaId desde la
+  // relacion del catalogo (no pedimos al usuario que la elija aparte).
+  const sel = cursoSeleccionado.value
+  form.categoriaLicenciaId = sel?.categoriaLicenciaId ?? null
+}
 
 const cargarEstudiante = async () => {
   if (!isEditing.value) return
@@ -203,7 +269,8 @@ const guardar = async () => {
       telefono: form.telefono.trim(),
       direccion: form.direccion.trim(),
       tipoSangre: form.tipoSangre || undefined,
-      categoriaLicenciaSolicitada: form.categoriaLicenciaSolicitada || undefined
+      tipoCursoId: form.tipoCursoId || null,
+      categoriaLicenciaId: form.categoriaLicenciaId || null
     }
     if (isEditing.value) await estudiantesService.actualizarEstudiante(estudianteId.value as number, payload)
     else await estudiantesService.crearEstudiante(payload)
@@ -218,5 +285,8 @@ const guardar = async () => {
   } finally { isLoading.value = false }
 }
 
-onMounted(cargarEstudiante)
+onMounted(async () => {
+  await cargarTiposCurso()
+  await cargarEstudiante()
+})
 </script>
