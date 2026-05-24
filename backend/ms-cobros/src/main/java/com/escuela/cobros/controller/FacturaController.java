@@ -5,7 +5,9 @@ import com.escuela.cobros.dto.FacturaListResponse;
 import com.escuela.cobros.dto.FacturaRequest;
 import com.escuela.cobros.dto.FacturaResponse;
 import com.escuela.cobros.service.FacturaService;
+import com.escuela.cobros.service.SituacionPagoCalculator;
 import java.util.List;
+import java.util.Map;
 import com.escuela.common.security.headers.UserHeaders;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +31,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class FacturaController {
 
     private final FacturaService facturaService;
+    private final SituacionPagoCalculator situacionPagoCalculator;
     private static final String ROLE_ADMIN = "ADMIN";
     private static final String ROLE_STAFF = "STAFF";
 
@@ -66,6 +69,15 @@ public class FacturaController {
     public ResponseEntity<List<FacturaCuotaResponse>> listarCuotas(@PathVariable Long id) {
         log.debug("Listando cuotas de factura: {}", id);
         return ResponseEntity.ok(facturaService.findCuotas(id));
+    }
+
+    @GetMapping("/estudiante/{estudianteId}/situacion-pago")
+    @Operation(summary = "Calcula la situacion_pago actual del estudiante",
+               description = "Lee facturas y cuotas en vivo. Usado por MS-Estudiantes para sincronizar drifts.")
+    public ResponseEntity<Map<String, String>> calcularSituacionPago(@PathVariable Long estudianteId) {
+        log.debug("Calculando situacion_pago para estudiante: {}", estudianteId);
+        String situacion = situacionPagoCalculator.calcular(estudianteId);
+        return ResponseEntity.ok(Map.of("situacionPago", situacion));
     }
 
     @PostMapping

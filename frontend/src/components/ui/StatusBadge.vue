@@ -1,12 +1,13 @@
 <template>
   <span :class="['inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border', tone]">
     <span :class="['w-1.5 h-1.5 rounded-full', dot]" />
-    {{ label || status }}
+    {{ label || humanLabel(status, status) }}
   </span>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { humanLabel } from '@/utils/labels'
 
 const props = withDefaults(defineProps<{
   status?: string

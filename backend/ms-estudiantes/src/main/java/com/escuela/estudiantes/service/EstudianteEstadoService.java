@@ -1,14 +1,19 @@
 package com.escuela.estudiantes.service;
 
 import com.escuela.estudiantes.entity.Estudiante;
+import com.escuela.estudiantes.feign.CobrosClient;
 import com.escuela.estudiantes.repository.EstudianteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Aplica transiciones automaticas de estado academico y de situacion_pago
@@ -27,6 +32,7 @@ import java.util.Optional;
 public class EstudianteEstadoService {
 
     private final EstudianteRepository repository;
+    private final ObjectProvider<CobrosClient> cobrosClientProvider;
 
     /**
      * Reacciona a un evento {@code pago.registrado}.
@@ -96,6 +102,67 @@ public class EstudianteEstadoService {
             log.info("Estudiante {} MATRICULADO → CURSANDO (primera asignacion)", estudianteId);
         }
         // Si ya esta CURSANDO/COMPLETADO/RETIRADO no hacemos nada (idempotente).
+    }
+
+    /**
+     * Sincroniza la {@code situacion_pago} de TODOS los estudiantes consultando
+     * a MS-Cobros vía Feign. Reservado para uso administrativo (resolver drift
+     * tras caídas de servicio o eventos perdidos antes de que la cola existiera).
+     *
+     * @return map con conteos: {@code total}, {@code actualizados}, {@code errores}
+     */
+    public Map<String, Integer> sincronizarSituacionPagoMasivo() {
+        CobrosClient cobros = cobrosClientProvider.getIfAvailable();
+        if (cobros == null) {
+            log.warn("CobrosClient no disponible, sincronizacion abortada");
+            return Map.of("total", 0, "actualizados", 0, "errores", 0);
+        }
+
+        List<Estudiante> todos = repository.findAll().stream()
+            .filter(e -> e.getDeletedAt() == null)
+            .toList();
+
+        AtomicInteger actualizados = new AtomicInteger();
+        AtomicInteger errores = new AtomicInteger();
+
+        for (Estudiante e : todos) {
+            try {
+                Map<String, String> resp = cobros.obtenerSituacionPago(e.getId());
+                String nueva = resp != null ? resp.get("situacionPago") : null;
+                if (nueva != null && !nueva.equals(e.getSituacionPago())) {
+                    String anterior = e.getSituacionPago();
+                    e.setSituacionPago(nueva);
+                    repository.save(e);
+                    actualizados.incrementAndGet();
+                    log.info("Estudiante {} situacion_pago {} → {}", e.getId(), anterior, nueva);
+                }
+            } catch (Exception ex) {
+                errores.incrementAndGet();
+                log.warn("Error sincronizando estudiante {}: {}", e.getId(), ex.getMessage());
+            }
+        }
+
+        return Map.of("total", todos.size(),
+                      "actualizados", actualizados.get(),
+                      "errores", errores.get());
+    }
+
+    /** Sincroniza solo un estudiante. Útil para refresco puntual desde UI. */
+    public String sincronizarSituacionPago(Long estudianteId) {
+        CobrosClient cobros = cobrosClientProvider.getIfAvailable();
+        if (cobros == null) return null;
+        Optional<Estudiante> opt = repository.findByIdAndDeletedAtIsNull(estudianteId);
+        if (opt.isEmpty()) return null;
+        Map<String, String> resp = cobros.obtenerSituacionPago(estudianteId);
+        String nueva = resp != null ? resp.get("situacionPago") : null;
+        if (nueva == null) return opt.get().getSituacionPago();
+        Estudiante e = opt.get();
+        if (!nueva.equals(e.getSituacionPago())) {
+            e.setSituacionPago(nueva);
+            repository.save(e);
+            log.info("Estudiante {} situacion_pago sincronizada → {}", estudianteId, nueva);
+        }
+        return nueva;
     }
 
     private String mapearSituacionPago(String estadoFactura) {

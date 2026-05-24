@@ -7,6 +7,14 @@
       :breadcrumbs="[{ label: 'Inicio', to: '/dashboard' }, { label: 'Cobros' }]"
     >
       <template #actions>
+        <Button
+          v-tooltip.bottom="'Recalcula situacion_pago de todos los estudiantes consultando MS-Cobros'"
+          label="Sincronizar"
+          icon="pi pi-refresh"
+          severity="secondary" outlined
+          :loading="sincronizando"
+          @click="sincronizarSituacion"
+        />
         <Button label="Registrar pago" icon="pi pi-dollar" outlined @click="abrirFormPago()" />
         <Button label="Nueva factura" icon="pi pi-plus" @click="abrirFormFactura()" />
       </template>
@@ -803,6 +811,23 @@ const DetailRow = defineComponent({
     ])
   }
 })
+
+// ============ Sincronización de situacion_pago ============
+const sincronizando = ref(false)
+const sincronizarSituacion = async () => {
+  sincronizando.value = true
+  try {
+    const { data } = await api.post('/estudiantes/sync-situacion-pago')
+    const msg = `Sincronización OK · ${data.actualizados} de ${data.total} estudiante(s) actualizado(s)`
+                + (data.errores ? ` · ${data.errores} error(es)` : '')
+    alert(msg)
+    await cargar()
+  } catch (e: any) {
+    alert('No se pudo sincronizar: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    sincronizando.value = false
+  }
+}
 
 // ============ Carga inicial ============
 const cargar = async () => {
