@@ -19,6 +19,7 @@ public record EstudianteDetailResponse(
         LocalDate fechaNacimiento,
         String genero,
         String estado,
+        String situacionPago,
         LocalDate fechaMatricula,
         Long tipoCursoId,
         Long categoriaLicenciaId,

@@ -20,6 +20,14 @@ import org.springframework.context.annotation.Configuration;
  *   auth.exchange (topic, durable, declarado tambien por MS-Auth)
  *     └─ binding "auth.usuario.creado" ──► estudiantes.from-auth.queue
  *        (para enlazar usuario_id al recibir UsuarioCreadoEvent)
+ *
+ *   cobros.exchange (topic, durable, declarado por MS-Cobros)
+ *     └─ binding "pago.registrado" ──► estudiantes.from-cobros.queue
+ *        (auto-transicion PRE_MATRICULADO → MATRICULADO + situacion_pago)
+ *
+ *   asignaciones.exchange (topic, durable, declarado por MS-Asignaciones)
+ *     └─ binding "asignacion.creada" ──► estudiantes.from-asignaciones.queue
+ *        (auto-transicion MATRICULADO → CURSANDO)
  */
 @Configuration
 public class RabbitConfig extends AbstractRabbitConfig {
@@ -33,6 +41,14 @@ public class RabbitConfig extends AbstractRabbitConfig {
     public static final String AUTH_EXCHANGE_NAME = "auth.exchange";
     public static final String FROM_AUTH_QUEUE_NAME = "estudiantes.from-auth.queue";
     public static final String AUTH_USUARIO_CREADO_ROUTING = "auth.usuario.creado";
+
+    public static final String COBROS_EXCHANGE_NAME = "cobros.exchange";
+    public static final String FROM_COBROS_QUEUE_NAME = "estudiantes.from-cobros.queue";
+    public static final String COBROS_PAGO_REGISTRADO_ROUTING = "pago.registrado";
+
+    public static final String ASIGNACIONES_EXCHANGE_NAME = "asignaciones.exchange";
+    public static final String FROM_ASIGNACIONES_QUEUE_NAME = "estudiantes.from-asignaciones.queue";
+    public static final String ASIGNACIONES_CREADA_ROUTING = "asignacion.creada";
 
     @Bean
     public TopicExchange estudiantesExchange() {
@@ -66,7 +82,7 @@ public class RabbitConfig extends AbstractRabbitConfig {
         return BindingBuilder.bind(estudiantesDlq()).to(estudiantesDlx()).with("");
     }
 
-    // ============ Consume de auth.exchange (para enlazar usuario_id) ============
+    // ============ Consume de auth.exchange ============
 
     @Bean
     public TopicExchange authExchangeRef() {
@@ -85,5 +101,47 @@ public class RabbitConfig extends AbstractRabbitConfig {
         return BindingBuilder.bind(estudiantesFromAuthQueue())
                 .to(authExchangeRef())
                 .with(AUTH_USUARIO_CREADO_ROUTING);
+    }
+
+    // ============ Consume de cobros.exchange (pago.registrado) ============
+
+    @Bean
+    public TopicExchange cobrosExchangeRef() {
+        return new TopicExchange(COBROS_EXCHANGE_NAME, true, false);
+    }
+
+    @Bean
+    public Queue estudiantesFromCobrosQueue() {
+        return QueueBuilder.durable(FROM_COBROS_QUEUE_NAME)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .build();
+    }
+
+    @Bean
+    public Binding estudiantesFromCobrosBinding() {
+        return BindingBuilder.bind(estudiantesFromCobrosQueue())
+                .to(cobrosExchangeRef())
+                .with(COBROS_PAGO_REGISTRADO_ROUTING);
+    }
+
+    // ============ Consume de asignaciones.exchange (asignacion.creada) ============
+
+    @Bean
+    public TopicExchange asignacionesExchangeRef() {
+        return new TopicExchange(ASIGNACIONES_EXCHANGE_NAME, true, false);
+    }
+
+    @Bean
+    public Queue estudiantesFromAsignacionesQueue() {
+        return QueueBuilder.durable(FROM_ASIGNACIONES_QUEUE_NAME)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .build();
+    }
+
+    @Bean
+    public Binding estudiantesFromAsignacionesBinding() {
+        return BindingBuilder.bind(estudiantesFromAsignacionesQueue())
+                .to(asignacionesExchangeRef())
+                .with(ASIGNACIONES_CREADA_ROUTING);
     }
 }

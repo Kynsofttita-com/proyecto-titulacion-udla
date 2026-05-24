@@ -13,5 +13,6 @@ public record EstudianteResponse(
         String email,
         String telefono,
         String estado,
+        String situacionPago,
         LocalDate fechaMatricula
 ) {}
