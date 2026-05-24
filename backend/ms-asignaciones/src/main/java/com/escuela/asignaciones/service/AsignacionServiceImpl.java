@@ -139,7 +139,14 @@ public class AsignacionServiceImpl implements AsignacionService {
     private void validarEntidadesExisten(CreateAsignacionRequest request) {
         try {
             var estudiante = estudianteClient.obtenerEstudiante(request.estudianteId());
-            if (!estudiante.estado().equals("ACTIVO")) {
+            // Estados validos para recibir asignaciones: MATRICULADO (ya pago, listo
+            // para arrancar), CURSANDO (en curso, recibe mas clases) y el legado
+            // ACTIVO (defensa por compat). NO se permite PRE_MATRICULADO, COMPLETADO
+            // ni RETIRADO.
+            String estado = estudiante.estado();
+            if (!"MATRICULADO".equals(estado)
+                && !"CURSANDO".equals(estado)
+                && !"ACTIVO".equals(estado)) {
                 throw new EstudianteInactivoException(request.estudianteId());
             }
         } catch (Exception e) {
