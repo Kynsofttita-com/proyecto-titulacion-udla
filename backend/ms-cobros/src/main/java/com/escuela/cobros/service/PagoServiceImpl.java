@@ -4,10 +4,12 @@ import com.escuela.cobros.dto.PagoListResponse;
 import com.escuela.cobros.dto.PagoRequest;
 import com.escuela.cobros.dto.PagoResponse;
 import com.escuela.cobros.entity.Factura;
+import com.escuela.cobros.entity.FacturaCuota;
 import com.escuela.cobros.entity.Pago;
 import com.escuela.cobros.exception.FacturaNotFoundException;
 import com.escuela.cobros.exception.SaldoInsuficienteException;
 import com.escuela.cobros.mapper.PagoMapper;
+import com.escuela.cobros.repository.FacturaCuotaRepository;
 import com.escuela.cobros.repository.FacturaRepository;
 import com.escuela.cobros.repository.PagoRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,8 +30,11 @@ import java.math.BigDecimal;
 @Slf4j
 public class PagoServiceImpl implements PagoService {
 
+    private static final List<String> CUOTA_PENDIENTE = List.of("PENDIENTE", "PARCIAL");
+
     private final PagoRepository pagoRepository;
     private final FacturaRepository facturaRepository;
+    private final FacturaCuotaRepository facturaCuotaRepository;
     private final PagoMapper pagoMapper;
     private final PagoEventDispatcher eventDispatcher;
 
@@ -72,10 +80,16 @@ public class PagoServiceImpl implements PagoService {
 
         Pago pago = pagoMapper.toEntity(request);
         pago.setFactura(factura);
-        pago.setFechaPago(java.time.LocalDateTime.now());
+        pago.setFechaPago(LocalDateTime.now());
         if (pago.getUsuarioRegistroId() == null) {
             Long uid = getUsuarioActualId();
             pago.setUsuarioRegistroId(uid != null ? uid : 1L);
+        }
+
+        // Si la factura es CREDITO, aplicamos el pago a la cuota más antigua
+        // pendiente y vinculamos el pago a esa cuota.
+        if ("CREDITO".equals(factura.getTipoPago())) {
+            aplicarPagoACuota(pago, factura);
         }
 
         Pago pagGuardado = pagoRepository.save(pago);
@@ -89,10 +103,55 @@ public class PagoServiceImpl implements PagoService {
         return pagoMapper.toResponse(pagGuardado);
     }
 
+    /**
+     * Aplica el monto del pago a la cuota más antigua que aún tiene saldo.
+     * Si el monto del pago supera el saldo de la cuota, solo cubre esa cuota
+     * (no se reparte automáticamente entre varias). El operador debe registrar
+     * un segundo pago si quiere abonar a la siguiente cuota.
+     */
+    private void aplicarPagoACuota(Pago pago, Factura factura) {
+        Optional<FacturaCuota> cuotaOpt = facturaCuotaRepository
+            .findFirstByFacturaIdAndEstadoInOrderByNumeroCuotaAsc(factura.getId(), CUOTA_PENDIENTE);
+
+        if (cuotaOpt.isEmpty()) {
+            log.warn("Factura {} es CREDITO pero no tiene cuotas pendientes — pago se registra suelto",
+                     factura.getId());
+            return;
+        }
+
+        FacturaCuota cuota = cuotaOpt.get();
+        BigDecimal saldoCuota = cuota.getMonto().subtract(cuota.getMontoPagado());
+
+        if (pago.getMonto().compareTo(saldoCuota) > 0) {
+            throw new IllegalArgumentException(String.format(
+                "El monto del pago (%s) excede el saldo de la cuota %d (%s). " +
+                "Registre un pago por el saldo exacto de la cuota o ajuste el monto.",
+                pago.getMonto(), cuota.getNumeroCuota(), saldoCuota));
+        }
+
+        BigDecimal nuevoPagado = cuota.getMontoPagado().add(pago.getMonto());
+        cuota.setMontoPagado(nuevoPagado);
+
+        if (nuevoPagado.compareTo(cuota.getMonto()) >= 0) {
+            cuota.setEstado("PAGADA");
+            cuota.setFechaPagoCompleta(LocalDateTime.now());
+            factura.setCuotasPagadas(factura.getCuotasPagadas() + 1);
+            log.debug("Cuota {} de factura {} saldada", cuota.getNumeroCuota(), factura.getId());
+        } else {
+            cuota.setEstado("PARCIAL");
+        }
+
+        facturaCuotaRepository.save(cuota);
+
+        pago.setNumeroCuota(cuota.getNumeroCuota());
+        pago.setFacturaCuotaId(cuota.getId());
+    }
+
     private void validarFacturaEstadoValido(Factura factura) {
-        if ("CANCELADA".equalsIgnoreCase(factura.getEstado())) {
-            log.warn("Factura {} está cancelada, no se puede registrar pago", factura.getId());
-            throw new RuntimeException("Factura está cancelada, no se puede registrar pago");
+        if ("CANCELADA".equalsIgnoreCase(factura.getEstado())
+            || "ANULADA".equalsIgnoreCase(factura.getEstado())) {
+            log.warn("Factura {} está anulada, no se puede registrar pago", factura.getId());
+            throw new RuntimeException("Factura está anulada, no se puede registrar pago");
         }
     }
 
@@ -121,7 +180,7 @@ public class PagoServiceImpl implements PagoService {
         factura.setMontoPagado(nuevoMontoPagado);
 
         if (nuevoMontoPagado.compareTo(factura.getMontoOriginal()) >= 0) {
-            factura.setEstado("PAGADO");
+            factura.setEstado("PAGADA");
             log.debug("Factura {} completamente pagada", factura.getId());
         } else if (nuevoMontoPagado.compareTo(BigDecimal.ZERO) > 0) {
             factura.setEstado("PARCIAL");

@@ -8,11 +8,17 @@ import com.escuela.estudiantes.service.DocumentoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -79,5 +85,47 @@ public class DocumentoController {
         AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ESCRITURA);
         service.eliminar(estudianteId, documentoId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Subir archivo binario", description = "Recibe el archivo via multipart y lo almacena. ADMIN/STAFF.")
+    public ResponseEntity<DocumentoResponse> upload(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long estudianteId,
+            @RequestParam("tipo") String tipo,
+            @RequestParam("archivo") MultipartFile archivo) {
+        AuthHeaderGuard.requireAuth(userEmail);
+        AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ESCRITURA);
+        DocumentoResponse creado = service.subirArchivo(estudianteId, tipo, archivo);
+        URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/estudiantes/{eid}/documentos/{id}")
+                .buildAndExpand(estudianteId, creado.id())
+                .toUri();
+        return ResponseEntity.created(location).body(creado);
+    }
+
+    @GetMapping("/{documentoId}/descargar")
+    @Operation(summary = "Descargar archivo binario del documento")
+    public ResponseEntity<Resource> descargar(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long estudianteId,
+            @PathVariable Long documentoId) {
+        AuthHeaderGuard.requireAuth(userEmail);
+        AuthHeaderGuard.requireAnyRole(userRoles, ROLES_LECTURA);
+
+        DocumentoService.ArchivoDescarga descarga = service.descargar(estudianteId, documentoId);
+        MediaType contentType = descarga.mimeType() != null && !descarga.mimeType().isBlank()
+                ? MediaType.parseMediaType(descarga.mimeType())
+                : MediaType.APPLICATION_OCTET_STREAM;
+        String filenameEncoded = URLEncoder.encode(descarga.nombreOriginal(), StandardCharsets.UTF_8)
+                .replace("+", "%20");
+
+        return ResponseEntity.ok()
+                .contentType(contentType)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + descarga.nombreOriginal() + "\"; filename*=UTF-8''" + filenameEncoded)
+                .body(descarga.resource());
     }
 }

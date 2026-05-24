@@ -13,5 +13,8 @@ public record FacturaListResponse(
     BigDecimal saldo,
     String estado,
     LocalDate fechaEmision,
+    String tipoPago,
+    Integer numeroCuotas,
+    Integer cuotasPagadas,
     LocalDateTime createdAt
 ) {}

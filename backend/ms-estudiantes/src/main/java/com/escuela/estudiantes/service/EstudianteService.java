@@ -23,4 +23,11 @@ public interface EstudianteService {
     EstudianteResponse update(Long id, UpdateEstudianteRequest request);
 
     void softDelete(Long id);
+
+    /**
+     * Cambia manualmente el estado academico del estudiante validando las
+     * transiciones permitidas. Si se provee un motivo, se anexa a las
+     * observaciones del estudiante con timestamp.
+     */
+    EstudianteResponse cambiarEstado(Long id, String nuevoEstado, String motivo);
 }

@@ -14,11 +14,13 @@ import com.escuela.asignaciones.feign.VehiculoClient;
 import com.escuela.asignaciones.mapper.AsignacionMapper;
 import com.escuela.asignaciones.repository.AsignacionRepository;
 import com.escuela.asignaciones.repository.HistorialEstadoRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -56,6 +58,14 @@ class AsignacionServiceImplTest {
 
     @InjectMocks
     private AsignacionServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        // AsignacionServiceImpl usa lazy init para 'mapper' (no esta en el
+        // constructor). @InjectMocks no lo establece con constructor injection
+        // completo; forzamos field injection para que los stubs funcionen.
+        ReflectionTestUtils.setField(service, "mapper", mapper);
+    }
 
     @Test
     void testFindById_Success() {

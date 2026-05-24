@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public record CreateUsuarioRequest(
@@ -20,5 +21,12 @@ public record CreateUsuarioRequest(
         @Pattern(regexp = "^0\\d{9}$|^$", message = "Telefono ecuatoriano invalido")
         String telefono,
         @NotEmpty(message = "Debe asignarse al menos un rol")
-        List<String> roles
+        List<String> roles,
+        @Size(max = 10) String cedula,
+        LocalDate fechaNacimiento,
+        String genero,
+        String direccion,
+        String ciudad,
+        String provincia,
+        Boolean passwordChangeRequired
 ) {}

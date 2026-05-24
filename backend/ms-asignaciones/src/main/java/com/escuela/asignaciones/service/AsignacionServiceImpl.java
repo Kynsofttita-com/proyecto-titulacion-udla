@@ -65,6 +65,13 @@ public class AsignacionServiceImpl implements AsignacionService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<AsignacionListResponse> findByEstudianteId(Long estudianteId, Pageable pageable) {
+        return repository.findByEstudianteIdAndDeletedAtIsNull(estudianteId, pageable)
+                .map(getMapper()::toListResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public AsignacionResponse findById(Long id) {
         Asignacion asignacion = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new AsignacionNotFoundException(id));
@@ -139,7 +146,14 @@ public class AsignacionServiceImpl implements AsignacionService {
     private void validarEntidadesExisten(CreateAsignacionRequest request) {
         try {
             var estudiante = estudianteClient.obtenerEstudiante(request.estudianteId());
-            if (!estudiante.estado().equals("ACTIVO")) {
+            // Estados validos para recibir asignaciones: MATRICULADO (ya pago, listo
+            // para arrancar), CURSANDO (en curso, recibe mas clases) y el legado
+            // ACTIVO (defensa por compat). NO se permite PRE_MATRICULADO, COMPLETADO
+            // ni RETIRADO.
+            String estado = estudiante.estado();
+            if (!"MATRICULADO".equals(estado)
+                && !"CURSANDO".equals(estado)
+                && !"ACTIVO".equals(estado)) {
                 throw new EstudianteInactivoException(request.estudianteId());
             }
         } catch (Exception e) {

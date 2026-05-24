@@ -1,10 +1,13 @@
 package com.escuela.cobros.service;
 
+import com.escuela.cobros.dto.FacturaCuotaResponse;
 import com.escuela.cobros.dto.FacturaListResponse;
 import com.escuela.cobros.dto.FacturaRequest;
 import com.escuela.cobros.dto.FacturaResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface FacturaService {
 
@@ -19,4 +22,7 @@ public interface FacturaService {
     FacturaResponse update(Long id, FacturaRequest request);
 
     void softDelete(Long id);
+
+    /** Devuelve el cronograma de cuotas de una factura (vacío si CONTADO). */
+    List<FacturaCuotaResponse> findCuotas(Long facturaId);
 }
