@@ -4,11 +4,12 @@
  */
 
 export const LABELS_SITUACION_PAGO: Record<string, string> = {
-  SIN_DEUDA:    'Sin deuda',
-  PAGO_PARCIAL: 'Pago parcial',
-  AL_DIA:       'Al día',
-  EN_MORA:      'En mora',
-  PAGADO_TOTAL: 'Pagado total'
+  PENDIENTE_MATRICULA: 'Pendiente matrícula',
+  SIN_DEUDA:           'Sin deuda',
+  PAGO_PARCIAL:        'Pago parcial',
+  AL_DIA:              'Al día',
+  EN_MORA:             'En mora',
+  PAGADO_TOTAL:        'Pagado total'
 }
 
 export const LABELS_ESTADO_ESTUDIANTE: Record<string, string> = {
