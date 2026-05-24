@@ -251,6 +251,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import estudiantesService from '@/services/estudiantes'
 import api from '@/services/api'
+import { humanLabel } from '@/utils/labels'
 
 const vTooltip = Tooltip
 const router = useRouter()
@@ -413,7 +414,7 @@ const confirmarCambioEstado = async () => {
     toast.add({
       severity: 'success',
       summary: 'Estado actualizado',
-      detail: `Ahora está en estado ${nuevoEstado.value}`,
+      detail: `Ahora está en estado ${humanLabel(nuevoEstado.value)}`,
       life: 4000
     })
     mostrarEstado.value = false

@@ -172,8 +172,8 @@
           <div v-if="selEstudiante" class="mt-3 rounded-lg border border-brand-200 bg-brand-50/40 p-3 animate-fade-up">
             <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
               <DetailRow label="Cédula" :value="selEstudiante.cedula" />
-              <DetailRow label="Estado académico" :value="selEstudiante.estado" />
-              <DetailRow label="Situación pago" :value="selEstudiante.situacionPago || '—'" />
+              <DetailRow label="Estado académico" :value="humanLabel(selEstudiante.estado)" />
+              <DetailRow label="Situación pago" :value="humanLabel(selEstudiante.situacionPago)" />
               <DetailRow label="Email" :value="selEstudiante.email" />
             </div>
           </div>
@@ -543,6 +543,7 @@ import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import api from '@/services/api'
+import { humanLabel } from '@/utils/labels'
 
 const vTooltip = Tooltip
 
