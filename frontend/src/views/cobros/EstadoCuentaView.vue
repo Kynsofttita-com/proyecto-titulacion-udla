@@ -27,6 +27,72 @@
       <StatCard label="Facturas activas" :value="stats.facturas" icon="pi pi-receipt" color="info" :hint="`${stats.pagos} pagos registrados`" />
     </div>
 
+    <!-- ====== ESTUDIANTES POR SITUACIÓN DE PAGO ====== -->
+    <div class="card overflow-hidden">
+      <div class="px-5 pt-5 pb-2 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h3 class="heading-3">Estudiantes por estado de pago</h3>
+          <p class="text-xs text-ink-500 mt-0.5">
+            Identifica de un vistazo a quién cobrar matrícula, quién tiene saldo y quién ya pagó todo.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex border-b border-ink-200 bg-ink-50/40 mt-2">
+        <button
+          v-for="t in tabsEstudiantes"
+          :key="t.key"
+          @click="tabEst = t.key"
+          :class="['flex-1 px-4 py-3 text-sm font-medium transition border-b-2 flex items-center justify-center gap-2',
+            tabEst === t.key
+              ? 'border-brand-600 text-brand-700 bg-white'
+              : 'border-transparent text-ink-600 hover:bg-ink-100/60']"
+        >
+          <i :class="['pi', t.icon]" />
+          <span>{{ t.label }}</span>
+          <span :class="['inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold',
+            tabEst === t.key ? t.activeBadge : 'bg-ink-200 text-ink-600']">
+            {{ estudiantesPorTab(t.key).length }}
+          </span>
+        </button>
+      </div>
+
+      <div class="p-5">
+        <EmptyState
+          v-if="estudiantesPorTab(tabEst).length === 0"
+          :icon="tabEst === 'sin_pagar' ? 'pi-check-circle' : tabEst === 'con_saldo' ? 'pi-thumbs-up' : 'pi-users'"
+          :title="tabEst === 'sin_pagar' ? 'Nadie sin facturar' : tabEst === 'con_saldo' ? 'Nadie con saldo pendiente' : 'Nadie al día aún'"
+          :description="tabEst === 'sin_pagar' ? 'Todos los estudiantes activos ya tienen facturas emitidas.' : tabEst === 'con_saldo' ? 'Todos los estudiantes pagaron o no tienen facturas.' : 'Los estudiantes que paguen todas sus facturas aparecerán aquí.'"
+        />
+        <ul v-else class="divide-y divide-ink-200">
+          <li
+            v-for="est in estudiantesPorTab(tabEst)"
+            :key="est.id"
+            class="flex items-center gap-4 py-3 hover:bg-ink-50/50 transition rounded-lg px-3 -mx-3"
+          >
+            <div class="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+              {{ initials(est.nombreCompleto) }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-ink-900 truncate">{{ est.nombreCompleto }}</p>
+              <p class="text-[11px] text-ink-500">{{ est.cedula }} · <StatusBadge :status="est.estado" /></p>
+            </div>
+            <div class="hidden md:block text-right">
+              <p class="text-[10px] uppercase tracking-wider text-ink-500 font-semibold">Situación</p>
+              <StatusBadge :status="est.situacionPago || 'SIN_DEUDA'" />
+            </div>
+            <Button
+              :label="tabEst === 'sin_pagar' ? 'Facturar' : tabEst === 'con_saldo' ? 'Cobrar' : 'Ver'"
+              :icon="tabEst === 'sin_pagar' ? 'pi pi-plus' : tabEst === 'con_saldo' ? 'pi pi-dollar' : 'pi pi-eye'"
+              size="small"
+              :outlined="tabEst === 'al_dia'"
+              @click="accionEstudiante(est, tabEst)"
+            />
+          </li>
+        </ul>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
       <!-- ============================= FACTURAS ============================ -->
       <DataTableCard title="Facturas" :description="`${facturas.length} facturas en el sistema`">
@@ -59,6 +125,19 @@
             <template #body="{ data }">
               <p class="text-sm font-semibold">{{ formatMoney(data.montoOriginal) }}</p>
               <p class="text-[11px] text-ink-500">Pagado: {{ formatMoney(data.montoPagado) }}</p>
+            </template>
+          </Column>
+          <Column header="Saldo" style="width: 110px">
+            <template #body="{ data }">
+              <span
+                v-if="saldoFactura(data) > 0"
+                class="inline-flex items-center px-2 py-0.5 rounded-md bg-warning-50 text-warning-700 text-xs font-bold border border-warning-500/20"
+              >
+                {{ formatMoney(saldoFactura(data)) }}
+              </span>
+              <span v-else class="inline-flex items-center gap-1 text-xs text-success-600 font-medium">
+                <i class="pi pi-check-circle text-[10px]" /> Pagada
+              </span>
             </template>
           </Column>
           <Column header="Pago">
@@ -176,6 +255,63 @@
               <DetailRow label="Situación pago" :value="humanLabel(selEstudiante.situacionPago)" />
               <DetailRow label="Email" :value="selEstudiante.email" />
             </div>
+          </div>
+
+          <!-- Resumen académico-financiero -->
+          <div v-if="cargandoResumen" class="mt-3 rounded-lg bg-ink-50 p-3 text-center text-xs text-ink-500">
+            <i class="pi pi-spin pi-spinner mr-2" /> Cargando resumen financiero del estudiante...
+          </div>
+          <div v-else-if="resumenAcad && resumenAcad.tieneCursoAsignado" class="mt-3 rounded-xl border-2 border-brand-300 bg-gradient-to-br from-brand-50/60 to-brand-50/20 p-4 animate-fade-up">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <p class="text-[10px] uppercase tracking-wider text-brand-700 font-semibold">Curso contratado</p>
+                <p class="text-sm font-bold text-ink-900">{{ resumenAcad.tipoCursoNombre }}</p>
+                <p class="text-[11px] text-ink-500 mt-0.5">Categoría {{ resumenAcad.categoriaLicenciaCodigo }} · {{ resumenAcad.duracionHoras }} h</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[10px] uppercase tracking-wider text-ink-500 font-semibold">Precio</p>
+                <p class="text-base font-bold text-brand-700">{{ formatMoney(resumenAcad.precioCurso) }}</p>
+              </div>
+            </div>
+
+            <!-- Barra de progreso -->
+            <div class="mb-3">
+              <div class="flex items-center justify-between text-[11px] text-ink-600 mb-1.5">
+                <span>Pagado <strong>{{ formatMoney(resumenAcad.totalPagado) }}</strong></span>
+                <span>Saldo <strong class="text-warning-700">{{ formatMoney(resumenAcad.saldoTotal) }}</strong></span>
+              </div>
+              <div class="h-2 rounded-full bg-ink-200/80 overflow-hidden">
+                <div
+                  class="h-full bg-success-500 rounded-full transition-all"
+                  :style="{ width: progresoPct + '%' }"
+                />
+              </div>
+              <p class="text-[10px] text-ink-500 mt-1">{{ progresoPct }}% pagado del curso completo</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 text-[11px]">
+              <div class="rounded-md bg-white/60 px-2 py-1.5 text-center">
+                <p class="text-ink-500 uppercase tracking-wider">Facturas</p>
+                <p class="font-bold text-ink-900">{{ resumenAcad.cantidadFacturas }}</p>
+              </div>
+              <div class="rounded-md bg-white/60 px-2 py-1.5 text-center">
+                <p class="text-ink-500 uppercase tracking-wider">Facturado</p>
+                <p class="font-bold text-ink-900">{{ formatMoney(resumenAcad.totalFacturado) }}</p>
+              </div>
+              <div class="rounded-md bg-white/60 px-2 py-1.5 text-center">
+                <p class="text-ink-500 uppercase tracking-wider">Por facturar</p>
+                <p class="font-bold text-info-700">{{ formatMoney(precioRestantePorFacturar) }}</p>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="resumenAcad && !resumenAcad.tieneCursoAsignado" class="mt-3 rounded-lg border border-warning-500/30 bg-warning-50/60 p-3 text-sm text-warning-700 flex items-start gap-2 animate-fade-up">
+            <i class="pi pi-exclamation-triangle mt-0.5" />
+            <span>
+              <strong>Este estudiante no tiene tipo de curso asignado.</strong>
+              Asígnale uno desde
+              <router-link to="/estudiantes" class="font-semibold underline">Estudiantes → Editar</router-link>
+              antes de facturar, o factura un monto manual (ej: examen, material extra).
+            </span>
           </div>
         </div>
 
@@ -594,6 +730,7 @@ const formF = reactive<any>({
 const abrirFormFactura = () => {
   errF.value = ''
   selEstudiante.value = null
+  resumenAcad.value = null
   Object.assign(formF, {
     estudianteId: null, conceptoFacturacionId: null, montoOriginal: 0,
     fechaVencimiento: null, descripcion: '', tipoPago: 'CONTADO',
@@ -791,6 +928,9 @@ const initials = (n: string) => (n || '').split(' ').filter(Boolean).slice(0, 2)
 // ============ Helpers ============
 const formatMoney = (n: any) => `$${(parseFloat(n) || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+const saldoFactura = (f: any) =>
+  (parseFloat(f?.montoOriginal) || 0) - (parseFloat(f?.montoPagado) || 0)
+
 const metodoIcon = (m: string) => ({
   EFECTIVO: 'pi pi-dollar',
   TRANSFERENCIA: 'pi pi-arrows-h',
@@ -812,6 +952,40 @@ const DetailRow = defineComponent({
     ])
   }
 })
+
+// ============ Pestañas por situación de pago ============
+const tabEst = ref<'sin_pagar' | 'con_saldo' | 'al_dia'>('sin_pagar')
+const tabsEstudiantes = [
+  { key: 'sin_pagar', label: 'Sin pagar',  icon: 'pi-exclamation-circle', activeBadge: 'bg-warning-100 text-warning-700' },
+  { key: 'con_saldo', label: 'Con saldo',  icon: 'pi-clock',              activeBadge: 'bg-info-100 text-info-700' },
+  { key: 'al_dia',    label: 'Al día',     icon: 'pi-check-circle',       activeBadge: 'bg-success-100 text-success-700' }
+] as const
+
+const estudiantesPorTab = (key: string) => {
+  const sit = (e: any) => e.situacionPago
+  return estudiantes.value.filter(e => {
+    if (key === 'sin_pagar') return sit(e) === 'PENDIENTE_MATRICULA'
+    if (key === 'con_saldo') return ['PAGO_PARCIAL', 'EN_MORA', 'AL_DIA'].includes(sit(e))
+    if (key === 'al_dia')    return ['PAGADO_TOTAL', 'SIN_DEUDA'].includes(sit(e))
+    return false
+  })
+}
+
+const accionEstudiante = (est: any, tab: string) => {
+  if (tab === 'sin_pagar') {
+    // Abrir form factura precargado con este estudiante
+    abrirFormFactura()
+    selEstudiante.value = est
+  } else if (tab === 'con_saldo') {
+    // Abrir form de pago precargado con este estudiante
+    abrirFormPago()
+    selEstudiantePago.value = est
+    onEstudiantePagoSelect({ value: est })
+  } else {
+    // Ver detalle (futuro: navegar a /estudiantes/:id)
+    alert(`${est.nombreCompleto} está al día.`)
+  }
+}
 
 // ============ Sincronización de situacion_pago ============
 const sincronizando = ref(false)
@@ -860,7 +1034,51 @@ const cargar = async () => {
   }
 }
 
-watch(selEstudiante, (v) => { if (v) formF.estudianteId = v.id })
+// Resumen académico-financiero (curso + total + pagado + saldo) que muestra
+// la mini-card y se usa para auto-completar el monto.
+const resumenAcad = ref<any>(null)
+const cargandoResumen = ref(false)
+
+const progresoPct = computed(() => {
+  const r = resumenAcad.value
+  if (!r || !r.precioCurso || r.precioCurso <= 0) return 0
+  const pagado = parseFloat(r.totalPagado || 0)
+  const pct = (pagado / parseFloat(r.precioCurso)) * 100
+  return Math.min(Math.max(Math.round(pct), 0), 100)
+})
+
+const precioRestantePorFacturar = computed(() => {
+  const r = resumenAcad.value
+  if (!r) return 0
+  const dif = parseFloat(r.precioCurso || 0) - parseFloat(r.totalFacturado || 0)
+  return Math.max(dif, 0)
+})
+
+const cargarResumenAcademico = async (estudianteId: number) => {
+  cargandoResumen.value = true
+  resumenAcad.value = null
+  try {
+    const { data } = await api.get(`/facturas/estudiante/${estudianteId}/resumen-academico`)
+    resumenAcad.value = data
+    // Auto-fill del monto si todavía está en 0 y hay saldo:
+    if ((!formF.montoOriginal || formF.montoOriginal === 0) && data.saldoFacturado > 0) {
+      formF.montoOriginal = parseFloat(data.saldoFacturado)
+    } else if ((!formF.montoOriginal || formF.montoOriginal === 0) && data.saldoTotal > 0) {
+      formF.montoOriginal = parseFloat(data.saldoTotal)
+    }
+  } catch (e) {
+    console.warn('No se pudo cargar resumen académico', e)
+  } finally { cargandoResumen.value = false }
+}
+
+watch(selEstudiante, (v) => {
+  if (v) {
+    formF.estudianteId = v.id
+    cargarResumenAcademico(v.id)
+  } else {
+    resumenAcad.value = null
+  }
+})
 
 onMounted(cargar)
 </script>
