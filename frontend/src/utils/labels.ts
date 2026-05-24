@@ -17,10 +17,19 @@ export const LABELS_ESTADO_ESTUDIANTE: Record<string, string> = {
   MATRICULADO:     'Matriculado',
   CURSANDO:        'Cursando',
   COMPLETADO:      'Completado',
-  RETIRADO:        'Retirado',
-  // Legado (por filas no migradas)
-  ACTIVO:          'Matriculado',
-  INACTIVO:        'Inactivo'
+  RETIRADO:        'Retirado'
+  // OJO: NO mapear 'ACTIVO' aquí porque colisiona con catálogos
+  // (concepto/tipo curso). Si quedan estudiantes legacy con ACTIVO,
+  // el LABELS_GENERICO lo resuelve a "Activo" abajo.
+}
+
+/**
+ * Etiquetas genéricas que aplican a entidades de catálogo
+ * (conceptos, tipos curso, usuarios, etc).
+ */
+export const LABELS_GENERICO: Record<string, string> = {
+  ACTIVO:   'Activo',
+  INACTIVO: 'Inactivo'
 }
 
 export const LABELS_ESTADO_FACTURA: Record<string, string> = {
@@ -46,6 +55,7 @@ export const LABELS_ESTADO_CUOTA: Record<string, string> = {
 
 /** Lookup compuesto: si existe label específica devuelve esa, sino devuelve el valor crudo. */
 const ALL: Record<string, string> = {
+  ...LABELS_GENERICO,
   ...LABELS_SITUACION_PAGO,
   ...LABELS_ESTADO_ESTUDIANTE,
   ...LABELS_ESTADO_FACTURA,
