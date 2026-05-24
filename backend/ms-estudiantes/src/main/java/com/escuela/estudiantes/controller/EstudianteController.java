@@ -6,6 +6,7 @@ import com.escuela.estudiantes.dto.EstudianteDetailResponse;
 import com.escuela.estudiantes.dto.EstudianteListResponse;
 import com.escuela.estudiantes.dto.EstudianteResponse;
 import com.escuela.estudiantes.dto.UpdateEstudianteRequest;
+import com.escuela.estudiantes.service.EstudianteEstadoService;
 import com.escuela.estudiantes.service.EstudianteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,6 +34,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -52,9 +54,11 @@ public class EstudianteController {
     private static final Set<String> ROLES_BORRADO = Set.of("ADMIN");
 
     private final EstudianteService service;
+    private final EstudianteEstadoService estadoService;
 
-    public EstudianteController(EstudianteService service) {
+    public EstudianteController(EstudianteService service, EstudianteEstadoService estadoService) {
         this.service = service;
+        this.estadoService = estadoService;
     }
 
     // -----------------------------------------------------------------------
@@ -173,6 +177,34 @@ public class EstudianteController {
         validarRoles(userRoles, ROLES_BORRADO);
         service.softDelete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // -----------------------------------------------------------------------
+    // POST /estudiantes/sync-situacion-pago (ADMIN)
+    // -----------------------------------------------------------------------
+
+    @PostMapping("/sync-situacion-pago")
+    @Operation(summary = "Sincroniza situacion_pago de todos los estudiantes",
+               description = "Llama a MS-Cobros para cada estudiante y actualiza el campo. Util para resolver "
+                           + "drift cuando los eventos pago.registrado se perdieron (ej: cola no existia). Solo ADMIN.")
+    public ResponseEntity<Map<String, Integer>> sincronizarSituacionPago(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles) {
+        validarAutenticacion(userEmail);
+        validarRoles(userRoles, ROLES_BORRADO); // solo ADMIN
+        return ResponseEntity.ok(estadoService.sincronizarSituacionPagoMasivo());
+    }
+
+    @PostMapping("/{id}/sync-situacion-pago")
+    @Operation(summary = "Sincroniza situacion_pago de un estudiante puntual")
+    public ResponseEntity<Map<String, String>> sincronizarSituacionPagoEstudiante(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id) {
+        validarAutenticacion(userEmail);
+        validarRoles(userRoles, ROLES_ESCRITURA);
+        String nueva = estadoService.sincronizarSituacionPago(id);
+        return ResponseEntity.ok(Map.of("situacionPago", nueva != null ? nueva : "SIN_DEUDA"));
     }
 
     // -----------------------------------------------------------------------
