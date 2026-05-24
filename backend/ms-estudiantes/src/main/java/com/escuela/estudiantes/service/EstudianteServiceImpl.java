@@ -13,22 +13,31 @@ import com.escuela.estudiantes.dto.UpdateEstudianteRequest;
 import com.escuela.estudiantes.entity.ContactoEmergencia;
 import com.escuela.estudiantes.entity.Estudiante;
 import com.escuela.estudiantes.exception.CedulaDuplicadaException;
+import com.escuela.estudiantes.feign.AuthClient;
 import com.escuela.estudiantes.exception.CedulaInvalidaException;
 import com.escuela.estudiantes.exception.EmailDuplicadoException;
 import com.escuela.estudiantes.exception.EstudianteNotFoundException;
+import com.escuela.estudiantes.exception.TransicionEstadoInvalidaException;
 import com.escuela.estudiantes.mapper.EstudianteMapper;
 import com.escuela.estudiantes.mapper.EstudianteMapperImpl;
 import com.escuela.estudiantes.repository.EstudianteRepository;
 import com.escuela.estudiantes.specification.EstudianteSpecifications;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Implementacion del servicio de Estudiantes.
@@ -60,12 +69,15 @@ public class EstudianteServiceImpl implements EstudianteService {
 
     private final EstudianteRepository repository;
     private final EstudianteEventDispatcher eventDispatcher;
+    private final ObjectProvider<AuthClient> authClientProvider;
     private EstudianteMapper mapper;
 
     public EstudianteServiceImpl(EstudianteRepository repository,
-                                 EstudianteEventDispatcher eventDispatcher) {
+                                 EstudianteEventDispatcher eventDispatcher,
+                                 ObjectProvider<AuthClient> authClientProvider) {
         this.repository = repository;
         this.eventDispatcher = eventDispatcher;
+        this.authClientProvider = authClientProvider;
     }
 
     private EstudianteMapper getMapper() {
@@ -97,6 +109,11 @@ public class EstudianteServiceImpl implements EstudianteService {
 
         Estudiante guardado = repository.save(estudiante);
         log.info("Estudiante creado id={} cedula={}", guardado.getId(), guardado.getCedula());
+
+        // Auto-crear cuenta de Usuario en MS-Auth (rol ESTUDIANTE) para que
+        // pueda loguearse. El enlace usuario_id se completa via el evento
+        // auth.usuario.creado que escucha EstudianteAuthEventListener.
+        crearCuentaUsuarioAsociada(guardado);
 
         eventDispatcher.publishCreado(EstudianteCreadoEvent.builder()
                 .estudianteId(guardado.getId())
@@ -168,6 +185,70 @@ public class EstudianteServiceImpl implements EstudianteService {
         return getMapper().toResponse(actualizado);
     }
 
+    /**
+     * Matriz de transiciones manuales permitidas. Las transiciones
+     * {@code PRE_MATRICULADO -> MATRICULADO} y {@code MATRICULADO -> CURSANDO}
+     * NO estan aqui porque solo deben ocurrir via eventos
+     * (pago.registrado / asignacion.creada) para mantener consistencia con
+     * MS-Cobros y MS-Asignaciones.
+     */
+    private static final Map<String, Set<String>> TRANSICIONES_PERMITIDAS = Map.of(
+            "MATRICULADO", Set.of("COMPLETADO", "RETIRADO"),
+            "CURSANDO",    Set.of("COMPLETADO", "RETIRADO"),
+            "COMPLETADO",  Set.of("CURSANDO"),
+            "RETIRADO",    Set.of("MATRICULADO", "CURSANDO")
+    );
+
+    private static final DateTimeFormatter OBS_TIMESTAMP =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    @Override
+    @Transactional
+    public EstudianteResponse cambiarEstado(Long id, String nuevoEstado, String motivo) {
+        Estudiante estudiante = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new EstudianteNotFoundException(id));
+
+        String estadoActual = estudiante.getEstado();
+        if (Objects.equals(estadoActual, nuevoEstado)) {
+            throw new TransicionEstadoInvalidaException(
+                    "El estudiante ya esta en estado " + nuevoEstado);
+        }
+
+        Set<String> permitidos = TRANSICIONES_PERMITIDAS.get(estadoActual);
+        if (permitidos == null || !permitidos.contains(nuevoEstado)) {
+            throw new TransicionEstadoInvalidaException(estadoActual, nuevoEstado);
+        }
+
+        if ("RETIRADO".equals(nuevoEstado) && (motivo == null || motivo.isBlank())) {
+            throw new TransicionEstadoInvalidaException(
+                    "El motivo es obligatorio al marcar el estudiante como RETIRADO");
+        }
+
+        estudiante.setEstado(nuevoEstado);
+
+        if (motivo != null && !motivo.isBlank()) {
+            String entrada = "[" + LocalDateTime.now().format(OBS_TIMESTAMP) + "] "
+                    + estadoActual + " -> " + nuevoEstado + ": " + motivo.trim();
+            String obsPrevia = estudiante.getObservaciones();
+            estudiante.setObservaciones(
+                    obsPrevia == null || obsPrevia.isBlank() ? entrada : obsPrevia + "\n" + entrada);
+        }
+
+        Estudiante actualizado = repository.save(estudiante);
+        log.info("Estudiante id={} cambio de estado {} -> {} (motivo presente: {})",
+                id, estadoActual, nuevoEstado, motivo != null && !motivo.isBlank());
+
+        eventDispatcher.publishActualizado(EstudianteActualizadoEvent.builder()
+                .estudianteId(actualizado.getId())
+                .cedula(actualizado.getCedula())
+                .email(actualizado.getEmail())
+                .nombreCompleto(nombreCompleto(actualizado))
+                .estado(actualizado.getEstado())
+                .build());
+
+        return getMapper().toResponse(actualizado);
+    }
+
     @Override
     @Transactional
     public void softDelete(Long id) {
@@ -195,5 +276,44 @@ public class EstudianteServiceImpl implements EstudianteService {
 
     private String nombreCompleto(Estudiante e) {
         return e.getNombre() + " " + e.getApellido();
+    }
+
+    /**
+     * Crea (best-effort) una cuenta de Usuario asociada al estudiante en
+     * MS-Auth. Si MS-Auth esta caido o el email ya existe alli, se logguea y
+     * se sigue: el estudiante ya quedo persistido y el enlace
+     * {@code usuario_id} puede completarse despues por evento RabbitMQ.
+     */
+    private void crearCuentaUsuarioAsociada(Estudiante e) {
+        AuthClient client = authClientProvider.getIfAvailable();
+        if (client == null) {
+            log.warn("AuthClient no disponible (perfil test o ms-auth caido); " +
+                    "estudiante id={} sin cuenta de Usuario auto-creada", e.getId());
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("email", e.getEmail());
+        payload.put("password", PasswordGenerator.generarTemporal());
+        payload.put("nombre", e.getNombre());
+        payload.put("apellido", e.getApellido());
+        payload.put("telefono", e.getTelefono());
+        payload.put("roles", java.util.List.of("ESTUDIANTE"));
+        payload.put("cedula", e.getCedula());
+        payload.put("fechaNacimiento", e.getFechaNacimiento() != null
+                ? e.getFechaNacimiento().toString() : null);
+        payload.put("genero", e.getGenero());
+        payload.put("direccion", e.getDireccion());
+        payload.put("passwordChangeRequired", Boolean.TRUE);
+
+        try {
+            client.crearUsuario(payload);
+            log.info("Usuario auto-creado en MS-Auth para estudiante id={} email={} (password temporal generada, cambio obligatorio en primer login)",
+                    e.getId(), e.getEmail());
+        } catch (Exception ex) {
+            log.warn("No se pudo auto-crear Usuario en MS-Auth para estudiante id={} email={}: {}. " +
+                    "El estudiante queda sin cuenta de acceso; puede crearse manualmente en /usuarios.",
+                    e.getId(), e.getEmail(), ex.getMessage());
+        }
     }
 }
