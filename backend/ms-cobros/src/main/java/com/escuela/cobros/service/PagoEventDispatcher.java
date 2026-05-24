@@ -3,7 +3,7 @@ package com.escuela.cobros.service;
 import com.escuela.cobros.config.RabbitConfig;
 import com.escuela.cobros.entity.Factura;
 import com.escuela.cobros.entity.Pago;
-import com.escuela.cobros.event.CobroRegistradoEvent;
+import com.escuela.common.events.cobros.PagoRegistradoEvent;
 import com.escuela.common.events.publisher.EventPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -35,7 +35,7 @@ public class PagoEventDispatcher {
                 return;
             }
 
-            CobroRegistradoEvent event = new CobroRegistradoEvent(
+            PagoRegistradoEvent event = new PagoRegistradoEvent(
                 pago.getId(),
                 factura.getId(),
                 factura.getEstudianteId(),
@@ -46,9 +46,9 @@ public class PagoEventDispatcher {
             );
 
             publisher.publish(RabbitConfig.EXCHANGE_NAME, "pago.registrado", event);
-            log.info("Evento CobroRegistradoEvent publicado para pago: {}", pago.getId());
+            log.info("Evento PagoRegistradoEvent publicado para pago: {}", pago.getId());
         } catch (Exception e) {
-            log.error("Error publicando evento CobroRegistradoEvent", e);
+            log.error("Error publicando evento PagoRegistradoEvent", e);
         }
     }
 

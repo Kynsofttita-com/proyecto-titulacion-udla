@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 
 public class AsignacionCreadaEvent extends BaseEvent {
 
+    public static final String ROUTING_KEY = "asignacion.creada";
+
     @JsonProperty("asignacion_id")
     private Long asignacionId;
 
