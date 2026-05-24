@@ -34,6 +34,9 @@
         <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Finanzas</p>
         <NavItem to="/cobros"        icon="pi-wallet"    label="Cobros y Pagos" />
 
+        <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Mi cuenta</p>
+        <NavItem to="/perfil" icon="pi-user" label="Mi perfil" />
+
         <p v-if="isAdmin" class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Sistema</p>
         <NavItem v-if="isAdmin" to="/usuarios"      icon="pi-users"  label="Usuarios" />
         <NavItem v-if="isAdmin" to="/configuracion" icon="pi-cog"    label="Configuración" />
@@ -95,12 +98,32 @@
           <button class="w-10 h-10 rounded-lg hover:bg-ink-100 text-ink-600 flex items-center justify-center transition" title="Ayuda">
             <i class="pi pi-question-circle" />
           </button>
+          <!-- Switcher de rol (visible solo si tiene múltiples roles) -->
+          <div v-if="authStore.hasMultipleRoles" class="hidden md:flex items-center">
+            <div class="w-px h-6 bg-ink-200 mx-2" />
+            <button
+              @click="toggleRoleMenu"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-ink-100 transition group"
+              v-tooltip.bottom="'Cambiar de rol activo'"
+            >
+              <div class="w-7 h-7 rounded-md bg-accent-50 text-accent-600 flex items-center justify-center">
+                <i class="pi pi-sync text-xs" />
+              </div>
+              <div class="text-left">
+                <p class="text-[10px] uppercase tracking-wider text-ink-500 leading-none">Actuando como</p>
+                <p class="text-xs font-bold text-ink-900 leading-tight mt-0.5">{{ authStore.currentRole }}</p>
+              </div>
+              <i class="pi pi-angle-down text-xs text-ink-400" />
+            </button>
+            <Menu ref="roleMenuRef" :model="roleMenu" popup class="!min-w-[260px]" :pt="{ submenuHeader: { class: 'text-xs uppercase text-ink-500' } }" />
+          </div>
+
           <div class="w-px h-6 bg-ink-200 mx-2" />
           <button @click="toggleUserMenu" class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-lg hover:bg-ink-100 transition">
             <Avatar :name="userName" size="sm" />
             <div class="hidden lg:block text-left">
               <p class="text-xs font-semibold text-ink-900 leading-tight">{{ userName }}</p>
-              <p class="text-[11px] text-ink-500 leading-tight">{{ primaryRole }}</p>
+              <p class="text-[11px] text-ink-500 leading-tight">{{ authStore.currentRole }}</p>
             </div>
             <i class="pi pi-angle-down text-xs text-ink-400" />
           </button>
@@ -108,12 +131,15 @@
         <Menu ref="userMenuRef" :model="userMenu" popup class="!min-w-[200px]" />
       </header>
 
-      <!-- Contenido scrollable -->
+      <!-- Contenido scrollable
+           Nota: sin <transition> envolviendo el <component> porque interactuaba
+           mal con componentes que usan Teleport interno (PrimeVue Password en
+           PerfilView) — el leave quedaba colgado y la siguiente vista no se
+           pintaba hasta recargar. El :key fuerza unmount/mount completo entre
+           rutas, así no hay estado residual entre vistas. -->
       <main class="flex-1 p-4 lg:p-8">
-        <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
+        <router-view v-slot="{ Component, route }">
+          <component :is="Component" :key="route.fullPath" />
         </router-view>
       </main>
 
@@ -131,24 +157,58 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Menu from 'primevue/menu'
+import Tooltip from 'primevue/tooltip'
 import NavItem from '@/components/ui/NavItem.vue'
 import Avatar from '@/components/ui/Avatar.vue'
+
+const vTooltip = Tooltip
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const mobileOpen = ref(false)
 const userMenuRef = ref<any>(null)
+const roleMenuRef = ref<any>(null)
 
 const userName = computed(() => {
   const u: any = authStore.user
   return u?.nombreCompleto || `${u?.nombre || ''} ${u?.apellido || ''}`.trim() || 'Usuario'
 })
 const userEmail = computed(() => authStore.user?.email || '')
-const primaryRole = computed(() => authStore.user?.roles?.[0] || '')
 const isAdmin = computed(() => authStore.hasRole(['ADMIN']))
 
 const toggleUserMenu = (e: Event) => userMenuRef.value?.toggle(e)
+const toggleRoleMenu = (e: Event) => roleMenuRef.value?.toggle(e)
+
+const ROLE_DESCRIPCIONES: Record<string, string> = {
+  ADMIN: 'Acceso total al sistema',
+  STAFF: 'Operaciones administrativas',
+  INSTRUCTOR: 'Ver clases y alumnos asignados',
+  ESTUDIANTE: 'Ver progreso académico'
+}
+
+const ROLE_ICONS: Record<string, string> = {
+  ADMIN: 'pi pi-shield',
+  STAFF: 'pi pi-briefcase',
+  INSTRUCTOR: 'pi pi-id-card',
+  ESTUDIANTE: 'pi pi-graduation-cap'
+}
+
+const roleMenu = computed(() => {
+  return authStore.roles.map(rol => ({
+    label: rol,
+    icon: rol === authStore.currentRole ? 'pi pi-check-circle' : ROLE_ICONS[rol] || 'pi pi-user',
+    command: () => cambiarRol(rol),
+    class: rol === authStore.currentRole ? 'bg-brand-50 text-brand-700 font-semibold' : ''
+  }))
+})
+
+const cambiarRol = (rol: string) => {
+  if (rol === authStore.currentRole) return
+  authStore.setActiveRole(rol)
+  // Refrescar la ruta actual para que los guards revalúen permisos
+  router.replace({ path: '/dashboard' })
+}
 
 const userMenu = [
   { label: 'Mi Perfil', icon: 'pi pi-user', command: () => router.push('/perfil') },
@@ -181,11 +241,3 @@ onMounted(() => window.addEventListener('keydown', onKey))
 onUnmounted(() => window.removeEventListener('keydown', onKey))
 </script>
 
-<style scoped>
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.15s ease;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-}
-</style>
