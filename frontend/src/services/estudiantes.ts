@@ -10,7 +10,10 @@ export interface CreateEstudianteRequest {
   telefono: string
   direccion: string
   tipoSangre?: string
-  categoriaLicenciaSolicitada?: string
+  /** ID del tipo de curso contratado (de auth_schema.tipos_curso). */
+  tipoCursoId?: number | null
+  /** ID de la categoría de licencia. Se deduce del tipoCurso si se omite. */
+  categoriaLicenciaId?: number | null
 }
 
 export interface UpdateEstudianteRequest extends Partial<CreateEstudianteRequest> {}
@@ -27,8 +30,11 @@ export interface EstudianteResponse {
   telefono?: string
   direccion?: string
   estado: string
+  situacionPago?: string
   fechaMatricula?: string | null
   tipoSangre?: string
+  tipoCursoId?: number | null
+  categoriaLicenciaId?: number | null
 }
 
 export interface ProgresoAcademico {
