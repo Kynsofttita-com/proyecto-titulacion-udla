@@ -296,6 +296,7 @@ services:
     environment:
       <<: *ms-environment
       FEIGN_MS_ESTUDIANTES_URL: http://ms-estudiantes:8082
+      FEIGN_MS_AUTH_URL: http://ms-auth:8081
     depends_on: *ms-depends_on
     networks:
       - escuela-network
