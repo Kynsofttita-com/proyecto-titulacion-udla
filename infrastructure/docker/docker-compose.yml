@@ -223,6 +223,10 @@ services:
       - "8082:8082"
     environment: *ms-environment
     depends_on: *ms-depends_on
+    volumes:
+      # Persistencia de documentos subidos por estudiantes (FileStorageService).
+      # Sin este volumen, los archivos se pierden al recrear el contenedor.
+      - estudiantes_documentos:/app/storage
     networks:
       - escuela-network
 
@@ -354,6 +358,9 @@ volumes:
   minio_data:
     driver: local
     name: escuela_minio_data
+  estudiantes_documentos:
+    driver: local
+    name: escuela_estudiantes_documentos
 
 # =============================================================================
 # Red compartida
