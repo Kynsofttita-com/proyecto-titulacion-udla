@@ -1,9 +1,11 @@
 package com.escuela.cobros.controller;
 
+import com.escuela.cobros.dto.FacturaCuotaResponse;
 import com.escuela.cobros.dto.FacturaListResponse;
 import com.escuela.cobros.dto.FacturaRequest;
 import com.escuela.cobros.dto.FacturaResponse;
 import com.escuela.cobros.service.FacturaService;
+import java.util.List;
 import com.escuela.common.security.headers.UserHeaders;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,6 +59,13 @@ public class FacturaController {
         log.debug("Listando facturas del estudiante: {}", estudianteId);
         Page<FacturaListResponse> facturas = facturaService.findByEstudianteId(estudianteId, pageable);
         return ResponseEntity.ok(facturas);
+    }
+
+    @GetMapping("/{id}/cuotas")
+    @Operation(summary = "Listar cuotas de una factura (vacío si CONTADO)")
+    public ResponseEntity<List<FacturaCuotaResponse>> listarCuotas(@PathVariable Long id) {
+        log.debug("Listando cuotas de factura: {}", id);
+        return ResponseEntity.ok(facturaService.findCuotas(id));
     }
 
     @PostMapping

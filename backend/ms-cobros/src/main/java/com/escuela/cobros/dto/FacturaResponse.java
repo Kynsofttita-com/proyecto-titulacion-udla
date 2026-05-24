@@ -15,6 +15,15 @@ public record FacturaResponse(
     String estado,
     LocalDate fechaEmision,
     LocalDate fechaVencimiento,
+    String descripcion,
+    // Campos de crédito
+    String tipoPago,
+    Integer numeroCuotas,
+    Integer cuotasPagadas,
+    String frecuenciaCuota,
+    LocalDate fechaPrimeraCuota,
+    BigDecimal valorCuota,
+    // Auditoría
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
     String createdBy,

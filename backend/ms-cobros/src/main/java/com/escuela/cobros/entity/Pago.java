@@ -56,6 +56,14 @@ public class Pago implements Serializable {
     @Column(name = "usuario_registro_id", nullable = false)
     private Long usuarioRegistroId;
 
+    /** Cuota cubierta por este pago (NULL si CONTADO o pago libre). */
+    @Column(name = "numero_cuota")
+    private Integer numeroCuota;
+
+    /** FK a {@code factura_cuotas.id} cuando el pago se imputa a una cuota. */
+    @Column(name = "factura_cuota_id")
+    private Long facturaCuotaId;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

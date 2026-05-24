@@ -62,6 +62,32 @@ public class Factura extends BaseEntity {
     @Column(name = "motivo_anulacion", columnDefinition = "TEXT")
     private String motivoAnulacion;
 
+    // ============== CRÉDITO (V2) ==============
+
+    /** CONTADO o CREDITO. Si CONTADO → numero_cuotas=1 y sin frecuencia. */
+    @Column(name = "tipo_pago", nullable = false, length = 20)
+    private String tipoPago = "CONTADO";
+
+    /** 1 si CONTADO, 2..24 si CREDITO. */
+    @Column(name = "numero_cuotas", nullable = false)
+    private Integer numeroCuotas = 1;
+
+    /** Cuotas saldadas (mantenido por {@code PagoService} cuando registra un pago de crédito). */
+    @Column(name = "cuotas_pagadas", nullable = false)
+    private Integer cuotasPagadas = 0;
+
+    /** MENSUAL / QUINCENAL / SEMANAL. NULL si CONTADO. */
+    @Column(name = "frecuencia_cuota", length = 20)
+    private String frecuenciaCuota;
+
+    /** Fecha de la primera cuota (las siguientes se calculan según frecuencia). */
+    @Column(name = "fecha_primera_cuota")
+    private LocalDate fechaPrimeraCuota;
+
+    /** Persisted: monto_original / numero_cuotas. */
+    @Column(name = "valor_cuota", precision = 10, scale = 2)
+    private BigDecimal valorCuota;
+
     @Version
     @Column(nullable = false)
     private Long version = 0L;

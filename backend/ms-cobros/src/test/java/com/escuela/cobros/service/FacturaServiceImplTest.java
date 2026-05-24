@@ -69,7 +69,11 @@ class FacturaServiceImplTest {
             1L,
             BigDecimal.valueOf(1000),
             LocalDate.now().plusMonths(1),
-            "Curso básico"
+            "Curso básico",
+            "CONTADO",
+            1,
+            null,
+            null
         );
 
         facturaResponse = new FacturaResponse(
@@ -83,6 +87,13 @@ class FacturaServiceImplTest {
             "PENDIENTE",
             LocalDate.now(),
             LocalDate.now().plusMonths(1),
+            "Curso básico",
+            "CONTADO",
+            1,
+            0,
+            null,
+            null,
+            BigDecimal.valueOf(1000),
             null,
             null,
             null,
@@ -145,7 +156,11 @@ class FacturaServiceImplTest {
             1L,
             BigDecimal.valueOf(1000),
             LocalDate.now().plusMonths(1),
-            "Curso"
+            "Curso",
+            "CONTADO",
+            1,
+            null,
+            null
         );
 
         assertThrows(EstudianteNotFoundException.class, () -> facturaService.create(request));
@@ -166,7 +181,7 @@ class FacturaServiceImplTest {
         Page<FacturaListResponse> expected = new PageImpl<>(
             List.of(new FacturaListResponse(1L, "FAC-0001", 1L,
                 BigDecimal.valueOf(1000), BigDecimal.ZERO,
-                BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), null))
+                BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), "CONTADO", 1, 0, null))
         );
 
         when(facturaRepository.findByDeletedAtIsNull(pageable))
@@ -224,7 +239,7 @@ class FacturaServiceImplTest {
         when(facturaMapper.toListResponse(facturaMock))
             .thenReturn(new FacturaListResponse(1L, "FAC-0001", 1L,
                 BigDecimal.valueOf(1000), BigDecimal.ZERO,
-                BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), null));
+                BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), "CONTADO", 1, 0, null));
 
         Page<FacturaListResponse> result = facturaService.findByEstudianteId(1L, pageable);
 
