@@ -27,6 +27,7 @@ class DocumentoServiceTest {
 
     @Mock private DocumentoRepository documentoRepository;
     @Mock private EstudianteRepository estudianteRepository;
+    @Mock private FileStorageService fileStorage;
 
     @InjectMocks
     private DocumentoService service;
