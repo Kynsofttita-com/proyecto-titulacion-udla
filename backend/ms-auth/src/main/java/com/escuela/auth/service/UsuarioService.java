@@ -74,6 +74,13 @@ public class UsuarioService {
                 .nombre(request.nombre())
                 .apellido(request.apellido())
                 .telefono(emptyToNull(request.telefono()))
+                .cedula(emptyToNull(request.cedula()))
+                .fechaNacimiento(request.fechaNacimiento())
+                .genero(emptyToNull(request.genero()))
+                .direccion(emptyToNull(request.direccion()))
+                .ciudad(emptyToNull(request.ciudad()))
+                .provincia(emptyToNull(request.provincia()))
+                .passwordChangeRequired(request.passwordChangeRequired() != null ? request.passwordChangeRequired() : Boolean.FALSE)
                 .activo(Boolean.TRUE)
                 .locked(Boolean.FALSE)
                 .failedAttempts((short) 0)
@@ -92,7 +99,17 @@ public class UsuarioService {
         if (request.nombre() != null) u.setNombre(request.nombre());
         if (request.apellido() != null) u.setApellido(request.apellido());
         if (request.telefono() != null) u.setTelefono(emptyToNull(request.telefono()));
+        if (request.cedula() != null) u.setCedula(emptyToNull(request.cedula()));
+        if (request.fechaNacimiento() != null) u.setFechaNacimiento(request.fechaNacimiento());
+        if (request.genero() != null) u.setGenero(emptyToNull(request.genero()));
+        if (request.direccion() != null) u.setDireccion(emptyToNull(request.direccion()));
+        if (request.ciudad() != null) u.setCiudad(emptyToNull(request.ciudad()));
+        if (request.provincia() != null) u.setProvincia(emptyToNull(request.provincia()));
         if (request.activo() != null) u.setActivo(request.activo());
+        if (request.roles() != null && !request.roles().isEmpty()) {
+            Set<Rol> roles = resolverRoles(request.roles());
+            u.setRoles(roles);
+        }
 
         usuarioRepository.save(u);
         log.info("Usuario actualizado id={}", id);
@@ -131,6 +148,30 @@ public class UsuarioService {
         log.info("Usuario soft-deleted id={}", id);
     }
 
+    public UsuarioResponse cambiarPasswordAdmin(Long id, String nuevaPassword, Boolean passwordChangeRequired) {
+        Usuario u = usuarioRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", id));
+
+        u.setPassword(passwordEncoder.encode(nuevaPassword));
+        if (passwordChangeRequired != null) {
+            u.setPasswordChangeRequired(passwordChangeRequired);
+        }
+
+        usuarioRepository.save(u);
+        log.info("Contraseña cambiada por admin para usuario id={}", id);
+        return toResponse(u);
+    }
+
+    public UsuarioResponse resetearIntentos(Long id) {
+        Usuario u = usuarioRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", id));
+
+        u.setFailedAttempts((short) 0);
+        usuarioRepository.save(u);
+        log.info("Intentos fallidos reseteados para usuario id={}", id);
+        return toResponse(u);
+    }
+
     // ----- helpers -----
 
     private Set<Rol> resolverRoles(List<String> nombres) {
@@ -152,7 +193,9 @@ public class UsuarioService {
         return new UsuarioListResponse(
                 u.getId(), u.getEmail(), u.getNombre(), u.getApellido(),
                 u.getActivo(), u.getLocked(), u.getLastLogin(),
-                u.getRoles().stream().map(Rol::getNombre).sorted().toList()
+                u.getRoles().stream().map(Rol::getNombre).sorted().toList(),
+                u.getTelefono(), u.getCedula(), u.getFechaNacimiento(),
+                u.getGenero(), u.getDireccion(), u.getCiudad(), u.getProvincia()
         );
     }
 
@@ -161,7 +204,9 @@ public class UsuarioService {
                 u.getId(), u.getEmail(), u.getNombre(), u.getApellido(),
                 u.getTelefono(), u.getActivo(), u.getLocked(),
                 u.getFailedAttempts(), u.getLockUntil(), u.getLastLogin(),
-                u.getRoles().stream().map(Rol::getNombre).sorted().toList()
+                u.getRoles().stream().map(Rol::getNombre).sorted().toList(),
+                u.getCedula(), u.getFechaNacimiento(), u.getGenero(),
+                u.getDireccion(), u.getCiudad(), u.getProvincia()
         );
     }
 
