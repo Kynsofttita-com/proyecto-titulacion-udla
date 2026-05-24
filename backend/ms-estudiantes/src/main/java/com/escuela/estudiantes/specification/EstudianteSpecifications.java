@@ -29,12 +29,20 @@ public final class EstudianteSpecifications {
         return (root, query, cb) -> cb.isNull(root.get("deletedAt"));
     }
 
-    /** Filtra por estado exacto (PRE_MATRICULADO, ACTIVO, COMPLETADO, RETIRADO). */
+    /** Filtra por estado exacto (PRE_MATRICULADO, MATRICULADO, CURSANDO, COMPLETADO, RETIRADO). */
     public static Specification<Estudiante> estado(String estado) {
         if (estado == null || estado.isBlank()) {
             return null;
         }
         return (root, query, cb) -> cb.equal(root.get("estado"), estado);
+    }
+
+    /** Filtra por situacion_pago exacto (SIN_DEUDA, PAGO_PARCIAL, AL_DIA, EN_MORA, PAGADO_TOTAL). */
+    public static Specification<Estudiante> situacionPago(String situacionPago) {
+        if (situacionPago == null || situacionPago.isBlank()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("situacionPago"), situacionPago);
     }
 
     /**

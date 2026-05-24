@@ -13,6 +13,7 @@ import com.escuela.estudiantes.exception.CedulaDuplicadaException;
 import com.escuela.estudiantes.exception.CedulaInvalidaException;
 import com.escuela.estudiantes.exception.EmailDuplicadoException;
 import com.escuela.estudiantes.exception.EstudianteNotFoundException;
+import com.escuela.estudiantes.feign.AuthClient;
 import com.escuela.estudiantes.mapper.EstudianteMapper;
 import com.escuela.estudiantes.repository.EstudianteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -51,6 +54,9 @@ class EstudianteServiceImplTest {
     @Mock
     private EstudianteEventDispatcher eventDispatcher;
 
+    @Mock
+    private ObjectProvider<AuthClient> authClientProvider;
+
     @InjectMocks
     private EstudianteServiceImpl service;
 
@@ -59,6 +65,12 @@ class EstudianteServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // EstudianteServiceImpl usa lazy init para 'mapper' (no esta en el
+        // constructor), por lo que @InjectMocks no lo inyecta cuando hay
+        // constructor injection completo. Forzamos field injection con
+        // ReflectionTestUtils para que los stubs sobre 'mapper' funcionen.
+        ReflectionTestUtils.setField(service, "mapper", mapper);
+
         createRequest = new CreateEstudianteRequest(
                 CEDULA_VALIDA, "Hernan", "Jurado", "hernan@test.com",
                 "0987654321", "Av Siempre Viva 123",
@@ -92,7 +104,7 @@ class EstudianteServiceImplTest {
         when(repository.save(any(Estudiante.class))).thenReturn(entidad);
         when(mapper.toResponse(entidad)).thenReturn(new EstudianteResponse(
                 1L, CEDULA_VALIDA, "Hernan", "Jurado", "hernan@test.com",
-                "0987654321", "PRE_MATRICULADO", null));
+                "0987654321", "PRE_MATRICULADO", null, null));
 
         EstudianteResponse response = service.create(createRequest);
 
@@ -151,7 +163,7 @@ class EstudianteServiceImplTest {
                 1L, CEDULA_VALIDA, "Hernan", "Jurado", "hernan@test.com",
                 "0987654321", null, LocalDate.of(2000, 1, 1), "M",
                 "PRE_MATRICULADO", null, null, null, null, null,
-                null, null, null, null));
+                null, null, null, null, null));
 
         EstudianteDetailResponse response = service.findById(1L);
 
@@ -182,7 +194,7 @@ class EstudianteServiceImplTest {
         when(repository.save(entidad)).thenReturn(entidad);
         when(mapper.toResponse(entidad)).thenReturn(new EstudianteResponse(
                 1L, CEDULA_VALIDA, "HernanNuevo", "Jurado", "hernan@test.com",
-                "0987654321", "ACTIVO", null));
+                "0987654321", "ACTIVO", null, null));
 
         EstudianteResponse response = service.update(1L, req);
 
@@ -208,7 +220,7 @@ class EstudianteServiceImplTest {
         when(repository.save(entidad)).thenReturn(entidad);
         when(mapper.toResponse(entidad)).thenReturn(new EstudianteResponse(
                 1L, CEDULA_VALIDA, "Hernan", "Jurado", "hernan@test.com",
-                "0987654321", "ACTIVO", null));
+                "0987654321", "ACTIVO", null, null));
 
         service.update(1L, req);
 

@@ -1,6 +1,7 @@
 package com.escuela.auth.controller;
 
 import com.escuela.auth.dto.AsignarRolesRequest;
+import com.escuela.auth.dto.CambiarPasswordAdminRequest;
 import com.escuela.auth.dto.CreateUsuarioRequest;
 import com.escuela.auth.dto.UpdateUsuarioRequest;
 import com.escuela.auth.dto.UsuarioListResponse;
@@ -27,6 +28,7 @@ import java.util.Set;
 public class UsuarioController {
 
     private static final Set<String> ROLES_ADMIN = Set.of("ADMIN");
+    private static final Set<String> ROLES_ADMIN_STAFF = Set.of("ADMIN", "STAFF");
 
     private final UsuarioService service;
 
@@ -59,13 +61,13 @@ public class UsuarioController {
     }
 
     @PostMapping
-    @Operation(summary = "Crear usuario nuevo", description = "Solo ADMIN")
+    @Operation(summary = "Crear usuario nuevo", description = "ADMIN o STAFF")
     public ResponseEntity<UsuarioResponse> crear(
             @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
             @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
             @Valid @RequestBody CreateUsuarioRequest request) {
         AuthHeaderGuard.requireAuth(userEmail);
-        AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ADMIN);
+        AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ADMIN_STAFF);
         UsuarioResponse creado = service.crear(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}").buildAndExpand(creado.id()).toUri();
@@ -105,6 +107,29 @@ public class UsuarioController {
         AuthHeaderGuard.requireAuth(userEmail);
         AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ADMIN);
         return ResponseEntity.ok(service.desbloquear(id));
+    }
+
+    @PostMapping("/{id}/resetear-intentos")
+    @Operation(summary = "Resetear intentos fallidos", description = "Solo ADMIN")
+    public ResponseEntity<UsuarioResponse> resetearIntentos(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id) {
+        AuthHeaderGuard.requireAuth(userEmail);
+        AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ADMIN);
+        return ResponseEntity.ok(service.resetearIntentos(id));
+    }
+
+    @PostMapping("/{id}/cambiar-password")
+    @Operation(summary = "Cambiar contraseña como admin", description = "Solo ADMIN")
+    public ResponseEntity<UsuarioResponse> cambiarPasswordAdmin(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @Valid @RequestBody CambiarPasswordAdminRequest request) {
+        AuthHeaderGuard.requireAuth(userEmail);
+        AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ADMIN);
+        return ResponseEntity.ok(service.cambiarPasswordAdmin(id, request.nuevaPassword(), request.passwordChangeRequired()));
     }
 
     @DeleteMapping("/{id}")

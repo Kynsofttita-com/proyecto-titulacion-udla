@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface AsignacionRepository extends JpaRepository<Asignacion, Long> {
     Optional<Asignacion> findByIdAndDeletedAtIsNull(Long id);
     Page<Asignacion> findByDeletedAtIsNull(Pageable pageable);
+    Page<Asignacion> findByEstudianteIdAndDeletedAtIsNull(Long estudianteId, Pageable pageable);
     long countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
             Long instructorId, LocalDateTime inicio, LocalDateTime fin, String estado);
     long countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(

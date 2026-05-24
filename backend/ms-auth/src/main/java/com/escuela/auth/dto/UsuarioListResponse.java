@@ -1,5 +1,6 @@
 package com.escuela.auth.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,5 +13,12 @@ public record UsuarioListResponse(
         Boolean activo,
         Boolean locked,
         LocalDateTime lastLogin,
-        List<String> roles
+        List<String> roles,
+        String telefono,
+        String cedula,
+        LocalDate fechaNacimiento,
+        String genero,
+        String direccion,
+        String ciudad,
+        String provincia
 ) {}

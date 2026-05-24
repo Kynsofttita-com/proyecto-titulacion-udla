@@ -54,7 +54,7 @@ class UsuarioServiceTest {
     void crearOk() {
         CreateUsuarioRequest req = new CreateUsuarioRequest(
                 "nuevo@escuela.local", "Admin123!", "Juan", "Perez", "0991234567",
-                List.of("ADMIN", "STAFF"));
+                List.of("ADMIN", "STAFF"), null, null, null, null, null, null, true);
 
         when(usuarioRepository.findByEmailAndDeletedAtIsNull("nuevo@escuela.local"))
                 .thenReturn(Optional.empty());
@@ -80,7 +80,7 @@ class UsuarioServiceTest {
     @DisplayName("crear() falla con DuplicateResource si email ya existe")
     void crearDuplicado() {
         CreateUsuarioRequest req = new CreateUsuarioRequest(
-                "admin@escuela.local", "Admin123!", "X", "Y", null, List.of("ADMIN"));
+                "admin@escuela.local", "Admin123!", "X", "Y", null, List.of("ADMIN"), null, null, null, null, null, null, true);
 
         when(usuarioRepository.findByEmailAndDeletedAtIsNull(anyString()))
                 .thenReturn(Optional.of(Usuario.builder().id(1L).build()));
@@ -92,7 +92,7 @@ class UsuarioServiceTest {
     @DisplayName("crear() falla si algun rol no existe")
     void crearRolNoExiste() {
         CreateUsuarioRequest req = new CreateUsuarioRequest(
-                "x@y.com", "Admin123!", "X", "Y", null, List.of("ADMIN", "INEXISTENTE"));
+                "x@y.com", "Admin123!", "X", "Y", null, List.of("ADMIN", "INEXISTENTE"), null, null, null, null, null, null, true);
 
         when(usuarioRepository.findByEmailAndDeletedAtIsNull(anyString())).thenReturn(Optional.empty());
         when(rolRepository.findByNombreIn(any())).thenReturn(List.of(rolAdmin));
@@ -133,7 +133,7 @@ class UsuarioServiceTest {
         when(usuarioRepository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(u));
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateUsuarioRequest req = new UpdateUsuarioRequest("NewName", null, null, null);
+        UpdateUsuarioRequest req = new UpdateUsuarioRequest("NewName", null, null, null, null, null, null, null, null, null, null, null);
         UsuarioResponse r = service.actualizar(1L, req);
 
         assertEquals("NewName", r.nombre());

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -62,6 +63,27 @@ public class Usuario extends BaseEntity {
 
     @Column(name = "lock_until")
     private LocalDateTime lockUntil;
+
+    @Column(length = 10)
+    private String cedula;
+
+    @Column(name = "fecha_nacimiento")
+    private LocalDate fechaNacimiento;
+
+    @Column(length = 1)
+    private String genero;
+
+    @Column(length = 255)
+    private String direccion;
+
+    @Column(length = 100)
+    private String ciudad;
+
+    @Column(length = 100)
+    private String provincia;
+
+    @Column(name = "password_change_required", nullable = false)
+    private Boolean passwordChangeRequired = Boolean.FALSE;
 
     /**
      * Roles asignados al usuario (relación muchos-a-muchos via {@code usuario_rol}).
