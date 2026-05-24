@@ -47,6 +47,16 @@
               <p :class="['text-xs mt-0.5 leading-tight', activa === s.key ? 'text-brand-600/80' : 'text-ink-400']">{{ s.hint }}</p>
             </div>
           </button>
+          <router-link
+            to="/usuarios"
+            class="w-full flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition text-ink-600 hover:bg-ink-100"
+          >
+            <i class="pi pi-users text-sm mt-0.5 text-ink-400" />
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium">Usuarios</p>
+              <p class="text-xs mt-0.5 leading-tight text-ink-400">Gestión de cuentas</p>
+            </div>
+          </router-link>
         </nav>
       </aside>
 
