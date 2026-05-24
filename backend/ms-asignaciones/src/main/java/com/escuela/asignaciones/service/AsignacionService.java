@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface AsignacionService {
     Page<AsignacionListResponse> findAll(Pageable pageable);
+    Page<AsignacionListResponse> findByEstudianteId(Long estudianteId, Pageable pageable);
     AsignacionResponse findById(Long id);
     AsignacionResponse create(CreateAsignacionRequest request);
     AsignacionResponse update(Long id, UpdateAsignacionRequest request);

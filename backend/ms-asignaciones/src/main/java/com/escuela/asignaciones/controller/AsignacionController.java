@@ -45,6 +45,16 @@ public class AsignacionController {
         return ResponseEntity.ok(service.findAll(pageable));
     }
 
+    @GetMapping("/estudiante/{estudianteId}")
+    @Operation(summary = "Listar asignaciones de un estudiante (historial)")
+    public ResponseEntity<Page<AsignacionListResponse>> listarPorEstudiante(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @PathVariable Long estudianteId,
+            @PageableDefault(size = 100, sort = "fechaHora") Pageable pageable) {
+        validarAutenticacion(userEmail);
+        return ResponseEntity.ok(service.findByEstudianteId(estudianteId, pageable));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener detalle de una asignación")
     public ResponseEntity<AsignacionResponse> obtener(

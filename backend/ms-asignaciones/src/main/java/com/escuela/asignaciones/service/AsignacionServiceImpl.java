@@ -65,6 +65,13 @@ public class AsignacionServiceImpl implements AsignacionService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<AsignacionListResponse> findByEstudianteId(Long estudianteId, Pageable pageable) {
+        return repository.findByEstudianteIdAndDeletedAtIsNull(estudianteId, pageable)
+                .map(getMapper()::toListResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public AsignacionResponse findById(Long id) {
         Asignacion asignacion = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new AsignacionNotFoundException(id));
