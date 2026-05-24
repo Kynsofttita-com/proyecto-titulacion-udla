@@ -7,11 +7,13 @@ import com.escuela.vehiculos.exception.PlacaDuplicadaException;
 import com.escuela.vehiculos.exception.VehiculoNotFoundException;
 import com.escuela.vehiculos.mapper.VehiculoMapper;
 import com.escuela.vehiculos.repository.VehiculoRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -31,6 +33,14 @@ class VehiculoServiceImplTest {
 
     @InjectMocks
     private VehiculoServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        // VehiculoServiceImpl usa lazy init para 'mapper' (no esta en el
+        // constructor). @InjectMocks con constructor injection no lo establece;
+        // forzamos field injection para que los stubs sobre 'mapper' funcionen.
+        ReflectionTestUtils.setField(service, "mapper", mapper);
+    }
 
     @Test
     void testFindById_Success() {
