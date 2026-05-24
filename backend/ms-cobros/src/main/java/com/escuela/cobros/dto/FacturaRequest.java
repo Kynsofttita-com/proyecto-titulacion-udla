@@ -2,11 +2,26 @@ package com.escuela.cobros.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Request para crear o actualizar una factura.
+ *
+ * <p>Soporta dos modalidades:
+ * <ul>
+ *   <li><b>CONTADO</b> (default): {@code tipoPago=CONTADO}, {@code numeroCuotas=1}.
+ *       Los campos {@code frecuenciaCuota} y {@code fechaPrimeraCuota} pueden ser null.</li>
+ *   <li><b>CREDITO</b>: {@code tipoPago=CREDITO}, {@code numeroCuotas} entre 2 y 24,
+ *       {@code frecuenciaCuota} y {@code fechaPrimeraCuota} obligatorios. El servicio
+ *       generará automáticamente las filas en {@code factura_cuotas}.</li>
+ * </ul>
+ */
 public record FacturaRequest(
     @NotNull(message = "El ID del estudiante no puede ser nulo")
     Long estudianteId,
@@ -22,5 +37,24 @@ public record FacturaRequest(
     @FutureOrPresent(message = "La fecha de vencimiento debe ser presente o futura")
     LocalDate fechaVencimiento,
 
-    String descripcion
-) {}
+    String descripcion,
+
+    // ============== Campos opcionales de crédito ==============
+
+    @Pattern(regexp = "CONTADO|CREDITO", message = "tipoPago debe ser CONTADO o CREDITO")
+    String tipoPago,
+
+    @Min(value = 1, message = "numeroCuotas debe ser >= 1")
+    @Max(value = 24, message = "numeroCuotas debe ser <= 24")
+    Integer numeroCuotas,
+
+    @Pattern(regexp = "MENSUAL|QUINCENAL|SEMANAL", message = "frecuenciaCuota debe ser MENSUAL, QUINCENAL o SEMANAL")
+    String frecuenciaCuota,
+
+    LocalDate fechaPrimeraCuota
+) {
+    public FacturaRequest {
+        if (tipoPago == null) tipoPago = "CONTADO";
+        if (numeroCuotas == null) numeroCuotas = 1;
+    }
+}
