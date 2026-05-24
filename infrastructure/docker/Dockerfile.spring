@@ -59,8 +59,10 @@ COPY shared/common-validation/src shared/common-validation/src
 COPY ${MODULE}/src ${MODULE}/src
 
 # Capa 4: Build del módulo (incluye sus dependencias internas con -am)
+# -Dmaven.test.skip=true salta compilación y ejecución de tests (-DskipTests
+# solo salta la ejecución).
 RUN --mount=type=cache,target=/root/.m2/repository \
-    mvn -B -pl ${MODULE} -am clean package -DskipTests \
+    mvn -B -pl ${MODULE} -am clean package -Dmaven.test.skip=true \
     && cp ${MODULE}/target/*.jar /workspace/app.jar
 
 
@@ -79,6 +81,11 @@ RUN addgroup -S spring && \
     adduser -S -G spring -u 1000 spring
 
 WORKDIR /app
+
+# Carpeta de storage para archivos subidos por el usuario (documentos de
+# estudiantes, etc.). Se crea con permisos del usuario spring para que
+# servicios que escriban en filesystem no fallen con AccessDeniedException.
+RUN mkdir -p /app/storage && chown -R spring:spring /app
 
 # Copiar el JAR construido en el stage anterior
 COPY --from=build --chown=spring:spring /workspace/app.jar /app/app.jar
