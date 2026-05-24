@@ -6,6 +6,7 @@ import com.escuela.estudiantes.exception.CedulaDuplicadaException;
 import com.escuela.estudiantes.exception.CedulaInvalidaException;
 import com.escuela.estudiantes.exception.EmailDuplicadoException;
 import com.escuela.estudiantes.exception.EstudianteNotFoundException;
+import com.escuela.estudiantes.service.EstudianteEstadoService;
 import com.escuela.estudiantes.service.EstudianteService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +62,11 @@ class EstudianteControllerTest {
         EstudianteService estudianteService() {
             return mock(EstudianteService.class);
         }
+
+        @Bean
+        EstudianteEstadoService estudianteEstadoService() {
+            return mock(EstudianteEstadoService.class);
+        }
     }
 
     @BeforeEach
@@ -101,7 +107,7 @@ class EstudianteControllerTest {
         when(service.findById(1L)).thenReturn(new EstudianteDetailResponse(
                 1L, "1710034065", "Hernan", "Jurado", "h@t.com", "0987654321",
                 null, null, "M", "PRE_MATRICULADO", null, null, null, null, null,
-                null, null, null, null));
+                null, null, null, null, null));
 
         mockMvc.perform(get("/estudiantes/1")
                         .header("X-User-Email", ADMIN_EMAIL))
@@ -153,7 +159,7 @@ class EstudianteControllerTest {
     void postOkStaff() throws Exception {
         when(service.create(any())).thenReturn(new EstudianteResponse(
                 7L, "1710034065", "Hernan", "Jurado", "h@t.com", "0987654321",
-                "PRE_MATRICULADO", null));
+                "PRE_MATRICULADO", null, null));
 
         mockMvc.perform(post("/estudiantes")
                         .header("X-User-Email", ADMIN_EMAIL)
@@ -238,7 +244,7 @@ class EstudianteControllerTest {
     void putOk() throws Exception {
         when(service.update(eq(1L), any())).thenReturn(new EstudianteResponse(
                 1L, "1710034065", "Nuevo", "Jurado", "h@t.com", "0987654321",
-                "ACTIVO", null));
+                "ACTIVO", null, null));
 
         mockMvc.perform(put("/estudiantes/1")
                         .header("X-User-Email", ADMIN_EMAIL)
