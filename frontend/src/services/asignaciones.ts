@@ -87,10 +87,28 @@ const asignacionesService = {
     return response.data
   },
 
-  async obtenerHistorial(estudianteId: number): Promise<AsignacionResponse[]> {
-    const response = await api.get<AsignacionResponse[]>(`/asignaciones/estudiante/${estudianteId}/historial`)
-    return response.data
+  async obtenerHistorial(estudianteId: number): Promise<HistorialAsignacionItem[]> {
+    const response = await api.get<{ content: HistorialAsignacionItem[] }>(
+      `/asignaciones/estudiante/${estudianteId}`,
+      { params: { size: 100, sort: 'fechaHora,desc' } }
+    )
+    return response.data?.content ?? []
   }
+}
+
+/**
+ * Forma cruda del backend (AsignacionListResponse) — sin nombres resueltos.
+ */
+export interface HistorialAsignacionItem {
+  id: number
+  estudianteId: number
+  instructorId: number
+  vehiculoId: number
+  fecha: string
+  horaInicio: string
+  horaFin: string
+  estado: string
+  dateCreated: string
 }
 
 export default asignacionesService

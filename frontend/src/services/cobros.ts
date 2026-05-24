@@ -106,6 +106,14 @@ const cobrosService = {
     return response.data
   },
 
+  async obtenerPagosPorEstudiante(estudianteId: number): Promise<HistorialPagoItem[]> {
+    const response = await api.get<{ content: HistorialPagoItem[] }>(
+      `/pagos/estudiante/${estudianteId}`,
+      { params: { size: 100, sort: 'fechaPago,desc' } }
+    )
+    return response.data?.content ?? []
+  },
+
   async generarReporteFiscal(fechaInicio: string, fechaFin: string): Promise<Blob> {
     const response = await api.get(`/cobros/reportes/fiscal`, {
       params: { fechaInicio, fechaFin },
@@ -113,6 +121,18 @@ const cobrosService = {
     })
     return response.data
   }
+}
+
+/**
+ * Forma cruda del backend (PagoListResponse) — sin estado calculado.
+ */
+export interface HistorialPagoItem {
+  id: number
+  facturaId: number
+  monto: number
+  fechaPago: string
+  metodoPago: string
+  referenciaTransaccion: string | null
 }
 
 export default cobrosService
