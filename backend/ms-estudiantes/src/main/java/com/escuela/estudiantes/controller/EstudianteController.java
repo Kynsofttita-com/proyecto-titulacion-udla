@@ -1,6 +1,7 @@
 package com.escuela.estudiantes.controller;
 
 import com.escuela.common.security.headers.UserHeaders;
+import com.escuela.estudiantes.dto.CambiarEstadoRequest;
 import com.escuela.estudiantes.dto.CreateEstudianteRequest;
 import com.escuela.estudiantes.dto.EstudianteDetailResponse;
 import com.escuela.estudiantes.dto.EstudianteListResponse;
@@ -22,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -154,6 +156,33 @@ public class EstudianteController {
         validarAutenticacion(userEmail);
         validarRoles(userRoles, ROLES_ESCRITURA);
         return ResponseEntity.ok(service.update(id, request));
+    }
+
+    // -----------------------------------------------------------------------
+    // PATCH /estudiantes/{id}/estado
+    // -----------------------------------------------------------------------
+
+    @PatchMapping("/{id}/estado")
+    @Operation(summary = "Cambiar estado academico del estudiante",
+            description = "Transiciones manuales permitidas: MATRICULADO/CURSANDO -> COMPLETADO/RETIRADO, " +
+                    "COMPLETADO -> CURSANDO, RETIRADO -> MATRICULADO/CURSANDO. " +
+                    "Las transiciones desde PRE_MATRICULADO son automaticas (via evento pago). " +
+                    "Solo ADMIN o STAFF.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estado cambiado"),
+            @ApiResponse(responseCode = "400", description = "Transicion no permitida o motivo requerido"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "Sin permisos"),
+            @ApiResponse(responseCode = "404", description = "No encontrado")
+    })
+    public ResponseEntity<EstudianteResponse> cambiarEstado(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @Valid @RequestBody CambiarEstadoRequest request) {
+        validarAutenticacion(userEmail);
+        validarRoles(userRoles, ROLES_ESCRITURA);
+        return ResponseEntity.ok(service.cambiarEstado(id, request.estado(), request.motivo()));
     }
 
     // -----------------------------------------------------------------------
