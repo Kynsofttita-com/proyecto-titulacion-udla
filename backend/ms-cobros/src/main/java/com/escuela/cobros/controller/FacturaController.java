@@ -4,7 +4,9 @@ import com.escuela.cobros.dto.FacturaCuotaResponse;
 import com.escuela.cobros.dto.FacturaListResponse;
 import com.escuela.cobros.dto.FacturaRequest;
 import com.escuela.cobros.dto.FacturaResponse;
+import com.escuela.cobros.dto.ResumenAcademicoResponse;
 import com.escuela.cobros.service.FacturaService;
+import com.escuela.cobros.service.ResumenAcademicoService;
 import com.escuela.cobros.service.SituacionPagoCalculator;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ public class FacturaController {
 
     private final FacturaService facturaService;
     private final SituacionPagoCalculator situacionPagoCalculator;
+    private final ResumenAcademicoService resumenAcademicoService;
     private static final String ROLE_ADMIN = "ADMIN";
     private static final String ROLE_STAFF = "STAFF";
 
@@ -78,6 +81,15 @@ public class FacturaController {
         log.debug("Calculando situacion_pago para estudiante: {}", estudianteId);
         String situacion = situacionPagoCalculator.calcular(estudianteId);
         return ResponseEntity.ok(Map.of("situacionPago", situacion));
+    }
+
+    @GetMapping("/estudiante/{estudianteId}/resumen-academico")
+    @Operation(summary = "Resumen academico-financiero del estudiante",
+               description = "Combina datos del estudiante, tipo de curso contratado y total facturado/pagado. "
+                           + "La UI lo usa al crear factura para mostrar 'cuanto debe' y auto-llenar el monto.")
+    public ResponseEntity<ResumenAcademicoResponse> resumenAcademico(@PathVariable Long estudianteId) {
+        log.debug("Resumen academico de estudiante: {}", estudianteId);
+        return ResponseEntity.ok(resumenAcademicoService.calcular(estudianteId));
     }
 
     @PostMapping
