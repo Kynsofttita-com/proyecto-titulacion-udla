@@ -62,6 +62,15 @@ public class Estudiante extends BaseEntity {
     @Column(nullable = false, length = 20)
     private String estado = "PRE_MATRICULADO";
 
+    /**
+     * Estado financiero derivado de MS-Cobros (sincronizado via evento
+     * pago.registrado). Valores: SIN_DEUDA / PAGO_PARCIAL / AL_DIA /
+     * EN_MORA / PAGADO_TOTAL.
+     */
+    @Column(name = "situacion_pago", nullable = false, length = 20)
+    @lombok.Builder.Default
+    private String situacionPago = "SIN_DEUDA";
+
     @Column(name = "fecha_matricula")
     private LocalDate fechaMatricula;
 
