@@ -64,6 +64,12 @@ public class GlobalExceptionHandler {
                 "Recurso no encontrado", ex.getMessage());
     }
 
+    @ExceptionHandler(TransicionEstadoInvalidaException.class)
+    public ProblemDetail handleTransicionInvalida(TransicionEstadoInvalidaException ex) {
+        return build(HttpStatus.BAD_REQUEST, "transicion-estado-invalida",
+                "Transicion de estado no permitida", ex.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleIllegalArg(IllegalArgumentException ex) {
         return build(HttpStatus.BAD_REQUEST, "argumento-invalido",
