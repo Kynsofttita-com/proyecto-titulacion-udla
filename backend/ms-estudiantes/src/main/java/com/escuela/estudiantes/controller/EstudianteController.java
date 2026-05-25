@@ -79,7 +79,7 @@ public class EstudianteController {
             @PageableDefault(size = 50, sort = "id") Pageable pageable,
             @Parameter(description = "Busqueda en nombre, apellido, cedula o email")
             @RequestParam(required = false) String search,
-            @Parameter(description = "Filtrar por estado (PRE_MATRICULADO, ACTIVO, COMPLETADO, RETIRADO)")
+            @Parameter(description = "Filtrar por estado (PRE_MATRICULADO, MATRICULADO, CURSANDO, COMPLETADO, RETIRADO)")
             @RequestParam(required = false) String estado) {
         validarAutenticacion(userEmail);
         return ResponseEntity.ok(service.findAll(pageable, search, estado));
@@ -233,7 +233,8 @@ public class EstudianteController {
         validarAutenticacion(userEmail);
         validarRoles(userRoles, ROLES_ESCRITURA);
         String nueva = estadoService.sincronizarSituacionPago(id);
-        return ResponseEntity.ok(Map.of("situacionPago", nueva != null ? nueva : "SIN_DEUDA"));
+        return ResponseEntity.ok(Map.of("situacionPago",
+                nueva != null ? nueva : "PENDIENTE_FACTURACION"));
     }
 
     // -----------------------------------------------------------------------
