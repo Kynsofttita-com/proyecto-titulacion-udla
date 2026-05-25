@@ -38,8 +38,8 @@ public record UpdateEstudianteRequest(
         @Pattern(regexp = "^[MFO]$", message = "Genero debe ser M, F u O")
         String genero,
 
-        @Pattern(regexp = "^(PRE_MATRICULADO|ACTIVO|COMPLETADO|RETIRADO)$",
-                message = "Estado invalido")
+        @Pattern(regexp = "^(PRE_MATRICULADO|MATRICULADO|CURSANDO|COMPLETADO|RETIRADO)$",
+                message = "Estado invalido. Use PATCH /estudiantes/{id}/estado para cambiar el estado academico con validacion de transiciones.")
         String estado,
 
         Long tipoCursoId,

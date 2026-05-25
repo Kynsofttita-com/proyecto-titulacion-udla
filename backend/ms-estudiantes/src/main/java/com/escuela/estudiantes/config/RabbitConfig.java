@@ -46,6 +46,9 @@ public class RabbitConfig extends AbstractRabbitConfig {
     public static final String FROM_COBROS_QUEUE_NAME = "estudiantes.from-cobros.queue";
     public static final String COBROS_PAGO_REGISTRADO_ROUTING = "pago.registrado";
 
+    public static final String FROM_COBROS_FACTURAS_QUEUE_NAME = "estudiantes.from-cobros-facturas.queue";
+    public static final String COBROS_FACTURA_EMITIDA_ROUTING = "factura.emitida";
+
     public static final String ASIGNACIONES_EXCHANGE_NAME = "asignaciones.exchange";
     public static final String FROM_ASIGNACIONES_QUEUE_NAME = "estudiantes.from-asignaciones.queue";
     public static final String ASIGNACIONES_CREADA_ROUTING = "asignacion.creada";
@@ -122,6 +125,24 @@ public class RabbitConfig extends AbstractRabbitConfig {
         return BindingBuilder.bind(estudiantesFromCobrosQueue())
                 .to(cobrosExchangeRef())
                 .with(COBROS_PAGO_REGISTRADO_ROUTING);
+    }
+
+    /**
+     * Cola dedicada para factura.emitida (separada de pago.registrado para
+     * que un fallo procesando una factura no bloquee el procesamiento de pagos).
+     */
+    @Bean
+    public Queue estudiantesFromCobrosFacturasQueue() {
+        return QueueBuilder.durable(FROM_COBROS_FACTURAS_QUEUE_NAME)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .build();
+    }
+
+    @Bean
+    public Binding estudiantesFromCobrosFacturasBinding() {
+        return BindingBuilder.bind(estudiantesFromCobrosFacturasQueue())
+                .to(cobrosExchangeRef())
+                .with(COBROS_FACTURA_EMITIDA_ROUTING);
     }
 
     // ============ Consume de asignaciones.exchange (asignacion.creada) ============

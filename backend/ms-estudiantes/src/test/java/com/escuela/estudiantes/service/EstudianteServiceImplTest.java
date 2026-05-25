@@ -207,25 +207,26 @@ class EstudianteServiceImplTest {
     }
 
     @Test
-    @DisplayName("update transicion estado PRE_MATRICULADO -> ACTIVO publica EstudianteMatriculadoEvent")
-    void updateMatricula() {
+    @DisplayName("update con cambio de estado solo publica EstudianteActualizadoEvent (matriculado lo dispara EstudianteEstadoService via evento)")
+    void updateNoPublicaMatriculado() {
         UpdateEstudianteRequest req = new UpdateEstudianteRequest(
-                null, null, null, null, null, null, null, "ACTIVO", null, null, null);
+                null, null, null, null, null, null, null, "MATRICULADO", null, null, null);
         when(repository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(entidad));
-        // Simulamos que mapper.updateEntity SI aplica el cambio de estado
         org.mockito.Mockito.doAnswer(inv -> {
-            entidad.setEstado("ACTIVO");
+            entidad.setEstado("MATRICULADO");
             return null;
         }).when(mapper).updateEntity(entidad, req);
         when(repository.save(entidad)).thenReturn(entidad);
         when(mapper.toResponse(entidad)).thenReturn(new EstudianteResponse(
                 1L, CEDULA_VALIDA, "Hernan", "Jurado", "hernan@test.com",
-                "0987654321", "ACTIVO", null, null));
+                "0987654321", "MATRICULADO", null, null));
 
         service.update(1L, req);
 
         verify(eventDispatcher).publishActualizado(any(EstudianteActualizadoEvent.class));
-        verify(eventDispatcher).publishMatriculado(any(EstudianteMatriculadoEvent.class));
+        // El evento matriculado se publica desde EstudianteEstadoService al
+        // procesar pago/factura, no desde el flujo de UPDATE administrativo.
+        verify(eventDispatcher, never()).publishMatriculado(any());
     }
 
     @Test
