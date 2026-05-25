@@ -146,14 +146,12 @@ public class AsignacionServiceImpl implements AsignacionService {
     private void validarEntidadesExisten(CreateAsignacionRequest request) {
         try {
             var estudiante = estudianteClient.obtenerEstudiante(request.estudianteId());
-            // Estados validos para recibir asignaciones: MATRICULADO (ya pago, listo
-            // para arrancar), CURSANDO (en curso, recibe mas clases) y el legado
-            // ACTIVO (defensa por compat). NO se permite PRE_MATRICULADO, COMPLETADO
-            // ni RETIRADO.
+            // Solo se permite asignar clases a estudiantes que ya pagaron por
+            // completo (MATRICULADO) o que ya tienen clases activas (CURSANDO).
+            // PRE_MATRICULADO se rechaza porque NO ha completado el pago.
+            // COMPLETADO/RETIRADO se rechazan porque el curso ya termino.
             String estado = estudiante.estado();
-            if (!"MATRICULADO".equals(estado)
-                && !"CURSANDO".equals(estado)
-                && !"ACTIVO".equals(estado)) {
+            if (!"MATRICULADO".equals(estado) && !"CURSANDO".equals(estado)) {
                 throw new EstudianteInactivoException(request.estudianteId());
             }
         } catch (Exception e) {
