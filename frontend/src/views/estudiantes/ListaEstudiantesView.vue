@@ -20,7 +20,7 @@
       <StatCard label="Completados" :value="stats.completados" icon="pi pi-graduation-cap" color="brand" />
     </div>
 
-    <!-- Aviso de morosos / pendientes de matrícula -->
+    <!-- Aviso financiero: sin facturar o con saldo CONTADO pendiente -->
     <div v-if="stats.enMora > 0 || stats.pendienteMatricula > 0" class="card animate-fade-up p-4 border-l-4 !border-l-warning-600">
       <div class="flex items-start gap-3 flex-wrap">
         <div class="w-10 h-10 rounded-lg bg-warning-50 text-warning-700 flex items-center justify-center flex-shrink-0">
@@ -30,10 +30,10 @@
           <h3 class="text-sm font-semibold text-ink-900">Atención financiera</h3>
           <p class="text-xs text-ink-600 mt-0.5">
             <span v-if="stats.pendienteMatricula > 0">
-              <strong>{{ stats.pendienteMatricula }}</strong> estudiante(s) sin matrícula emitida.
+              <strong>{{ stats.pendienteMatricula }}</strong> estudiante(s) sin factura emitida.
             </span>
             <span v-if="stats.enMora > 0" class="ml-2">
-              <strong class="text-danger-700">{{ stats.enMora }}</strong> en mora.
+              <strong class="text-danger-700">{{ stats.enMora }}</strong> con saldo por cobrar.
             </span>
           </p>
         </div>
@@ -123,7 +123,7 @@
         </Column>
         <Column header="Situación pago">
           <template #body="{ data }">
-            <StatusBadge :status="data.situacionPago || 'SIN_DEUDA'" />
+            <StatusBadge :status="data.situacionPago || 'PENDIENTE_FACTURACION'" />
           </template>
         </Column>
         <Column header="Matrícula">
@@ -284,12 +284,10 @@ const estadosFilter = [
 ]
 
 const situacionesFilter = [
-  { label: 'Pendiente matrícula', value: 'PENDIENTE_MATRICULA' },
-  { label: 'Sin deuda',            value: 'SIN_DEUDA' },
-  { label: 'Pago parcial',         value: 'PAGO_PARCIAL' },
-  { label: 'Al día',               value: 'AL_DIA' },
-  { label: 'En mora',              value: 'EN_MORA' },
-  { label: 'Pagado total',         value: 'PAGADO_TOTAL' }
+  { label: 'Pendiente facturación', value: 'PENDIENTE_FACTURACION' },
+  { label: 'Pendiente de pago',     value: 'PENDIENTE_PAGO' },
+  { label: 'Pago parcial',          value: 'PAGO_PARCIAL' },
+  { label: 'Pagado total',          value: 'PAGADO_TOTAL' }
 ]
 
 const cargar = async () => {
@@ -311,8 +309,12 @@ const cargar = async () => {
     stats.matriculados       = list.filter((e: any) => e.estado === 'MATRICULADO' || e.estado === 'ACTIVO').length
     stats.cursando           = list.filter((e: any) => e.estado === 'CURSANDO').length
     stats.completados        = list.filter((e: any) => e.estado === 'COMPLETADO').length
-    stats.enMora             = list.filter((e: any) => e.situacionPago === 'EN_MORA').length
-    stats.pendienteMatricula = list.filter((e: any) => e.situacionPago === 'PENDIENTE_MATRICULA').length
+    // Modelo nuevo: no existe "mora" (cobro automatico asumido). El indicador
+    // financiero relevante es "tienen saldo CONTADO sin pagar".
+    stats.enMora             = list.filter((e: any) =>
+        ['PENDIENTE_PAGO', 'PAGO_PARCIAL', 'EN_MORA'].includes(e.situacionPago)).length
+    stats.pendienteMatricula = list.filter((e: any) =>
+        ['PENDIENTE_FACTURACION', 'PENDIENTE_MATRICULA'].includes(e.situacionPago)).length
   } finally {
     loading.value = false
   }
