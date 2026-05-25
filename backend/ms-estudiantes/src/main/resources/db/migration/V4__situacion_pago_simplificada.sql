@@ -25,6 +25,11 @@
 -- pagos CONTADO o por emision de factura CREDITO).
 -- =============================================================================
 
+-- 0) Ampliar la columna a VARCHAR(30) porque "PENDIENTE_FACTURACION" tiene
+--    21 caracteres y la columna original era VARCHAR(20).
+ALTER TABLE estudiantes_schema.estudiantes
+    ALTER COLUMN situacion_pago TYPE VARCHAR(30);
+
 -- 1) Quitar CHECK actual para poder hacer UPDATE con valores intermedios
 ALTER TABLE estudiantes_schema.estudiantes
     DROP CONSTRAINT ck_estudiantes_situacion_pago;
