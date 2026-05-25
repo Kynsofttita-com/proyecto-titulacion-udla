@@ -3,6 +3,7 @@ package com.escuela.cobros.service;
 import com.escuela.cobros.config.RabbitConfig;
 import com.escuela.cobros.entity.Factura;
 import com.escuela.cobros.event.CobroCanceladoEvent;
+import com.escuela.common.events.cobros.FacturaEmitidaEvent;
 import com.escuela.common.events.publisher.EventPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -26,6 +27,37 @@ public class FacturaEventDispatcher {
     ) {
         this.rabbitTemplateProvider = rabbitTemplateProvider;
         this.applicationName = applicationName;
+    }
+
+    /**
+     * Publica {@link FacturaEmitidaEvent} tras crear una factura.
+     * Consumido por ms-estudiantes para actualizar {@code situacion_pago} y
+     * disparar transicion {@code PRE_MATRICULADO -> MATRICULADO} si CREDITO.
+     */
+    public void publishEmitida(Factura factura) {
+        try {
+            EventPublisher publisher = resolvePublisher();
+            if (publisher == null) {
+                log.warn("RabbitTemplate no disponible; FacturaEmitidaEvent no publicado (facturaId={})",
+                        factura.getId());
+                return;
+            }
+
+            FacturaEmitidaEvent event = FacturaEmitidaEvent.builder()
+                    .facturaId(factura.getId())
+                    .estudianteId(factura.getEstudianteId())
+                    .numeroFactura(factura.getNumeroFactura())
+                    .tipoPago(factura.getTipoPago())
+                    .montoOriginal(factura.getMontoOriginal())
+                    .numeroCuotas(factura.getNumeroCuotas())
+                    .build();
+
+            publisher.publish(RabbitConfig.EXCHANGE_NAME, FacturaEmitidaEvent.ROUTING_KEY, event);
+            log.info("FacturaEmitidaEvent publicado facturaId={} estudianteId={} tipoPago={}",
+                    factura.getId(), factura.getEstudianteId(), factura.getTipoPago());
+        } catch (Exception e) {
+            log.error("Error publicando FacturaEmitidaEvent (facturaId={})", factura.getId(), e);
+        }
     }
 
     public void publishCancelada(Factura factura) {
