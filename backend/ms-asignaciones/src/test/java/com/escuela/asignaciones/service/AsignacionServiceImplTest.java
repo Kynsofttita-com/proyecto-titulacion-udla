@@ -125,7 +125,7 @@ class AsignacionServiceImplTest {
         );
 
         when(estudianteClient.obtenerEstudiante(1L))
-                .thenReturn(new EstudianteDetailDTO(1L, "ACTIVO"));
+                .thenReturn(new EstudianteDetailDTO(1L, "MATRICULADO"));
         when(instructorClient.obtenerInstructor(1L))
                 .thenReturn(new InstructorDetailDTO(1L, "ACTIVO"));
         when(vehiculoClient.obtenerVehiculo(1L))
@@ -165,7 +165,7 @@ class AsignacionServiceImplTest {
         );
 
         when(estudianteClient.obtenerEstudiante(1L))
-                .thenReturn(new EstudianteDetailDTO(1L, "INACTIVO"));
+                .thenReturn(new EstudianteDetailDTO(1L, "PRE_MATRICULADO"));
 
         assertThrows(EstudianteInactivoException.class, () -> service.create(request));
     }
@@ -178,7 +178,7 @@ class AsignacionServiceImplTest {
         );
 
         when(estudianteClient.obtenerEstudiante(1L))
-                .thenReturn(new EstudianteDetailDTO(1L, "ACTIVO"));
+                .thenReturn(new EstudianteDetailDTO(1L, "MATRICULADO"));
         when(instructorClient.obtenerInstructor(1L))
                 .thenReturn(new InstructorDetailDTO(1L, "ACTIVO"));
         when(vehiculoClient.obtenerVehiculo(1L))
