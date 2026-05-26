@@ -164,8 +164,8 @@ jobs:
         if: always()
         with:
           name: Integration Tests
-          path: |
-            backend/**/target/surefire-reports/*.xml
-            backend/**/target/failsafe-reports/*.xml
+          # dorny/test-reporter espera paths separados por coma (no multiline).
+          # Cubre los reportes de surefire (unit) y failsafe (integration).
+          path: 'backend/**/target/surefire-reports/*.xml,backend/**/target/failsafe-reports/*.xml'
           reporter: java-junit
           fail-on-error: false
