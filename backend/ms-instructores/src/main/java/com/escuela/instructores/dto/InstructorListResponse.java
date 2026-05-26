@@ -8,7 +8,10 @@ public record InstructorListResponse(
         String nombre,
         String apellido,
         String email,
+        String telefono,
+        String licenciaNumero,
         String licenciaCategoria,
         LocalDate licenciaCaducidad,
-        String estado
+        String estado,
+        String tipoContrato
 ) {}
