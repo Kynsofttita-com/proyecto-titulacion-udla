@@ -25,6 +25,7 @@ public record EstudianteDetailResponse(
         Long categoriaLicenciaId,
         Long usuarioId,
         String observaciones,
+        Integer minutosCompletados,
         List<DocumentoResponse> documentos,
         List<ContactoEmergenciaResponse> contactosEmergencia,
         LocalDateTime createdAt,

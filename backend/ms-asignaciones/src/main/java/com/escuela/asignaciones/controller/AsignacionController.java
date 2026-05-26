@@ -2,6 +2,9 @@ package com.escuela.asignaciones.controller;
 
 import com.escuela.common.security.headers.UserHeaders;
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
+import com.escuela.asignaciones.dto.FinalizarAsignacionRequest;
+import com.escuela.asignaciones.dto.IniciarAsignacionRequest;
+import com.escuela.asignaciones.dto.RecorridoResponse;
 import com.escuela.asignaciones.dto.UpdateAsignacionRequest;
 import com.escuela.asignaciones.dto.UpdateAsignacionReprogramarRequest;
 import com.escuela.asignaciones.dto.AsignacionListResponse;
@@ -115,6 +118,47 @@ public class AsignacionController {
         validarRoles(userRoles, ROLES_BORRADO);
         service.softDelete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========================================================================
+    //  KILOMETRAJE: iniciar / finalizar / recorrido
+    //  Roles ampliados: INSTRUCTOR puede registrar km de SUS clases en la practica.
+    //  (Si en el futuro queremos restringir a "su" instructor, se valida en service)
+    // ========================================================================
+
+    private static final Set<String> ROLES_KILOMETRAJE = Set.of("ADMIN", "STAFF", "INSTRUCTOR");
+
+    @PatchMapping("/{id}/iniciar")
+    @Operation(summary = "Iniciar una clase: registra km_inicial y marca EN_CURSO")
+    public ResponseEntity<RecorridoResponse> iniciar(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @Valid @RequestBody IniciarAsignacionRequest request) {
+        validarAutenticacion(userEmail);
+        validarRoles(userRoles, ROLES_KILOMETRAJE);
+        return ResponseEntity.ok(service.iniciar(id, request));
+    }
+
+    @PatchMapping("/{id}/finalizar")
+    @Operation(summary = "Finalizar una clase: registra km_final, marca COMPLETADA y sync con ms-vehiculos")
+    public ResponseEntity<RecorridoResponse> finalizar(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @Valid @RequestBody FinalizarAsignacionRequest request) {
+        validarAutenticacion(userEmail);
+        validarRoles(userRoles, ROLES_KILOMETRAJE);
+        return ResponseEntity.ok(service.finalizar(id, request));
+    }
+
+    @GetMapping("/{id}/recorrido")
+    @Operation(summary = "Resumen del recorrido (km, duración real, etc.)")
+    public ResponseEntity<RecorridoResponse> obtenerRecorrido(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @PathVariable Long id) {
+        validarAutenticacion(userEmail);
+        return ResponseEntity.ok(service.obtenerRecorrido(id));
     }
 
     private void validarAutenticacion(String userEmail) {
