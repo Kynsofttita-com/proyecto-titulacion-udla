@@ -133,7 +133,7 @@ class UsuarioServiceTest {
         when(usuarioRepository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(u));
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateUsuarioRequest req = new UpdateUsuarioRequest("NewName", null, null, null, null, null, null, null, null, null, null, null);
+        UpdateUsuarioRequest req = new UpdateUsuarioRequest("NewName", null, null, null, null, null, null, null, null, null, null, null, null);
         UsuarioResponse r = service.actualizar(1L, req);
 
         assertEquals("NewName", r.nombre());

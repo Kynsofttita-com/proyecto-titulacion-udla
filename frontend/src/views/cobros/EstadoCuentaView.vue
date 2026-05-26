@@ -118,7 +118,9 @@
           <Column header="Estudiante">
             <template #body="{ data }">
               <p class="text-sm">{{ nombreEstudiante(data.estudianteId) }}</p>
-              <p class="text-[11px] text-ink-500">ID {{ data.estudianteId }}</p>
+              <p v-if="estudiantesPorId[data.estudianteId]?.cedula" class="text-[11px] text-ink-500">
+                {{ estudiantesPorId[data.estudianteId].cedula }}
+              </p>
             </template>
           </Column>
           <Column header="Monto">

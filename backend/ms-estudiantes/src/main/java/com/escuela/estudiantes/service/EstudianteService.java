@@ -18,6 +18,14 @@ public interface EstudianteService {
 
     EstudianteDetailResponse findById(Long id);
 
+    /**
+     * Devuelve el detalle del estudiante asociado al {@code usuario_id} dado.
+     * Usado por el endpoint {@code GET /estudiantes/me} para que un estudiante
+     * logueado pueda recuperar su propio registro a partir del header
+     * {@code X-User-Id} inyectado por el API Gateway.
+     */
+    EstudianteDetailResponse findByUsuarioId(Long usuarioId);
+
     Page<EstudianteListResponse> findAll(Pageable pageable, String search, String estado);
 
     EstudianteResponse update(Long id, UpdateEstudianteRequest request);
