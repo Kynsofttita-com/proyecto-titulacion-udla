@@ -12,6 +12,15 @@ spring:
   application:
     name: ms-asignaciones
 
+  # Necesario para que NoHandlerFoundException sea lanzada y nuestro
+  # GlobalExceptionHandler responda 404 ProblemDetail (no 500). Por defecto
+  # Spring Boot 3 sirve un response 404 generico via ResourceHttpRequestHandler.
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+
   # ---------------------------------------------------------------------------
   # Datasource (PostgreSQL)
   # ---------------------------------------------------------------------------

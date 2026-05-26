@@ -1,0 +1,171 @@
+# =============================================================================
+# Integration Tests - Backend con Postgres + RabbitMQ reales
+# =============================================================================
+# Workflow que levanta Postgres 15 y RabbitMQ 3.12 como GitHub Services y
+# corre los tests de integracion del backend contra esas instancias reales.
+#
+# Hoy ejecuta:
+#   - Smoke de conectividad: pg_isready + rabbitmq health check desde el runner
+#   - mvn -B verify (compila + tests unitarios + tests etiquetados @Tag("integration"))
+#
+# Cuando se escriban tests con @Tag("integration") (sprint futuro), este
+# workflow los ejecutara automaticamente sin cambios adicionales.
+#
+# Variables de entorno expuestas a mvn:
+#   SPRING_PROFILES_ACTIVE=integration
+#   SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/escuela_db
+#   SPRING_RABBITMQ_HOST=localhost
+#   JWT_SECRET=<random 512-bit en cada run>
+# =============================================================================
+
+name: Integration Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/integration-tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/integration-tests.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: integration-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  integration:
+    name: Integration tests (Postgres + RabbitMQ)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: escuela_user
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: escuela_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U escuela_user -d escuela_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      rabbitmq:
+        image: rabbitmq:3.12-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 15s
+          --health-timeout 10s
+          --health-retries 10
+          --health-start-period 30s
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Generate random JWT secret for this run
+        run: |
+          # JWT secret de 512 bits codificado en hex (128 chars) - usado por ms-auth y gateway
+          JWT=$(openssl rand -hex 64)
+          echo "JWT_SECRET=$JWT" >> "$GITHUB_ENV"
+          echo "JWT secret generado (longitud: ${#JWT})"
+
+      - name: Init schemas in Postgres
+        run: |
+          # Crea los 9 schemas que los servicios esperan (auth_schema, estudiantes_schema, etc).
+          # Usa el script del repo en lugar de duplicarlo aqui.
+          if [ -f infrastructure/postgres/init-schemas.sql ]; then
+            PGPASSWORD=changeme psql -h localhost -U escuela_user -d escuela_db \
+              -f infrastructure/postgres/init-schemas.sql
+            echo "OK: schemas inicializados desde init-schemas.sql"
+          else
+            echo "WARN: infrastructure/postgres/init-schemas.sql no existe - omitido"
+          fi
+
+      - name: Verify infrastructure reachable
+        run: |
+          echo "=== Postgres ==="
+          PGPASSWORD=changeme pg_isready -h localhost -U escuela_user -d escuela_db
+          PGPASSWORD=changeme psql -h localhost -U escuela_user -d escuela_db \
+            -c "SELECT version();" -t | head -1
+
+          echo ""
+          echo "=== RabbitMQ ==="
+          curl -sf -u guest:guest http://localhost:15672/api/overview \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"rabbit {d['rabbitmq_version']} OK\")"
+
+      - name: Run unit tests (H2 in-memory, sin override de env)
+        working-directory: backend
+        run: mvn -B -ntp verify
+
+      # Step preparado para tests futuros con @Tag("integration") y
+      # @ActiveProfiles("integration"). Las env vars apuntan a los services
+      # Postgres + RabbitMQ reales. Hoy no hay tests etiquetados, por lo que
+      # surefire no ejecuta nada y el step pasa rapido (~10s).
+      - name: Run integration tests (Postgres + RabbitMQ reales)
+        working-directory: backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/escuela_db
+          SPRING_DATASOURCE_USERNAME: escuela_user
+          SPRING_DATASOURCE_PASSWORD: changeme
+          SPRING_RABBITMQ_HOST: localhost
+          SPRING_RABBITMQ_PORT: 5672
+          SPRING_RABBITMQ_USERNAME: guest
+          SPRING_RABBITMQ_PASSWORD: guest
+        run: mvn -B -ntp test -Dgroups=integration -DfailIfNoTests=false
+
+      - name: Upload Surefire test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surefire-integration-reports
+          path: backend/**/target/surefire-reports/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload Failsafe test reports (integration)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: failsafe-integration-reports
+          path: backend/**/target/failsafe-reports/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Publish test results summary
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Integration Tests
+          # dorny/test-reporter espera paths separados por coma (no multiline).
+          # Cubre los reportes de surefire (unit) y failsafe (integration).
+          path: 'backend/**/target/surefire-reports/*.xml,backend/**/target/failsafe-reports/*.xml'
+          reporter: java-junit
+          fail-on-error: false

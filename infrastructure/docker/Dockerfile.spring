@@ -100,9 +100,13 @@ USER spring:spring
 EXPOSE ${SERVICE_PORT}
 
 # Healthcheck contra Spring Boot Actuator.
-# start-period generoso (90s) porque Spring + JPA + Eureka tarda en arrancar.
-# Nota: usamos $SERVICE_PORT (env var) que SÍ persiste en runtime, a diferencia del ARG.
-HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
+# start-period MUY generoso (180s) y retries=10 porque en runners gratuitos de
+# GitHub Actions (2 cores / 7 GB) Spring + JPA + Eureka tarda 200s+ en arrancar.
+# Total ventana antes de marcar unhealthy = start_period + interval * retries =
+# 180 + 30*10 = 480s = 8 min. En maquinas potentes esto es overkill pero no
+# danino: el healthcheck igual reporta UP en cuanto el endpoint responde.
+# Nota: usamos $SERVICE_PORT (env var) que SI persiste en runtime, a diferencia del ARG.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=10 \
     CMD curl -fsS "http://localhost:${SERVICE_PORT}/actuator/health" | grep -q '"status":"UP"' || exit 1
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
