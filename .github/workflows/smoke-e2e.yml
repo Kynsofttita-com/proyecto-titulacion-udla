@@ -77,7 +77,11 @@ jobs:
 
       - name: Start full stack (--wait espera healthchecks)
         run: |
-          docker compose up -d --wait --wait-timeout 300
+          # --wait-timeout 600s: en runners GHA gratis, Spring + JPA + Eureka
+          # tardan ~200s por servicio y el healthcheck del Dockerfile.spring
+          # tiene start-period=180s + 10 retries cada 30s. Margen amplio para
+          # cubrir incluso el peor caso (ms-estudiantes, mas pesado).
+          docker compose up -d --wait --wait-timeout 600
           echo ""
           echo "=== Contenedores corriendo ==="
           docker compose ps
