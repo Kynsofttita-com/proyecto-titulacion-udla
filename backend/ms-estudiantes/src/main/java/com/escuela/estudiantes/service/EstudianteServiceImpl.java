@@ -136,6 +136,15 @@ public class EstudianteServiceImpl implements EstudianteService {
 
     @Override
     @Transactional(readOnly = true)
+    public EstudianteDetailResponse findByUsuarioId(Long usuarioId) {
+        Estudiante estudiante = repository.findByUsuarioIdAndDeletedAtIsNull(usuarioId)
+                .orElseThrow(() -> new EstudianteNotFoundException(
+                        "No existe estudiante asociado al usuario " + usuarioId));
+        return getMapper().toDetailResponse(estudiante);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<EstudianteListResponse> findAll(Pageable pageable, String search, String estado) {
         Specification<Estudiante> spec = Specification.where(EstudianteSpecifications.notDeleted())
                 .and(EstudianteSpecifications.estado(estado))

@@ -31,7 +31,7 @@ import java.util.Set;
 @Tag(name = "Instructores", description = "Gestion de instructores de la escuela")
 public class InstructorController {
 
-    private static final Set<String> ROLES_LECTURA = Set.of("ADMIN", "STAFF", "INSTRUCTOR");
+    private static final Set<String> ROLES_LECTURA = Set.of("ADMIN", "STAFF", "INSTRUCTOR", "ESTUDIANTE");
     private static final Set<String> ROLES_ESCRITURA = Set.of("ADMIN", "STAFF");
     private static final Set<String> ROLES_BORRADO = Set.of("ADMIN");
 
@@ -69,6 +69,21 @@ public class InstructorController {
         AuthHeaderGuard.requireAuth(userEmail);
         AuthHeaderGuard.requireAnyRole(userRoles, ROLES_LECTURA);
         return ResponseEntity.ok(service.obtener(id));
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Obtener el instructor asociado al usuario logueado",
+            description = "Devuelve el instructor cuyo usuario_id coincide con el JWT del request. " +
+                    "Usado por el frontend cuando el usuario logueado tiene rol INSTRUCTOR para saber " +
+                    "que registro le pertenece y filtrar sus asignaciones/estudiantes.")
+    public ResponseEntity<InstructorResponse> obtenerMio(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ID, required = false) String userId) {
+        AuthHeaderGuard.requireAuth(userEmail);
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("Header X-User-Id requerido");
+        }
+        return ResponseEntity.ok(service.obtenerPorUsuarioId(Long.valueOf(userId)));
     }
 
     @PostMapping

@@ -105,6 +105,30 @@ public class EstudianteController {
     }
 
     // -----------------------------------------------------------------------
+    // GET /estudiantes/me
+    // -----------------------------------------------------------------------
+
+    @GetMapping("/me")
+    @Operation(summary = "Obtener el estudiante asociado al usuario logueado",
+            description = "Devuelve el estudiante cuyo usuario_id coincide con el X-User-Id del request. " +
+                    "Usado por el frontend cuando el usuario logueado tiene rol ESTUDIANTE para saber " +
+                    "que registro le pertenece y filtrar sus asignaciones / pagos / progreso.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estudiante encontrado"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "404", description = "El usuario no tiene un registro de estudiante asociado")
+    })
+    public ResponseEntity<EstudianteDetailResponse> obtenerMio(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ID, required = false) String userId) {
+        validarAutenticacion(userEmail);
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("Header X-User-Id requerido");
+        }
+        return ResponseEntity.ok(service.findByUsuarioId(Long.valueOf(userId)));
+    }
+
+    // -----------------------------------------------------------------------
     // POST /estudiantes
     // -----------------------------------------------------------------------
 

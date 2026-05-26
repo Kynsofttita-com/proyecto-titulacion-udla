@@ -24,7 +24,7 @@ import java.util.Set;
 @Tag(name = "Categorias Licencia", description = "Catalogo de categorias de licencia (A, B, C, ...)")
 public class CategoriaLicenciaController {
 
-    private static final Set<String> ROLES_LECTURA = Set.of("ADMIN", "STAFF", "INSTRUCTOR");
+    private static final Set<String> ROLES_LECTURA = Set.of("ADMIN", "STAFF", "INSTRUCTOR", "ESTUDIANTE");
     private static final Set<String> ROLES_ESCRITURA = Set.of("ADMIN");
 
     private final CategoriaLicenciaService service;

@@ -21,6 +21,8 @@ public interface InstructorRepository extends JpaRepository<Instructor, Long> {
 
     Optional<Instructor> findByLicenciaNumeroAndDeletedAtIsNull(String licenciaNumero);
 
+    Optional<Instructor> findByUsuarioIdAndDeletedAtIsNull(Long usuarioId);
+
     Page<Instructor> findByDeletedAtIsNull(Pageable pageable);
 
     @Query("""

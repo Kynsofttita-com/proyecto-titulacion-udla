@@ -106,6 +106,9 @@ public class UsuarioService {
         if (request.ciudad() != null) u.setCiudad(emptyToNull(request.ciudad()));
         if (request.provincia() != null) u.setProvincia(emptyToNull(request.provincia()));
         if (request.activo() != null) u.setActivo(request.activo());
+        if (request.passwordChangeRequired() != null) {
+            u.setPasswordChangeRequired(request.passwordChangeRequired());
+        }
         if (request.roles() != null && !request.roles().isEmpty()) {
             Set<Rol> roles = resolverRoles(request.roles());
             u.setRoles(roles);
@@ -206,7 +209,8 @@ public class UsuarioService {
                 u.getFailedAttempts(), u.getLockUntil(), u.getLastLogin(),
                 u.getRoles().stream().map(Rol::getNombre).sorted().toList(),
                 u.getCedula(), u.getFechaNacimiento(), u.getGenero(),
-                u.getDireccion(), u.getCiudad(), u.getProvincia()
+                u.getDireccion(), u.getCiudad(), u.getProvincia(),
+                u.getPasswordChangeRequired()
         );
     }
 

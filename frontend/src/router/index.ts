@@ -168,6 +168,24 @@ const routes: RouteRecordRaw[] = [
     name: 'UsuarioDetalle',
     component: () => import('@/views/configuracion/UsuarioDetailView.vue'),
     meta: { requiresAuth: true, roles: ['ADMIN'] }
+  },
+  {
+    path: '/perfil',
+    name: 'Perfil',
+    component: () => import('@/views/auth/PerfilView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/mi-progreso',
+    name: 'MiProgreso',
+    component: () => import('@/views/estudiantes/MiProgresoView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/mis-pagos',
+    name: 'MisPagos',
+    component: () => import('@/views/estudiantes/MisPagosView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -179,13 +197,24 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth
+  const rolesPermitidos = to.meta.roles as string[] | undefined
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    // Sin redirect query — siempre que vuelva al sistema irá al dashboard
     next({ name: 'Login' })
   } else if (to.name === 'Login' && authStore.isAuthenticated) {
     next({ name: 'Dashboard' })
-  } else if (to.meta.roles && !authStore.hasRole(to.meta.roles as string[])) {
+  } else if (
+    authStore.isAuthenticated
+    && authStore.mustChangePassword
+    && to.name !== 'Perfil'
+  ) {
+    // Si el admin activo "forzar cambio de contraseña" para este usuario,
+    // bloqueamos toda navegacion hasta que lo haga en /perfil.
+    next({ name: 'Perfil' })
+  } else if (rolesPermitidos && !rolesPermitidos.includes(authStore.currentRole)) {
+    // Guard por ROL ACTIVO (no por roles del user). Si el user tiene ADMIN+STAFF
+    // y eligio actuar como STAFF, NO debe poder entrar a rutas ADMIN-only.
+    // Esto permite la previsualizacion realista del rol.
     next({ name: 'Dashboard' })
   } else {
     next()

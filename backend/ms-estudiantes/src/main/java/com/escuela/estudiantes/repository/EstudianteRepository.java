@@ -27,6 +27,8 @@ public interface EstudianteRepository
 
     Optional<Estudiante> findByIdAndDeletedAtIsNull(Long id);
 
+    Optional<Estudiante> findByUsuarioIdAndDeletedAtIsNull(Long usuarioId);
+
     boolean existsByCedulaAndDeletedAtIsNull(String cedula);
 
     boolean existsByEmailAndDeletedAtIsNull(String email);

@@ -1,5 +1,6 @@
 package com.escuela.auth.controller;
 
+import com.escuela.auth.dto.CambiarPasswordRequest;
 import com.escuela.auth.dto.ForgotPasswordRequest;
 import com.escuela.auth.dto.LoginRequest;
 import com.escuela.auth.dto.LoginResponse;
@@ -80,6 +81,19 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/cambiar-password")
+    public ResponseEntity<Void> cambiarPasswordSelfService(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String email,
+            @Valid @RequestBody CambiarPasswordRequest request) {
+        // El API Gateway valida el JWT y agrega X-User-Email. MS-Auth toma la
+        // identidad de ahi para evitar suplantacion (el JSON no la incluye).
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.status(401).build();
+        }
+        authService.cambiarPasswordSelfService(email, request.currentPassword(), request.newPassword());
         return ResponseEntity.noContent().build();
     }
 

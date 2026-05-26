@@ -186,52 +186,114 @@ proyecto-titulacion/
 ### Requisitos previos
 - Java 21 JDK
 - Maven 3.8+
-- Node.js 18+ (frontend, Sprint 6+)
+- Node.js 18+ (recomendado 20 LTS)
 - Docker Desktop + Docker Compose
 - Git
 
-### Opción A — Stack completo containerizado (recomendado)
+---
+
+### Levantar el sistema completo (recomendado) ⭐
+
+Este flujo levanta los 14 contenedores del backend + el frontend Vue en modo dev. Es lo que necesitás para usar la app.
 
 ```bash
-# 1. Clonar
+# 1. Clonar el repo
 git clone https://github.com/Kynsofttita-com/proyecto-titulacion-udla.git
 cd proyecto-titulacion-udla
 
-# 2. Levantar los 14 contenedores
+# 2. Levantar el stack completo del backend (14 contenedores Docker)
 docker compose -f infrastructure/docker/docker-compose.yml up -d
 
-# 3. Verificar (esperar ~50-60 s a que pasen los healthchecks)
+# 3. Esperar a que todos los healthchecks pasen (~50-60s la primera vez, ~30s las siguientes)
 docker compose -f infrastructure/docker/docker-compose.yml ps
+# (todos deben aparecer "healthy")
+
+# 4. Verificar que Eureka registró los 9 servicios (Gateway + 8 MS)
+curl -s http://localhost:8761/eureka/apps -H "Accept: application/json" \
+  | python -c "import sys,json; d=json.load(sys.stdin); print(f'Apps registradas: {len(d[\"applications\"][\"application\"])}')"
+# Debe imprimir: Apps registradas: 9
+
+# 5. Instalar deps del frontend (solo la primera vez)
+cd frontend
+npm install
+
+# 6. Configurar variables de entorno del frontend (solo la primera vez)
+cp .env.example .env
+# (el default apunta a http://localhost:8080, no requiere edición para local)
+
+# 7. Levantar el frontend Vue (dev server con hot reload)
+npm run dev
+# Debe imprimir: VITE v5.x.x ready in XXXms - Local: http://localhost:5173/
 ```
 
-### Opción B — Solo infra (los MS corren desde tu IDE)
+**¡Listo!** Abrí **http://localhost:5173** en el navegador y entrá con:
+
+```
+Email:    admin@escuela.local
+Password: Admin123!
+```
+
+---
+
+### Opción alternativa — Solo infra + backend en el IDE
+
+Si querés debuggear código del backend desde IntelliJ/Eclipse en lugar de usar las imágenes Docker:
 
 ```bash
-# Levantar solo Postgres + RabbitMQ + MinIO + Adminer
+# 1. Levantar solo Postgres + RabbitMQ + MinIO + Adminer (4 contenedores)
 docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
 
-# Compilar backend
+# 2. Compilar todos los módulos backend (necesario por shared libs)
 cd backend
 mvn clean install -DskipTests
 
-# Arrancar Eureka primero, luego Gateway, luego cada MS
+# 3. Arrancar Eureka primero, luego Gateway, luego cada MS (cada uno en su terminal)
 cd eureka-server && mvn spring-boot:run
-# (en otra terminal)
+# (otra terminal)
 cd api-gateway && mvn spring-boot:run
-# (etc., uno por terminal)
+# (etc., 1 terminal por MS — 10 terminales en total)
+
+# 4. Frontend (en otra terminal más)
+cd frontend && npm install && npm run dev
 ```
+
+---
+
+### Comandos útiles para administrar el sistema
+
+```bash
+# Ver logs del backend en vivo
+docker compose -f infrastructure/docker/docker-compose.yml logs -f
+
+# Ver logs de un MS específico
+docker compose -f infrastructure/docker/docker-compose.yml logs -f ms-auth
+
+# Detener el backend (preserva la BD)
+docker compose -f infrastructure/docker/docker-compose.yml down
+
+# Detener Y BORRAR la BD (cuidado)
+docker compose -f infrastructure/docker/docker-compose.yml down -v
+
+# Rebuild de imágenes tras cambios de código backend
+docker compose -f infrastructure/docker/docker-compose.yml up -d --build
+
+# Detener el frontend
+# Ctrl+C en la terminal donde corre `npm run dev`
+```
+
+---
 
 ### URLs útiles
 
-| Servicio | URL |
-|----------|-----|
-| Eureka Dashboard | http://localhost:8761 |
-| API Gateway | http://localhost:8080 |
-| Gateway routes | http://localhost:8080/actuator/gateway/routes |
-| RabbitMQ Management | http://localhost:15672 (guest/guest) |
-| MinIO Console | http://localhost:9001 (minioadmin/minioadmin123) |
-| Adminer (BD) | http://localhost:8888 |
-| Frontend Vue (login: `admin@escuela.local` / `Admin123!`) | http://localhost:5173 |
+| Servicio | URL | Credenciales |
+|----------|-----|--------------|
+| 🎯 **Frontend Vue** | http://localhost:5173 | `admin@escuela.local` / `Admin123!` |
+| API Gateway | http://localhost:8080 | (JWT vía login) |
+| Gateway routes | http://localhost:8080/actuator/gateway/routes | — |
+| Eureka Dashboard | http://localhost:8761 | — |
+| RabbitMQ Management | http://localhost:15672 | guest / guest |
+| MinIO Console | http://localhost:9001 | minioadmin / minioadmin123 |
+| Adminer (BD) | http://localhost:8888 | escuela_user / `<ver .env>` / escuela_db |
 
 ---
 
