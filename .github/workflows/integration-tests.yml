@@ -79,18 +79,6 @@ jobs:
           --health-retries 10
           --health-start-period 30s
 
-    env:
-      # Variables expuestas a tests/mvn. Los unit tests actuales usan profile "test"
-      # con H2 in-memory (no tocan estas vars). Tests futuros con @Tag("integration")
-      # y @ActiveProfiles("integration") las usaran para conectarse a Postgres real.
-      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/escuela_db
-      SPRING_DATASOURCE_USERNAME: escuela_user
-      SPRING_DATASOURCE_PASSWORD: changeme
-      SPRING_RABBITMQ_HOST: localhost
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_PASSWORD: guest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -133,9 +121,25 @@ jobs:
           curl -sf -u guest:guest http://localhost:15672/api/overview \
             | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"rabbit {d['rabbitmq_version']} OK\")"
 
-      - name: Run tests (incluye @Tag("integration") si existen)
+      - name: Run unit tests (H2 in-memory, sin override de env)
         working-directory: backend
         run: mvn -B -ntp verify
+
+      # Step preparado para tests futuros con @Tag("integration") y
+      # @ActiveProfiles("integration"). Las env vars apuntan a los services
+      # Postgres + RabbitMQ reales. Hoy no hay tests etiquetados, por lo que
+      # surefire no ejecuta nada y el step pasa rapido (~10s).
+      - name: Run integration tests (Postgres + RabbitMQ reales)
+        working-directory: backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/escuela_db
+          SPRING_DATASOURCE_USERNAME: escuela_user
+          SPRING_DATASOURCE_PASSWORD: changeme
+          SPRING_RABBITMQ_HOST: localhost
+          SPRING_RABBITMQ_PORT: 5672
+          SPRING_RABBITMQ_USERNAME: guest
+          SPRING_RABBITMQ_PASSWORD: guest
+        run: mvn -B -ntp test -Dgroups=integration -DfailIfNoTests=false
 
       - name: Upload Surefire test reports
         uses: actions/upload-artifact@v4
