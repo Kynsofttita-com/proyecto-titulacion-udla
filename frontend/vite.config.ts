@@ -26,10 +26,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor': ['vue', 'vue-router', 'axios', 'pinia'],
-          'primevue': ['primevue']
+          'vendor': ['vue', 'vue-router', 'axios', 'pinia']
         }
       }
     }
+  },
+  optimizeDeps: {
+    include: ['primevue/config', 'primevue/usetoast', 'primevue/useconfirm']
   }
 })
