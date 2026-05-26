@@ -1,7 +1,10 @@
 package com.escuela.asignaciones.feign;
 
+import com.escuela.asignaciones.dto.feign.DisponibilidadDelDiaDTO;
 import com.escuela.asignaciones.dto.feign.InstructorDetailDTO;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,6 +13,11 @@ class InstructorClientTest {
     private final InstructorClient client = new InstructorClient() {
         @Override
         public InstructorDetailDTO obtenerInstructor(Long id) {
+            return null;
+        }
+
+        @Override
+        public DisponibilidadDelDiaDTO obtenerDisponibilidad(Long id, LocalDate fecha) {
             return null;
         }
     };
