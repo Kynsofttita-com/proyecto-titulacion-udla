@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * Plantilla de email transaccional editable por el ADMIN.
@@ -41,9 +41,14 @@ public class PlantillaEmail extends BaseEntity {
     @Column(name = "cuerpo_html", nullable = false, columnDefinition = "TEXT")
     private String cuerpoHtml;
 
+    /**
+     * Nombres de variables disponibles para sustituir en {@link #cuerpoHtml}
+     * con sintaxis {@code {{variable}}}. Se persiste como array JSONB en
+     * Postgres (ej. {@code ["nombre", "enlace"]}).
+     */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
-    private Map<String, Object> variables;
+    private List<String> variables;
 
     @Column(nullable = false)
     private Boolean activa = Boolean.TRUE;

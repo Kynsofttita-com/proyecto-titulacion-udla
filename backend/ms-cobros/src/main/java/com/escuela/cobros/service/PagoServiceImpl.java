@@ -7,6 +7,7 @@ import com.escuela.cobros.entity.Factura;
 import com.escuela.cobros.entity.FacturaCuota;
 import com.escuela.cobros.entity.Pago;
 import com.escuela.cobros.exception.FacturaNotFoundException;
+import com.escuela.cobros.exception.PagoNotFoundException;
 import com.escuela.cobros.exception.SaldoInsuficienteException;
 import com.escuela.cobros.mapper.PagoMapper;
 import com.escuela.cobros.repository.FacturaCuotaRepository;
@@ -49,7 +50,7 @@ public class PagoServiceImpl implements PagoService {
     public PagoResponse findById(Long id) {
         log.debug("Buscando pago con ID: {}", id);
         Pago pago = pagoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Pago con ID " + id + " no encontrado"));
+            .orElseThrow(() -> new PagoNotFoundException(id));
         return pagoMapper.toResponse(pago);
     }
 
@@ -151,7 +152,7 @@ public class PagoServiceImpl implements PagoService {
         if ("CANCELADA".equalsIgnoreCase(factura.getEstado())
             || "ANULADA".equalsIgnoreCase(factura.getEstado())) {
             log.warn("Factura {} está anulada, no se puede registrar pago", factura.getId());
-            throw new RuntimeException("Factura está anulada, no se puede registrar pago");
+            throw new IllegalArgumentException("Factura está anulada, no se puede registrar pago");
         }
     }
 
