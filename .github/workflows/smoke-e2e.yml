@@ -195,10 +195,20 @@ jobs:
 
           echo ""
           echo "=== 4. Verificar 404 ProblemDetail (no 500) en ruta inexistente ==="
+          # Usamos 2+ segmentos extra para que NO matchee handlers como
+          # @GetMapping("/{id}") y dispare NoHandlerFoundException → 404.
           code=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" \
-            "http://localhost:8080/vehiculos/no-existe-handler")
+            "http://localhost:8080/vehiculos/ruta/inventada/sin/handler")
           [ "$code" = "404" ] || { echo "FAIL: esperaba 404 ProblemDetail, recibi $code"; exit 1; }
           echo "OK: 404 correcto"
+
+          echo ""
+          echo "=== 5. Verificar 400 ProblemDetail (no 500) cuando path var es invalido ==="
+          # id no numerico dispara MethodArgumentTypeMismatchException → 400.
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" \
+            "http://localhost:8080/vehiculos/no-es-un-id")
+          [ "$code" = "400" ] || { echo "FAIL: esperaba 400 ProblemDetail, recibi $code"; exit 1; }
+          echo "OK: 400 correcto"
 
       - name: Dump container logs on failure
         if: failure()
