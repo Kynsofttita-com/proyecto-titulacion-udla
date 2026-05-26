@@ -2,6 +2,7 @@ package com.escuela.asignaciones.service;
 
 import com.escuela.asignaciones.config.RabbitConfig;
 import com.escuela.asignaciones.entity.Asignacion;
+import com.escuela.common.events.asignaciones.AsignacionCompletadaEvent;
 import com.escuela.common.events.asignaciones.AsignacionCreadaEvent;
 import com.escuela.common.events.asignaciones.AsignacionReprogramadaEvent;
 import com.escuela.common.events.asignaciones.AsignacionCanceladaEvent;
@@ -74,6 +75,36 @@ public class AsignacionEventDispatcher {
             log.info("Evento AsignacionReprogramada publicado: id={}", asignacion.getId());
         } catch (Exception e) {
             log.error("Error publicando evento AsignacionReprogramada", e);
+        }
+    }
+
+    /**
+     * Publica que una asignacion se completo (instructor llamo a finalizar).
+     * ms-estudiantes lo usa para incrementar clases_completadas en progreso_academico.
+     */
+    public void publishCompletada(Asignacion asignacion, Integer duracionRealMinutos, Integer kmRecorridos) {
+        try {
+            EventPublisher publisher = resolvePublisher();
+            if (publisher == null) {
+                log.warn("RabbitTemplate no disponible, evento no publicado");
+                return;
+            }
+
+            AsignacionCompletadaEvent event = new AsignacionCompletadaEvent(
+                    asignacion.getId(),
+                    asignacion.getInstructorId(),
+                    asignacion.getEstudianteId(),
+                    asignacion.getVehiculoId(),
+                    asignacion.getFechaHora(),
+                    duracionRealMinutos,
+                    kmRecorridos
+            );
+
+            publisher.publish(RabbitConfig.EXCHANGE_NAME, AsignacionCompletadaEvent.ROUTING_KEY, event);
+            log.info("Evento AsignacionCompletada publicado: id={} duracionMin={} kmRecorridos={}",
+                    asignacion.getId(), duracionRealMinutos, kmRecorridos);
+        } catch (Exception e) {
+            log.error("Error publicando evento AsignacionCompletada", e);
         }
     }
 

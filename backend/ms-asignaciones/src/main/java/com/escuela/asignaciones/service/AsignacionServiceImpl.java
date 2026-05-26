@@ -458,6 +458,13 @@ public class AsignacionServiceImpl implements AsignacionService {
             syncEstMsg = "Duración 0, no se sumaron minutos";
         }
 
+        // Publica AsignacionCompletada para que ms-estudiantes mantenga el contador
+        // clases_completadas en progreso_academico (camino asincrono, separado del
+        // sync de horas via Feign que es transaccional con la operacion).
+        Integer kmRec = (a.getKmInicial() != null && a.getKmFinal() != null)
+                ? (a.getKmFinal() - a.getKmInicial()) : null;
+        eventDispatcher.publishCompletada(a, (int) duracionMin, kmRec);
+
         return toRecorridoResponse(a, syncVehOk, syncVehMsg, syncEstOk, syncEstMsg);
     }
 

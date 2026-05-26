@@ -53,6 +53,13 @@ public class RabbitConfig extends AbstractRabbitConfig {
     public static final String FROM_ASIGNACIONES_QUEUE_NAME = "estudiantes.from-asignaciones.queue";
     public static final String ASIGNACIONES_CREADA_ROUTING = "asignacion.creada";
 
+    // Cola dedicada al mantenimiento del progreso academico. Recibe todos los
+    // eventos del ciclo de vida de una asignacion (creada/completada/cancelada)
+    // para mantener los contadores en la tabla progreso_academico actualizados.
+    public static final String FROM_ASIGNACIONES_PROGRESO_QUEUE_NAME = "estudiantes.from-asignaciones-progreso.queue";
+    public static final String ASIGNACIONES_COMPLETADA_ROUTING = "asignacion.completada";
+    public static final String ASIGNACIONES_CANCELADA_ROUTING = "asignacion.cancelada";
+
     @Bean
     public TopicExchange estudiantesExchange() {
         return new TopicExchange(EXCHANGE_NAME, true, false);
@@ -164,5 +171,37 @@ public class RabbitConfig extends AbstractRabbitConfig {
         return BindingBuilder.bind(estudiantesFromAsignacionesQueue())
                 .to(asignacionesExchangeRef())
                 .with(ASIGNACIONES_CREADA_ROUTING);
+    }
+
+    // ============ Cola para mantenimiento del progreso academico ============
+    // Escucha creada/completada/cancelada en una sola queue. El listener usa
+    // @RabbitHandler por tipo para distinguir.
+
+    @Bean
+    public Queue estudiantesFromAsignacionesProgresoQueue() {
+        return QueueBuilder.durable(FROM_ASIGNACIONES_PROGRESO_QUEUE_NAME)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .build();
+    }
+
+    @Bean
+    public Binding estudiantesProgresoCreadaBinding() {
+        return BindingBuilder.bind(estudiantesFromAsignacionesProgresoQueue())
+                .to(asignacionesExchangeRef())
+                .with(ASIGNACIONES_CREADA_ROUTING);
+    }
+
+    @Bean
+    public Binding estudiantesProgresoCompletadaBinding() {
+        return BindingBuilder.bind(estudiantesFromAsignacionesProgresoQueue())
+                .to(asignacionesExchangeRef())
+                .with(ASIGNACIONES_COMPLETADA_ROUTING);
+    }
+
+    @Bean
+    public Binding estudiantesProgresoCanceladaBinding() {
+        return BindingBuilder.bind(estudiantesFromAsignacionesProgresoQueue())
+                .to(asignacionesExchangeRef())
+                .with(ASIGNACIONES_CANCELADA_ROUTING);
     }
 }
