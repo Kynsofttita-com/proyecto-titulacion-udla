@@ -163,7 +163,7 @@ class EstudianteServiceImplTest {
                 1L, CEDULA_VALIDA, "Hernan", "Jurado", "hernan@test.com",
                 "0987654321", null, LocalDate.of(2000, 1, 1), "M",
                 "PRE_MATRICULADO", null, null, null, null, null,
-                null, null, null, null, null));
+                null, 0, null, null, null, null));
 
         EstudianteDetailResponse response = service.findById(1L);
 

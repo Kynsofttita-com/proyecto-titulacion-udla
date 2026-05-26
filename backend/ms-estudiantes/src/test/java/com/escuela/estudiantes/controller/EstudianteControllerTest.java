@@ -107,7 +107,7 @@ class EstudianteControllerTest {
         when(service.findById(1L)).thenReturn(new EstudianteDetailResponse(
                 1L, "1710034065", "Hernan", "Jurado", "h@t.com", "0987654321",
                 null, null, "M", "PRE_MATRICULADO", null, null, null, null, null,
-                null, null, null, null, null));
+                null, 0, null, null, null, null));
 
         mockMvc.perform(get("/estudiantes/1")
                         .header("X-User-Email", ADMIN_EMAIL))
