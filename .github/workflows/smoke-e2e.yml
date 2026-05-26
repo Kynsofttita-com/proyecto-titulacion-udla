@@ -1,0 +1,209 @@
+# =============================================================================
+# Smoke E2E - Stack completo via docker-compose
+# =============================================================================
+# Workflow que levanta el stack completo (Postgres + RabbitMQ + MinIO + Eureka
+# + Gateway + 8 MS) usando docker-compose y ejecuta un smoke test E2E:
+#   - Verifica que los 14 contenedores arrancan healthy
+#   - Verifica que Eureka registra 9 apps UP
+#   - Hace login admin y prueba ~14 endpoints REST via API Gateway
+#   - Verifica que un endpoint sin token responde 401
+#
+# Si algo falla, vuelca logs de todos los contenedores como artifacts para
+# debugging post-mortem.
+#
+# Performance:
+#   - Primera ejecucion: ~20 min (build de 10 imagenes spring sin cache)
+#   - Siguientes: ~8 min (cache GHA de docker buildx)
+#
+# Por eso este workflow solo se dispara con cambios en backend/Docker o manual.
+# =============================================================================
+
+name: Smoke E2E
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'infrastructure/**'
+      - '.github/workflows/smoke-e2e.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'infrastructure/**'
+      - '.github/workflows/smoke-e2e.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: smoke-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke E2E (docker compose up + curl)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    defaults:
+      run:
+        working-directory: infrastructure/docker
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx (cache GHA)
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate runtime secrets
+        run: |
+          # JWT_SECRET de 512 bits (compartido entre ms-auth y gateway)
+          JWT=$(openssl rand -hex 64)
+          echo "JWT_SECRET=$JWT" >> "$GITHUB_ENV"
+          echo "POSTGRES_PASSWORD=changeme" >> "$GITHUB_ENV"
+          echo "RABBITMQ_PASSWORD=guest" >> "$GITHUB_ENV"
+          echo "MINIO_SECRET_KEY=minioadmin123" >> "$GITHUB_ENV"
+          echo "Secrets generados para esta corrida"
+
+      - name: Build images (parallel, con cache GHA)
+        run: |
+          # COMPOSE_BAKE delega a buildx para usar cache GHA en cada imagen.
+          export COMPOSE_BAKE=true
+          docker compose build --parallel
+
+      - name: Start full stack (--wait espera healthchecks)
+        run: |
+          docker compose up -d --wait --wait-timeout 300
+          echo ""
+          echo "=== Contenedores corriendo ==="
+          docker compose ps
+
+      - name: Wait extra for Eureka registrations (max 90s)
+        run: |
+          for i in $(seq 1 18); do
+            count=$(curl -sf -H "Accept: application/json" http://localhost:8761/eureka/apps 2>/dev/null \
+              | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('applications',{}).get('application',[])))" 2>/dev/null || echo 0)
+            echo "Intento $i/18 - apps registradas en Eureka: $count"
+            if [ "$count" -ge 9 ]; then
+              echo "OK: 9 apps registradas"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "FAIL: timeout esperando registrations en Eureka"
+          exit 1
+
+      - name: Health check de los 10 servicios Spring
+        run: |
+          declare -A SERVICES=(
+            [api-gateway]=8080
+            [ms-auth]=8081
+            [ms-estudiantes]=8082
+            [ms-instructores]=8083
+            [ms-vehiculos]=8084
+            [ms-asignaciones]=8085
+            [ms-cobros]=8086
+            [ms-reportes]=8087
+            [ms-notificaciones]=8088
+            [eureka-server]=8761
+          )
+          fails=0
+          for svc in "${!SERVICES[@]}"; do
+            port="${SERVICES[$svc]}"
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://localhost:$port/actuator/health" || echo "000")
+            printf "  %-20s port=%s -> %s\n" "$svc" "$port" "$code"
+            [ "$code" = "200" ] || fails=$((fails+1))
+          done
+          if [ "$fails" -gt 0 ]; then
+            echo "FAIL: $fails servicios sin health 200"
+            exit 1
+          fi
+
+      - name: Verify RabbitMQ y MinIO
+        run: |
+          echo "=== RabbitMQ ==="
+          curl -sf -u guest:guest http://localhost:15672/api/overview \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"rabbit {d['rabbitmq_version']} OK - queues={d['object_totals']['queues']}\")"
+
+          echo ""
+          echo "=== MinIO ==="
+          curl -sf -o /dev/null -w "live: %{http_code}\n" http://localhost:9000/minio/health/live
+          curl -sf -o /dev/null -w "ready: %{http_code}\n" http://localhost:9000/minio/health/ready
+
+      - name: Smoke E2E via API Gateway
+        run: |
+          set -e
+          echo "=== 1. Login admin ==="
+          TOKEN=$(curl -sf -X POST http://localhost:8080/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"admin@escuela.local","password":"Admin123!"}' \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['accessToken'])")
+          [ -z "$TOKEN" ] && { echo "FAIL: login sin token"; exit 1; }
+          echo "OK: token len=${#TOKEN}"
+
+          echo ""
+          echo "=== 2. 401 sin token ==="
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/estudiantes)
+          [ "$code" = "401" ] || { echo "FAIL: esperaba 401, recibi $code"; exit 1; }
+          echo "OK: 401 correcto"
+
+          echo ""
+          echo "=== 3. Endpoints autenticados ==="
+          fails=0
+          for path in \
+              "/estudiantes?page=0&size=3" \
+              "/instructores?page=0&size=3" \
+              "/vehiculos?page=0&size=3" \
+              "/asignaciones?page=0&size=3" \
+              "/facturas?page=0&size=3" \
+              "/pagos?page=0&size=3" \
+              "/categorias-licencia" \
+              "/tipos-combustible" \
+              "/tipos-curso" \
+              "/conceptos-facturacion" \
+              "/usuarios?page=0&size=3" \
+              "/configuracion"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" "http://localhost:8080$path")
+            printf "  %-50s -> %s\n" "$path" "$code"
+            [ "$code" = "200" ] || fails=$((fails+1))
+          done
+          if [ "$fails" -gt 0 ]; then
+            echo "FAIL: $fails endpoints sin 200"
+            exit 1
+          fi
+
+          echo ""
+          echo "=== 4. Verificar 404 ProblemDetail (no 500) en ruta inexistente ==="
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" \
+            "http://localhost:8080/vehiculos/no-existe-handler")
+          [ "$code" = "404" ] || { echo "FAIL: esperaba 404 ProblemDetail, recibi $code"; exit 1; }
+          echo "OK: 404 correcto"
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          mkdir -p /tmp/container-logs
+          for c in $(docker compose ps -q); do
+            name=$(docker inspect -f '{{.Name}}' "$c" | sed 's|/||')
+            echo "=== $name ==="
+            docker logs --tail 200 "$c" > "/tmp/container-logs/${name}.log" 2>&1 || true
+          done
+          echo ""
+          docker compose ps
+
+      - name: Upload container logs (only on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-logs
+          path: /tmp/container-logs/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose down -v --remove-orphans
