@@ -44,6 +44,3 @@ README.md
 # Files no relevantes para el build
 .editorconfig
 .prettierrc
-
-# Archivo helper temporal del Sprint 1 (ya eliminado)
-generate-ms.sh
