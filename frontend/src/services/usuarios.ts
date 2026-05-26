@@ -41,6 +41,19 @@ const usuariosService = {
 
   async eliminarUsuario(id: number): Promise<void> {
     await api.delete(`/usuarios/${id}`)
+  },
+
+  /**
+   * Cambio de contraseña por el propio usuario (self-service).
+   *
+   * NOTA (deuda Sprint 13): el endpoint backend `/auth/cambiar-password`
+   * aún no está implementado. Devolverá 404 hasta que se implemente.
+   * Documentado en DECISIONES.md / project_state. El form de cambio en
+   * /perfil quedó listo para conectarse automáticamente cuando se cree
+   * el endpoint.
+   */
+  async cambiarPassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
+    await api.post('/auth/cambiar-password', data)
   }
 }
 

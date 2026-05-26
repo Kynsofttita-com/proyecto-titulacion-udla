@@ -1,15 +1,15 @@
 <template>
   <div class="space-y-6">
     <PageHeader
-      title="Asignaciones de clases"
-      description="Programación tripartita: estudiante + instructor + vehículo."
+      :title="(esInstructor || esEstudiante) ? 'Mis clases' : 'Asignaciones de clases'"
+      :description="esEstudiante ? 'Tus clases programadas y completadas.' : (esInstructor ? 'Tus clases programadas y en curso.' : 'Programación tripartita: estudiante + instructor + vehículo.')"
       icon="pi pi-calendar"
-      :breadcrumbs="[{ label: 'Inicio', to: '/dashboard' }, { label: 'Asignaciones' }]"
+      :breadcrumbs="[{ label: 'Inicio', to: '/dashboard' }, { label: (esInstructor || esEstudiante) ? 'Mis clases' : 'Asignaciones' }]"
     >
       <template #actions>
         <Button label="Vista lista" icon="pi pi-list" outlined @click="vista = 'lista'" :severity="vista === 'lista' ? 'primary' : 'secondary'" />
         <Button label="Vista calendario" icon="pi pi-calendar" outlined @click="vista = 'calendario'" :severity="vista === 'calendario' ? 'primary' : 'secondary'" />
-        <Button label="Nueva asignación" icon="pi pi-plus" @click="mostrarForm = true" />
+        <Button v-if="!esInstructor && !esEstudiante" label="Nueva asignación" icon="pi pi-plus" @click="mostrarForm = true" />
       </template>
     </PageHeader>
 
@@ -51,28 +51,35 @@
           v-if="asignacionesDelDia.length === 0"
           icon="pi pi-calendar-times"
           title="Sin clases en este día"
-          description="Selecciona otro día o crea una nueva asignación."
+          :description="(esInstructor || esEstudiante) ? 'Selecciona otro día en el calendario.' : 'Selecciona otro día o crea una nueva asignación.'"
         >
           <template #action>
-            <Button label="Crear asignación" icon="pi pi-plus" @click="mostrarForm = true" />
+            <Button v-if="!esInstructor && !esEstudiante" label="Crear asignación" icon="pi pi-plus" @click="mostrarForm = true" />
           </template>
         </EmptyState>
         <ul v-else class="divide-y divide-ink-200">
           <li v-for="a in asignacionesDelDia" :key="a.id" class="flex items-center gap-4 px-6 py-4 hover:bg-ink-50/50 transition">
             <div class="w-16 text-center flex-shrink-0">
-              <p class="text-xl font-bold text-brand-700">{{ extraerHora(a.fechaHora) }}</p>
-              <p class="text-[10px] text-ink-500 uppercase tracking-wider">{{ a.duracionMinutos || 60 }} min</p>
+              <p class="text-xl font-bold text-brand-700">{{ extraerHora(a) }}</p>
+              <p class="text-[10px] text-ink-500 uppercase tracking-wider">{{ a.duracionMinutos || calcDuracion(a) }} min</p>
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <p class="text-sm font-semibold text-ink-900">Clase #{{ a.id }}</p>
+                <p class="text-sm font-semibold text-ink-900">{{ nombreEstudiante(a.estudianteId) }}</p>
                 <span class="text-xs text-ink-400">·</span>
                 <span class="text-xs text-ink-500">{{ a.tipoClase || 'PRÁCTICA' }}</span>
+                <span class="text-[10px] text-ink-400 ml-auto">Clase #{{ a.id }}</span>
               </div>
-              <p class="text-xs text-ink-500 mt-0.5">
-                Estudiante <span class="text-ink-700 font-medium">#{{ a.estudianteId }}</span> ·
-                Instructor <span class="text-ink-700 font-medium">#{{ a.instructorId }}</span> ·
-                Vehículo <span class="text-ink-700 font-medium">#{{ a.vehiculoId }}</span>
+              <p class="text-xs text-ink-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                <span class="inline-flex items-center gap-1">
+                  <i class="pi pi-id-card text-[10px]" />
+                  <span class="text-ink-700">{{ nombreInstructor(a.instructorId) }}</span>
+                </span>
+                <span class="text-ink-300">·</span>
+                <span class="inline-flex items-center gap-1">
+                  <i class="pi pi-car text-[10px]" />
+                  <span class="text-ink-700 font-mono">{{ placaVehiculo(a.vehiculoId) }}</span>
+                </span>
               </p>
               <p v-if="a.kmInicial != null || a.kmFinal != null" class="text-xs text-info-600 mt-0.5">
                 <i class="pi pi-car text-xs mr-1" />
@@ -112,23 +119,23 @@
         <Column field="id" header="#" style="width: 70px" />
         <Column header="Fecha y hora">
           <template #body="{ data }">
-            <p class="text-sm font-medium">{{ extraerFechaCorta(data.fechaHora) }}</p>
-            <p class="text-xs text-ink-500">{{ extraerHora(data.fechaHora) }} · {{ data.duracionMinutos || 60 }}min</p>
+            <p class="text-sm font-medium">{{ extraerFechaCorta(data) }}</p>
+            <p class="text-xs text-ink-500">{{ extraerHora(data) }} · {{ data.duracionMinutos || calcDuracion(data) }}min</p>
           </template>
         </Column>
         <Column header="Estudiante">
           <template #body="{ data }">
-            <span class="text-sm">#{{ data.estudianteId }}</span>
+            <span class="text-sm font-medium text-ink-900">{{ nombreEstudiante(data.estudianteId) }}</span>
           </template>
         </Column>
         <Column header="Instructor">
           <template #body="{ data }">
-            <span class="text-sm">#{{ data.instructorId }}</span>
+            <span class="text-sm text-ink-700">{{ nombreInstructor(data.instructorId) }}</span>
           </template>
         </Column>
         <Column header="Vehículo">
           <template #body="{ data }">
-            <span class="text-sm">#{{ data.vehiculoId }}</span>
+            <span class="text-sm font-mono text-ink-700">{{ placaVehiculo(data.vehiculoId) }}</span>
           </template>
         </Column>
         <Column field="tipoClase" header="Tipo" />
@@ -342,7 +349,8 @@
     <Dialog v-model:visible="dialogIniciarVisible" modal header="Iniciar clase" :style="{ width: '460px' }">
       <div v-if="asignacionActual" class="space-y-4">
         <div class="rounded-lg bg-info-50 border border-info-200 p-3 text-xs text-ink-700">
-          <p><strong>Clase #{{ asignacionActual.id }}</strong> · Vehículo #{{ asignacionActual.vehiculoId }}</p>
+          <p><strong>Clase #{{ asignacionActual.id }}</strong> · Vehículo {{ placaVehiculo(asignacionActual.vehiculoId) }}</p>
+          <p class="text-[11px] text-ink-500 mt-0.5">Estudiante: {{ nombreEstudiante(asignacionActual.estudianteId) }}</p>
           <p class="mt-1">Registra el kilometraje del odómetro <strong>antes</strong> de empezar la clase. Si lo dejas vacío, usaremos el kilometraje actual del vehículo ({{ kmActualVehiculo ?? '—' }} km).</p>
         </div>
         <div>
@@ -364,7 +372,8 @@
     <Dialog v-model:visible="dialogFinalizarVisible" modal header="Finalizar clase" :style="{ width: '480px' }">
       <div v-if="asignacionActual" class="space-y-4">
         <div class="rounded-lg bg-success-50 border border-success-200 p-3 text-xs text-ink-700">
-          <p><strong>Clase #{{ asignacionActual.id }}</strong> · Vehículo #{{ asignacionActual.vehiculoId }}</p>
+          <p><strong>Clase #{{ asignacionActual.id }}</strong> · Vehículo {{ placaVehiculo(asignacionActual.vehiculoId) }}</p>
+          <p class="text-[11px] text-ink-500 mt-0.5">Estudiante: {{ nombreEstudiante(asignacionActual.estudianteId) }}</p>
           <p v-if="asignacionActual.kmInicial != null" class="mt-1">
             km inicial registrado: <strong>{{ asignacionActual.kmInicial.toLocaleString('es-EC') }}</strong>
           </p>
@@ -419,9 +428,16 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 import asignacionesService from '@/services/asignaciones'
 import vehiculosService from '@/services/vehiculos'
+
+const authStore = useAuthStore()
+const esInstructor = computed(() => authStore.currentRole === 'INSTRUCTOR')
+const esEstudiante = computed(() => authStore.currentRole === 'ESTUDIANTE')
+// Vista solo-lectura: aplica a ESTUDIANTE (sin crear/editar/cancelar/iniciar/finalizar)
+const soloLectura = computed(() => esEstudiante.value)
 
 const toast = useToast()
 
@@ -458,6 +474,16 @@ const LegendItem = defineComponent({
 const vista = ref<'calendario' | 'lista'>('calendario')
 const fechaSeleccionada = ref<Date>(new Date())
 const asignaciones = ref<any[]>([])
+
+// Maps para mostrar nombres en lugar de IDs en las tarjetas/tabla.
+// Se cargan una sola vez al inicio (poco volumen, no vale la pena cachear).
+const mapEstudiantes = ref<Map<number, string>>(new Map())
+const mapInstructores = ref<Map<number, string>>(new Map())
+const mapVehiculos = ref<Map<number, string>>(new Map())
+
+const nombreEstudiante = (id: number) => mapEstudiantes.value.get(id) || `Estudiante #${id}`
+const nombreInstructor = (id: number) => mapInstructores.value.get(id) || `Instructor #${id}`
+const placaVehiculo    = (id: number) => mapVehiculos.value.get(id) || `Vehículo #${id}`
 const loading = ref(false)
 const stats = reactive({ total: 0, confirmadas: 0, programadas: 0, semana: 0 })
 
@@ -561,27 +587,98 @@ const cancelarForm = () => {
 const fmtFecha = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const fmtHora = (d: Date) => d ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00` : '00:00:00'
 
-const extraerHora = (fh: string) => fh ? fh.substring(11, 16) : '--:--'
-const extraerFechaCorta = (fh: string) => fh ? fh.substring(0, 10) : '—'
+// El backend devuelve `fecha` (LocalDate "YYYY-MM-DD"), `horaInicio` y `horaFin`
+// (LocalTime "HH:MM:SS") como campos separados. Estas funciones aceptan tanto
+// el item de asignacion como un string legacy (compatibilidad).
+const extraerHora = (a: any) => {
+  if (!a) return '--:--'
+  if (typeof a === 'string') return a.length >= 16 ? a.substring(11, 16) : a.substring(0, 5)
+  return (a.horaInicio || '').substring(0, 5) || '--:--'
+}
+const extraerFechaCorta = (a: any) => {
+  if (!a) return '—'
+  if (typeof a === 'string') return a.substring(0, 10)
+  return a.fecha || '—'
+}
 const formatearFecha = (d: Date) => d.toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+// Calcula duracion en minutos a partir de horaInicio y horaFin
+const calcDuracion = (a: any) => {
+  if (!a?.horaInicio || !a?.horaFin) return 60
+  const hi = a.horaInicio.substring(0, 5).split(':').map(Number)
+  const hf = a.horaFin.substring(0, 5).split(':').map(Number)
+  return (hf[0] * 60 + hf[1]) - (hi[0] * 60 + hi[1])
+}
 
 const asignacionesDelDia = computed(() => {
   const f = fmtFecha(fechaSeleccionada.value)
-  return asignaciones.value.filter(a => (a.fechaHora || '').startsWith(f))
+  return asignaciones.value.filter(a => a.fecha === f)
 })
 
 const cargar = async () => {
   try {
     loading.value = true
-    const { data } = await api.get('/asignaciones', { params: { size: 200 } })
-    asignaciones.value = data.content || []
-    stats.total = data.totalElements ?? asignaciones.value.length
-    stats.confirmadas = asignaciones.value.filter(a => a.estado === 'CONFIRMADA').length
-    stats.programadas = asignaciones.value.filter(a => a.estado === 'PROGRAMADA').length
+
+    // Cargar en paralelo: asignaciones + catalogos para lookup de nombres
+    const [asigRes, estRes, insRes, vehRes] = await Promise.allSettled([
+      api.get('/asignaciones', { params: { size: 500 } }),
+      api.get('/estudiantes',  { params: { size: 500 } }),
+      api.get('/instructores', { params: { size: 200 } }),
+      api.get('/vehiculos',    { params: { size: 200 } })
+    ])
+
+    // Construir maps id -> nombre/placa
+    if (estRes.status === 'fulfilled') {
+      const items = estRes.value.data.content || []
+      mapEstudiantes.value = new Map(items.map((e: any) => [
+        e.id,
+        e.nombreCompleto || `${e.nombre ?? ''} ${e.apellido ?? ''}`.trim() || `Estudiante #${e.id}`
+      ]))
+    }
+    if (insRes.status === 'fulfilled') {
+      const items = insRes.value.data.content || []
+      mapInstructores.value = new Map(items.map((i: any) => [
+        i.id,
+        i.nombreCompleto || `${i.nombre ?? ''} ${i.apellido ?? ''}`.trim() || `Instructor #${i.id}`
+      ]))
+    }
+    if (vehRes.status === 'fulfilled') {
+      const items = vehRes.value.data.content || []
+      mapVehiculos.value = new Map(items.map((v: any) => [
+        v.id,
+        v.placa ? `${v.placa}${v.marca ? ` · ${v.marca} ${v.modelo ?? ''}`.trim() : ''}` : `Vehículo #${v.id}`
+      ]))
+    }
+
+    let lista = asigRes.status === 'fulfilled' ? (asigRes.value.data.content || []) : []
+
+    // INSTRUCTOR: solo ve sus propias asignaciones. Filtrado client-side
+    // por simplicidad (volumen esperado pequeño en MVP). Cuando crezca
+    // se puede agregar param ?instructorId= al endpoint.
+    if (esInstructor.value) {
+      if (!authStore.currentInstructorId) {
+        await authStore.loadInstructorId()
+      }
+      const miId = authStore.currentInstructorId
+      lista = miId ? lista.filter((a: any) => a.instructorId === miId) : []
+    }
+    // ESTUDIANTE: solo ve sus propias clases.
+    if (esEstudiante.value) {
+      if (!authStore.currentEstudianteId) {
+        await authStore.loadEstudianteId()
+      }
+      const miEstId = authStore.currentEstudianteId
+      lista = miEstId ? lista.filter((a: any) => a.estudianteId === miEstId) : []
+    }
+
+    asignaciones.value = lista
+    stats.total = lista.length
+    stats.confirmadas = lista.filter((a: any) => a.estado === 'CONFIRMADA').length
+    stats.programadas = lista.filter((a: any) => a.estado === 'PROGRAMADA').length
     const ahora = new Date()
     const finSem = new Date(ahora); finSem.setDate(ahora.getDate() + 7)
-    stats.semana = asignaciones.value.filter(a => {
-      const f = new Date(a.fechaHora || a.fecha)
+    stats.semana = lista.filter((a: any) => {
+      const f = new Date((a.fecha || '') + 'T' + (a.horaInicio || '00:00'))
       return f >= ahora && f <= finSem
     }).length
   } finally { loading.value = false }
@@ -643,12 +740,15 @@ const kmRecorridosPreview = computed(() => {
 })
 
 const puedeIniciar = (a: any): boolean => {
+  // ESTUDIANTE no puede iniciar — solo lectura
+  if (soloLectura.value) return false
   // Se puede iniciar si está PROGRAMADA o CONFIRMADA y aún no fue iniciada (sin km_inicial)
   const estado = a?.estado
   return (estado === 'PROGRAMADA' || estado === 'CONFIRMADA') && a?.kmInicial == null
 }
 
 const puedeFinalizar = (a: any): boolean => {
+  if (soloLectura.value) return false
   // Se puede finalizar si está EN_CURSO, o si está CONFIRMADA pero el instructor olvidó iniciar
   const estado = a?.estado
   return estado === 'EN_CURSO' || estado === 'CONFIRMADA' || estado === 'PROGRAMADA'

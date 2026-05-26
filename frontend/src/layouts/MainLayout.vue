@@ -25,14 +25,32 @@
         <p class="px-3 py-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">General</p>
         <NavItem to="/dashboard" icon="pi-th-large" label="Dashboard" />
 
-        <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Operación</p>
-        <NavItem to="/estudiantes"   icon="pi-users"     label="Estudiantes" />
-        <NavItem to="/instructores"  icon="pi-id-card"   label="Instructores" />
-        <NavItem to="/vehiculos"     icon="pi-car"       label="Vehículos" />
-        <NavItem to="/asignaciones"  icon="pi-calendar"  label="Asignaciones" />
+        <!-- ============ INSTRUCTOR: vista simplificada ============ -->
+        <template v-if="isInstructor">
+          <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Mi trabajo</p>
+          <NavItem to="/asignaciones" icon="pi-calendar" label="Mis clases" />
+          <NavItem to="/estudiantes"  icon="pi-users"    label="Mis estudiantes" />
+        </template>
 
-        <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Finanzas</p>
-        <NavItem to="/cobros"        icon="pi-wallet"    label="Cobros y Pagos" />
+        <!-- ============ ESTUDIANTE: vista solo-lectura ============ -->
+        <template v-else-if="isEstudiante">
+          <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Mi curso</p>
+          <NavItem to="/asignaciones" icon="pi-calendar"     label="Mis clases" />
+          <NavItem to="/mi-progreso"  icon="pi-chart-line"   label="Mi progreso" />
+          <NavItem to="/mis-pagos"    icon="pi-wallet"       label="Mis pagos" />
+        </template>
+
+        <!-- ============ ADMIN / STAFF: vista operativa completa ============ -->
+        <template v-else>
+          <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Operación</p>
+          <NavItem to="/estudiantes"   icon="pi-users"     label="Estudiantes" />
+          <NavItem to="/instructores"  icon="pi-id-card"   label="Instructores" />
+          <NavItem to="/vehiculos"     icon="pi-car"       label="Vehículos" />
+          <NavItem to="/asignaciones"  icon="pi-calendar"  label="Asignaciones" />
+
+          <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Finanzas</p>
+          <NavItem to="/cobros"        icon="pi-wallet"    label="Cobros y Pagos" />
+        </template>
 
         <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Mi cuenta</p>
         <NavItem to="/perfil" icon="pi-user" label="Mi perfil" />
@@ -175,7 +193,14 @@ const userName = computed(() => {
   return u?.nombreCompleto || `${u?.nombre || ''} ${u?.apellido || ''}`.trim() || 'Usuario'
 })
 const userEmail = computed(() => authStore.user?.email || '')
-const isAdmin = computed(() => authStore.hasRole(['ADMIN']))
+
+// IMPORTANTE: filtramos por currentRole (rol activo) y NO por roles del user.
+// Si un user tiene ADMIN+STAFF y selecciona "actuar como STAFF", debe ver SOLO
+// el menu de STAFF — sin Usuarios ni Configuracion. Eso le permite previsualizar
+// como verian los STAFF la app.
+const isAdmin = computed(() => authStore.currentRole === 'ADMIN')
+const isInstructor = computed(() => authStore.currentRole === 'INSTRUCTOR')
+const isEstudiante = computed(() => authStore.currentRole === 'ESTUDIANTE')
 
 const toggleUserMenu = (e: Event) => userMenuRef.value?.toggle(e)
 const toggleRoleMenu = (e: Event) => roleMenuRef.value?.toggle(e)
@@ -210,12 +235,20 @@ const cambiarRol = (rol: string) => {
   router.replace({ path: '/dashboard' })
 }
 
-const userMenu = [
-  { label: 'Mi Perfil', icon: 'pi pi-user', command: () => router.push('/perfil') },
-  { label: 'Configuración', icon: 'pi pi-cog', command: () => router.push('/configuracion') },
-  { separator: true },
-  { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => logout() }
-]
+// Menu del usuario en topbar: items condicionados al rol activo.
+const userMenu = computed(() => {
+  const items: any[] = [
+    { label: 'Mi Perfil', icon: 'pi pi-user', command: () => router.push('/perfil') }
+  ]
+  if (isAdmin.value) {
+    items.push({ label: 'Configuración', icon: 'pi pi-cog', command: () => router.push('/configuracion') })
+  }
+  items.push(
+    { separator: true },
+    { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => logout() }
+  )
+  return items
+})
 
 const logout = async () => {
   await authStore.logout()

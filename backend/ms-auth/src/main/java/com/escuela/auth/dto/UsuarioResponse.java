@@ -22,5 +22,6 @@ public record UsuarioResponse(
         String genero,
         String direccion,
         String ciudad,
-        String provincia
+        String provincia,
+        Boolean passwordChangeRequired
 ) {}

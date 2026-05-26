@@ -369,8 +369,8 @@
                   <td class="py-2 px-3 text-ink-700 whitespace-nowrap">
                     {{ formatearHora(asig.horaInicio) }} - {{ formatearHora(asig.horaFin) }}
                   </td>
-                  <td class="py-2 px-3 text-ink-700">#{{ asig.instructorId }}</td>
-                  <td class="py-2 px-3 text-ink-700">#{{ asig.vehiculoId }}</td>
+                  <td class="py-2 px-3 text-ink-700">{{ nombreInstructor(asig.instructorId) }}</td>
+                  <td class="py-2 px-3 text-ink-700 font-mono text-xs">{{ placaVehiculo(asig.vehiculoId) }}</td>
                   <td class="py-2 pl-3"><StatusBadge :status="asig.estado" /></td>
                 </tr>
               </tbody>
@@ -541,6 +541,7 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import DetailRow from '@/components/ui/DetailRow.vue'
+import api from '@/services/api'
 import estudiantesService, { EstudianteDetailResponse, ProgresoAcademico } from '@/services/estudiantes'
 import asignacionesService, { type HistorialAsignacionItem } from '@/services/asignaciones'
 import cobrosService, { type HistorialPagoItem } from '@/services/cobros'
@@ -605,6 +606,33 @@ const historialAsignaciones = ref<HistorialAsignacionItem[]>([])
 const historialPagos = ref<HistorialPagoItem[]>([])
 const cargandoHistorialAsignaciones = ref(false)
 const cargandoHistorialPagos = ref(false)
+
+// Maps id -> nombre/placa para mostrar nombres reales (no IDs) en el historial.
+const mapInstructores = ref<Map<number, string>>(new Map())
+const mapVehiculos    = ref<Map<number, string>>(new Map())
+const nombreInstructor = (id: number) => mapInstructores.value.get(id) || `Instructor #${id}`
+const placaVehiculo    = (id: number) => mapVehiculos.value.get(id) || `Vehículo #${id}`
+
+const cargarCatalogos = async () => {
+  try {
+    const [insRes, vehRes] = await Promise.all([
+      api.get('/instructores', { params: { size: 200 } }),
+      api.get('/vehiculos',    { params: { size: 200 } })
+    ])
+    const ins = insRes.data.content || []
+    const veh = vehRes.data.content || []
+    mapInstructores.value = new Map(ins.map((i: any) => [
+      i.id,
+      i.nombreCompleto || `${i.nombre ?? ''} ${i.apellido ?? ''}`.trim() || `Instructor #${i.id}`
+    ]))
+    mapVehiculos.value = new Map(veh.map((v: any) => [
+      v.id,
+      v.placa ? `${v.placa}${v.marca ? ` · ${v.marca} ${v.modelo ?? ''}`.trim() : ''}` : `Vehículo #${v.id}`
+    ]))
+  } catch (e) {
+    console.warn('No se pudo cargar catalogos para historial', e)
+  }
+}
 
 const totalPagado = computed(() =>
   historialPagos.value.reduce((sum, p) => sum + Number(p.monto || 0), 0)
@@ -1092,6 +1120,7 @@ const eliminarContacto = async (contactoId: number) => {
 
 onMounted(() => {
   cargar()
+  cargarCatalogos()
   cargarContactosEmergencia()
   cargarDocumentos()
   cargarHistorialAsignaciones()

@@ -19,5 +19,6 @@ public record UpdateUsuarioRequest(
         String ciudad,
         String provincia,
         List<String> roles,
-        String email
+        String email,
+        Boolean passwordChangeRequired
 ) {}

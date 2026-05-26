@@ -66,16 +66,37 @@ public interface AsignacionMapper {
     @Mapping(target = "observacionesRecorrido", ignore = true)
     void updateEntity(UpdateAsignacionRequest request, @MappingTarget Asignacion entity);
 
-    @Mapping(target = "fecha", ignore = true)
-    @Mapping(target = "horaInicio", ignore = true)
-    @Mapping(target = "horaFin", ignore = true)
-    @Mapping(target = "dateCreated", ignore = true)
-    @Mapping(target = "dateUpdated", ignore = true)
+    @Mapping(target = "fecha", source = "entity", qualifiedByName = "extractFecha")
+    @Mapping(target = "horaInicio", source = "entity", qualifiedByName = "extractHoraInicio")
+    @Mapping(target = "horaFin", source = "entity", qualifiedByName = "extractHoraFin")
+    @Mapping(target = "dateCreated", source = "createdAt")
+    @Mapping(target = "dateUpdated", source = "updatedAt")
     AsignacionResponse toResponse(Asignacion entity);
 
-    @Mapping(target = "fecha", ignore = true)
-    @Mapping(target = "horaInicio", ignore = true)
-    @Mapping(target = "horaFin", ignore = true)
-    @Mapping(target = "dateCreated", ignore = true)
+    @Mapping(target = "fecha", source = "entity", qualifiedByName = "extractFecha")
+    @Mapping(target = "horaInicio", source = "entity", qualifiedByName = "extractHoraInicio")
+    @Mapping(target = "horaFin", source = "entity", qualifiedByName = "extractHoraFin")
+    @Mapping(target = "dateCreated", source = "createdAt")
     AsignacionListResponse toListResponse(Asignacion entity);
+
+    @Named("extractFecha")
+    static java.time.LocalDate extractFecha(Asignacion entity) {
+        return entity == null || entity.getFechaHora() == null
+                ? null
+                : entity.getFechaHora().toLocalDate();
+    }
+
+    @Named("extractHoraInicio")
+    static java.time.LocalTime extractHoraInicio(Asignacion entity) {
+        return entity == null || entity.getFechaHora() == null
+                ? null
+                : entity.getFechaHora().toLocalTime();
+    }
+
+    @Named("extractHoraFin")
+    static java.time.LocalTime extractHoraFin(Asignacion entity) {
+        if (entity == null || entity.getFechaHora() == null) return null;
+        short dur = entity.getDuracionMinutos() != null ? entity.getDuracionMinutos() : 60;
+        return entity.getFechaHora().toLocalTime().plusMinutes(dur);
+    }
 }

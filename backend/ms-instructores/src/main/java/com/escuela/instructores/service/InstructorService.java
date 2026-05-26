@@ -54,6 +54,20 @@ public class InstructorService {
         return getMapper().toResponse(buscarOFallar(id));
     }
 
+    /**
+     * Devuelve el instructor cuyo usuario_id = usuarioId. Usado por el endpoint
+     * GET /instructores/me para que un INSTRUCTOR logueado sepa cual de los
+     * registros le pertenece (necesario para filtrar sus asignaciones y
+     * estudiantes en el frontend).
+     */
+    @Transactional(readOnly = true)
+    public InstructorResponse obtenerPorUsuarioId(Long usuarioId) {
+        Instructor instructor = repository.findByUsuarioIdAndDeletedAtIsNull(usuarioId)
+                .orElseThrow(() -> new InstructorNotFoundException(
+                        "No existe instructor asociado al usuario " + usuarioId));
+        return getMapper().toResponse(instructor);
+    }
+
     public InstructorResponse crear(CreateInstructorRequest request) {
         if (!CedulaEcuadorValidator.isValid(request.cedula())) {
             throw new IllegalArgumentException("Cedula ecuatoriana invalida: " + request.cedula());
