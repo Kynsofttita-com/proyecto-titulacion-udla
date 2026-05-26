@@ -5,8 +5,11 @@ import api from '@/services/api'
 interface User {
   id: number
   email: string
-  nombreCompleto: string
+  nombre?: string
+  apellido?: string
+  nombreCompleto?: string
   roles: string[]
+  passwordChangeRequired?: boolean
 }
 
 export const useAuthStore = defineStore(
@@ -16,11 +19,33 @@ export const useAuthStore = defineStore(
     const token = ref<string | null>(null)
     const isLoading = ref(false)
     const error = ref<string | null>(null)
+    // Rol activo elegido por el usuario (persistido). Si tiene varios roles
+    // puede cambiarlo desde Mi perfil para que el sidebar/menus se adapten.
+    const activeRole = ref<string | null>(null)
 
     const isAuthenticated = computed(() => !!token.value && !!user.value)
 
-    const hasRole = (roles: string[]) => {
-      return user.value?.roles.some(role => roles.includes(role)) ?? false
+    const roles = computed(() => user.value?.roles ?? [])
+    const hasMultipleRoles = computed(() => roles.value.length > 1)
+    const currentRole = computed(() => activeRole.value || roles.value[0] || '')
+    const mustChangePassword = computed(() => user.value?.passwordChangeRequired === true)
+
+    const hasRole = (rs: string[]) => {
+      return user.value?.roles.some(role => rs.includes(role)) ?? false
+    }
+
+    const setActiveRole = (rol: string) => {
+      if (roles.value.includes(rol)) activeRole.value = rol
+    }
+
+    const refreshProfile = async () => {
+      try {
+        const response = await api.get('/auth/me')
+        // Solo actualiza campos del user. Token se queda como esta.
+        user.value = { ...user.value, ...response.data } as User
+      } catch (_) {
+        // no romper la UI si falla
+      }
     }
 
     const login = async (email: string, password: string) => {
@@ -93,8 +118,15 @@ export const useAuthStore = defineStore(
       token,
       isLoading,
       error,
+      activeRole,
       isAuthenticated,
+      roles,
+      hasMultipleRoles,
+      currentRole,
+      mustChangePassword,
       hasRole,
+      setActiveRole,
+      refreshProfile,
       login,
       logout,
       refreshToken
@@ -102,7 +134,7 @@ export const useAuthStore = defineStore(
   },
   {
     persist: {
-      paths: ['token', 'user']
+      paths: ['token', 'user', 'activeRole']
     }
   }
 )
