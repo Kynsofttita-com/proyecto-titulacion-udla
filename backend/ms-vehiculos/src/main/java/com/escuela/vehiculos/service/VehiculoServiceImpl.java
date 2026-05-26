@@ -1,5 +1,7 @@
 package com.escuela.vehiculos.service;
 
+import com.escuela.vehiculos.dto.ActualizarKilometrajeRequest;
+import com.escuela.vehiculos.dto.ActualizarKilometrajeResponse;
 import com.escuela.vehiculos.dto.CreateVehiculoRequest;
 import com.escuela.vehiculos.dto.UpdateVehiculoRequest;
 import com.escuela.vehiculos.dto.VehiculoListResponse;
@@ -45,6 +47,12 @@ public class VehiculoServiceImpl implements VehiculoService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<VehiculoListResponse> buscar(Pageable pageable, String search, String estado) {
+        return repository.buscar(search, estado, pageable).map(getMapper()::toListResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public VehiculoResponse findById(Long id) {
         Vehiculo vehiculo = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new VehiculoNotFoundException(id));
@@ -76,6 +84,29 @@ public class VehiculoServiceImpl implements VehiculoService {
         vehiculo = repository.save(vehiculo);
         log.info("Vehículo actualizado id={}", id);
         return getMapper().toResponse(vehiculo);
+    }
+
+    @Override
+    public ActualizarKilometrajeResponse actualizarKilometraje(Long id, ActualizarKilometrajeRequest request) {
+        Vehiculo v = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new VehiculoNotFoundException(id));
+        Integer kmAnterior = v.getKilometraje() == null ? 0 : v.getKilometraje();
+        Integer nuevoKm = request.nuevoKm();
+
+        // Monotonico: solo aumenta. Si llega un km menor, se ignora silenciosamente.
+        if (nuevoKm <= kmAnterior) {
+            log.info("Kilometraje NO actualizado vehiculoId={} kmAnterior={} nuevoKm={} (no retroceso) fuente={}",
+                    id, kmAnterior, nuevoKm, request.fuente());
+            return new ActualizarKilometrajeResponse(id, kmAnterior, kmAnterior, false,
+                    "Kilometraje propuesto (" + nuevoKm + ") es menor o igual al actual (" + kmAnterior + ")");
+        }
+
+        v.setKilometraje(nuevoKm);
+        repository.save(v);
+        log.info("Kilometraje actualizado vehiculoId={} {} -> {} fuente={}",
+                id, kmAnterior, nuevoKm, request.fuente());
+        return new ActualizarKilometrajeResponse(id, kmAnterior, nuevoKm, true,
+                "Kilometraje actualizado de " + kmAnterior + " a " + nuevoKm);
     }
 
     @Override

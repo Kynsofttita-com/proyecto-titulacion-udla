@@ -3,10 +3,12 @@ package com.escuela.vehiculos.service;
 import com.escuela.vehiculos.dto.CombustibleRequest;
 import com.escuela.vehiculos.dto.CombustibleResponse;
 import com.escuela.vehiculos.entity.RegistroCombustible;
+import com.escuela.vehiculos.entity.TipoCombustible;
 import com.escuela.vehiculos.entity.Vehiculo;
 import com.escuela.vehiculos.exception.RecursoNotFoundException;
 import com.escuela.vehiculos.exception.VehiculoNotFoundException;
 import com.escuela.vehiculos.repository.RegistroCombustibleRepository;
+import com.escuela.vehiculos.repository.TipoCombustibleRepository;
 import com.escuela.vehiculos.repository.VehiculoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Service
 @Transactional
@@ -23,10 +28,14 @@ public class CombustibleService {
 
     private final RegistroCombustibleRepository repository;
     private final VehiculoRepository vehiculoRepository;
+    private final TipoCombustibleRepository tipoCombustibleRepository;
 
-    public CombustibleService(RegistroCombustibleRepository repository, VehiculoRepository vehiculoRepository) {
+    public CombustibleService(RegistroCombustibleRepository repository,
+                              VehiculoRepository vehiculoRepository,
+                              TipoCombustibleRepository tipoCombustibleRepository) {
         this.repository = repository;
         this.vehiculoRepository = vehiculoRepository;
+        this.tipoCombustibleRepository = tipoCombustibleRepository;
     }
 
     @Transactional(readOnly = true)
@@ -42,11 +51,14 @@ public class CombustibleService {
                     "Kilometraje actual (" + request.kilometrajeActual() +
                             ") no puede ser menor al actual del vehiculo (" + v.getKilometraje() + ")");
         }
+
+        BigDecimal costoTotal = resolverCostoTotal(v, request);
+
         RegistroCombustible r = RegistroCombustible.builder()
                 .vehiculo(v)
                 .fecha(request.fecha())
                 .litros(request.litros())
-                .costoTotal(request.costoTotal())
+                .costoTotal(costoTotal)
                 .kilometrajeActual(request.kilometrajeActual())
                 .estacion(request.estacion())
                 .build();
@@ -56,9 +68,40 @@ public class CombustibleService {
         v.setKilometraje(request.kilometrajeActual());
         vehiculoRepository.save(v);
 
-        log.info("Combustible registrado id={} vehiculoId={} litros={}",
-                r.getId(), vehiculoId, r.getLitros());
+        log.info("Combustible registrado id={} vehiculoId={} litros={} costoTotal={}",
+                r.getId(), vehiculoId, r.getLitros(), costoTotal);
         return toResponse(r);
+    }
+
+    /**
+     * Resuelve el costoTotal final del registro:
+     *  1) Si viene explicito en el request, se respeta.
+     *  2) Si no, se autocalcula con litros × precio_actual del tipo de combustible.
+     *     - Override: si el request manda tipoCombustibleIdOverride, se usa ese tipo.
+     *     - Default: se usa el tipo_combustible_id configurado en el vehiculo.
+     *  3) Si no hay forma de calcularlo, falla con mensaje claro.
+     */
+    private BigDecimal resolverCostoTotal(Vehiculo v, CombustibleRequest request) {
+        if (request.costoTotal() != null) {
+            return request.costoTotal();
+        }
+
+        Long tipoId = request.tipoCombustibleIdOverride() != null
+                ? request.tipoCombustibleIdOverride()
+                : v.getTipoCombustibleId();
+
+        if (tipoId == null) {
+            throw new IllegalArgumentException(
+                    "No se puede autocalcular el costo: el vehiculo no tiene tipo de combustible asignado " +
+                            "y no se envio costoTotal ni tipoCombustibleIdOverride");
+        }
+        TipoCombustible tipo = tipoCombustibleRepository.findById(tipoId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "TipoCombustible no encontrado: " + tipoId));
+
+        return request.litros()
+                .multiply(tipo.getPrecioActual())
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     public void eliminar(Long vehiculoId, Long registroId) {

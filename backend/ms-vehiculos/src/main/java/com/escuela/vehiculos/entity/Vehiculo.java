@@ -63,6 +63,18 @@ public class Vehiculo extends BaseEntity {
     @Column(name = "categoria_licencia_id")
     private Long categoriaLicenciaId;
 
+    @Column(name = "numero_motor", length = 50)
+    private String numeroMotor;
+
+    @Column(name = "numero_chasis", length = 50)
+    private String numeroChasis;
+
+    @Column(name = "capacidad_pasajeros")
+    private Short capacidadPasajeros;
+
+    @Column(name = "tipo_combustible_id")
+    private Long tipoCombustibleId;
+
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 }

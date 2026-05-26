@@ -23,6 +23,20 @@ public interface VehiculoRepository extends JpaRepository<Vehiculo, Long> {
 
     boolean existsByPlacaAndDeletedAtIsNull(String placa);
 
+    /** Busqueda con filtros opcionales (search, estado). */
+    @Query("""
+        SELECT v FROM Vehiculo v
+        WHERE v.deletedAt IS NULL
+          AND (:search IS NULL OR :search = '' OR
+               LOWER(v.placa)  LIKE LOWER(CONCAT('%', :search, '%')) OR
+               LOWER(v.marca)  LIKE LOWER(CONCAT('%', :search, '%')) OR
+               LOWER(v.modelo) LIKE LOWER(CONCAT('%', :search, '%')))
+          AND (:estado IS NULL OR :estado = '' OR v.estado = :estado)
+    """)
+    Page<Vehiculo> buscar(@Param("search") String search,
+                          @Param("estado") String estado,
+                          Pageable pageable);
+
     /** SOAT vencido o por vencer en {@code limite} (inclusive). */
     @Query("""
         SELECT v FROM Vehiculo v
