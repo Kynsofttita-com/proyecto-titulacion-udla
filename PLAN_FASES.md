@@ -316,7 +316,7 @@ Microservicios con lógica de negocio menor o que dependen del Grupo A para tene
 - `SPRINTS_PLAN.xlsx` — Plan tabular original (queda como histórico; **este documento lo sustituye para Sprints 5-12**)
 - `CLAUDE.md` — Contexto general
 - `docs/sprint-4-validacion-e2e.md` — Evidencia de cierre Sprint 4
-- `MODELO_BD_COMPLETO.md` — Modelo de BD detallado
+- `docs/database/schema.md` — Modelo de BD detallado (consolidado en Sprint 10, reemplaza al anterior `MODELO_BD_COMPLETO.md`)
 
 ---
 
