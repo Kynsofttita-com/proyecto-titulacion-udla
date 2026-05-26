@@ -79,7 +79,7 @@ public class EstudianteController {
             @PageableDefault(size = 50, sort = "id") Pageable pageable,
             @Parameter(description = "Busqueda en nombre, apellido, cedula o email")
             @RequestParam(required = false) String search,
-            @Parameter(description = "Filtrar por estado (PRE_MATRICULADO, ACTIVO, COMPLETADO, RETIRADO)")
+            @Parameter(description = "Filtrar por estado (PRE_MATRICULADO, MATRICULADO, CURSANDO, COMPLETADO, RETIRADO)")
             @RequestParam(required = false) String estado) {
         validarAutenticacion(userEmail);
         return ResponseEntity.ok(service.findAll(pageable, search, estado));
@@ -186,6 +186,26 @@ public class EstudianteController {
     }
 
     // -----------------------------------------------------------------------
+    // PUT /estudiantes/{id}/horas-completadas/incrementar
+    // (llamado por ms-asignaciones al finalizar una clase)
+    // -----------------------------------------------------------------------
+
+    @PutMapping("/{id}/horas-completadas/incrementar")
+    @Operation(summary = "Suma minutos al acumulado de horas completadas",
+            description = "Lo invoca ms-asignaciones cuando un instructor finaliza una clase. " +
+                    "Si el estudiante estaba MATRICULADO, transiciona a CURSANDO automáticamente. " +
+                    "Roles: ADMIN, STAFF, INSTRUCTOR (instructor lo invoca indirectamente vía ms-asignaciones).")
+    public ResponseEntity<com.escuela.estudiantes.dto.IncrementarHorasResponse> incrementarHoras(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @Valid @RequestBody com.escuela.estudiantes.dto.IncrementarHorasRequest request) {
+        validarAutenticacion(userEmail);
+        validarRoles(userRoles, java.util.Set.of("ADMIN", "STAFF", "INSTRUCTOR"));
+        return ResponseEntity.ok(service.incrementarMinutosCompletados(id, request));
+    }
+
+    // -----------------------------------------------------------------------
     // DELETE /estudiantes/{id}
     // -----------------------------------------------------------------------
 
@@ -233,7 +253,8 @@ public class EstudianteController {
         validarAutenticacion(userEmail);
         validarRoles(userRoles, ROLES_ESCRITURA);
         String nueva = estadoService.sincronizarSituacionPago(id);
-        return ResponseEntity.ok(Map.of("situacionPago", nueva != null ? nueva : "SIN_DEUDA"));
+        return ResponseEntity.ok(Map.of("situacionPago",
+                nueva != null ? nueva : "PENDIENTE_FACTURACION"));
     }
 
     // -----------------------------------------------------------------------

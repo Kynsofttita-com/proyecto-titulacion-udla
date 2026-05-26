@@ -30,6 +30,11 @@ public interface AsignacionMapper {
     @Mapping(target = "ubicacion", ignore = true)
     @Mapping(target = "motivoCancelacion", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "kmInicial", ignore = true)
+    @Mapping(target = "kmFinal", ignore = true)
+    @Mapping(target = "horaInicioReal", ignore = true)
+    @Mapping(target = "horaFinReal", ignore = true)
+    @Mapping(target = "observacionesRecorrido", ignore = true)
     Asignacion toEntity(CreateAsignacionRequest request);
 
     @Named("buildFechaHora")
@@ -54,6 +59,11 @@ public interface AsignacionMapper {
     @Mapping(target = "ubicacion", ignore = true)
     @Mapping(target = "motivoCancelacion", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "kmInicial", ignore = true)
+    @Mapping(target = "kmFinal", ignore = true)
+    @Mapping(target = "horaInicioReal", ignore = true)
+    @Mapping(target = "horaFinReal", ignore = true)
+    @Mapping(target = "observacionesRecorrido", ignore = true)
     void updateEntity(UpdateAsignacionRequest request, @MappingTarget Asignacion entity);
 
     @Mapping(target = "fecha", ignore = true)

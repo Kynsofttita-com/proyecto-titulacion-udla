@@ -4,12 +4,17 @@
  */
 
 export const LABELS_SITUACION_PAGO: Record<string, string> = {
-  PENDIENTE_MATRICULA: 'Pendiente matrícula',
-  SIN_DEUDA:           'Sin deuda',
-  PAGO_PARCIAL:        'Pago parcial',
-  AL_DIA:              'Al día',
-  EN_MORA:             'En mora',
-  PAGADO_TOTAL:        'Pagado total'
+  // Modelo nuevo (Sprint 9 ext): 4 valores claros.
+  PENDIENTE_FACTURACION: 'Pendiente facturación',
+  PENDIENTE_PAGO:        'Pendiente de pago',
+  PAGO_PARCIAL:          'Pago parcial',
+  PAGADO_TOTAL:          'Pagado total',
+  // Valores legacy (la migración V4 los recodificó en BD; se dejan aquí
+  // por si algún cache/respuesta vieja los devuelve).
+  PENDIENTE_MATRICULA: 'Pendiente facturación',
+  SIN_DEUDA:           'Pagado total',
+  AL_DIA:              'Pagado total',
+  EN_MORA:             'Pago parcial'
 }
 
 export const LABELS_ESTADO_ESTUDIANTE: Record<string, string> = {

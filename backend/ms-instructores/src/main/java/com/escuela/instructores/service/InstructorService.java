@@ -99,6 +99,11 @@ public class InstructorService {
             i.setEmail(request.email());
         }
         if (request.licenciaNumero() != null && !request.licenciaNumero().equals(i.getLicenciaNumero())) {
+            // En Ecuador el numero de licencia debe coincidir con la cedula del instructor
+            if (!request.licenciaNumero().equals(i.getCedula())) {
+                throw new IllegalArgumentException(
+                        "En Ecuador el numero de licencia debe coincidir con la cedula (" + i.getCedula() + ")");
+            }
             repository.findByLicenciaNumeroAndDeletedAtIsNull(request.licenciaNumero()).ifPresent(other -> {
                 if (!other.getId().equals(id)) {
                     throw new DuplicateResourceException("Licencia ya existe: " + request.licenciaNumero());
@@ -118,7 +123,21 @@ public class InstructorService {
         if (request.estado() != null) i.setEstado(request.estado());
         if (request.fechaContratacion() != null) i.setFechaContratacion(request.fechaContratacion());
         if (request.salarioMensual() != null) i.setSalarioMensual(request.salarioMensual());
+        if (request.tipoContrato() != null) i.setTipoContrato(request.tipoContrato());
+        if (request.horasContratoSemanales() != null) i.setHorasContratoSemanales(request.horasContratoSemanales());
+        if (request.tarifaHora() != null) i.setTarifaHora(request.tarifaHora());
         if (request.observaciones() != null) i.setObservaciones(request.observaciones());
+
+        // Validacion de coherencia post-merge: POR_HORAS exige tarifaHora; TC/MT exigen salario
+        if ("POR_HORAS".equals(i.getTipoContrato()) && i.getTarifaHora() == null) {
+            throw new IllegalArgumentException(
+                    "Tarifa por hora es obligatoria para contratos POR_HORAS");
+        }
+        if (("TIEMPO_COMPLETO".equals(i.getTipoContrato()) || "MEDIO_TIEMPO".equals(i.getTipoContrato()))
+                && (i.getSalarioMensual() == null || i.getSalarioMensual().signum() <= 0)) {
+            throw new IllegalArgumentException(
+                    "Salario mensual es obligatorio para contratos TIEMPO_COMPLETO o MEDIO_TIEMPO");
+        }
 
         repository.save(i);
         log.info("Instructor actualizado id={}", id);

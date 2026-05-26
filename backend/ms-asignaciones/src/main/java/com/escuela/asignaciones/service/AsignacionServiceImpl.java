@@ -1,10 +1,20 @@
 package com.escuela.asignaciones.service;
 
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
+import com.escuela.asignaciones.dto.FinalizarAsignacionRequest;
+import com.escuela.asignaciones.dto.IniciarAsignacionRequest;
+import com.escuela.asignaciones.dto.RecorridoResponse;
 import com.escuela.asignaciones.dto.UpdateAsignacionRequest;
 import com.escuela.asignaciones.dto.UpdateAsignacionReprogramarRequest;
 import com.escuela.asignaciones.dto.AsignacionListResponse;
 import com.escuela.asignaciones.dto.AsignacionResponse;
+import com.escuela.asignaciones.dto.feign.ActualizarKilometrajeFeignRequest;
+import com.escuela.asignaciones.dto.feign.ActualizarKilometrajeFeignResponse;
+import com.escuela.asignaciones.dto.feign.DisponibilidadDelDiaDTO;
+import com.escuela.asignaciones.dto.feign.EstudianteDetailDTO;
+import com.escuela.asignaciones.dto.feign.IncrementarHorasFeignRequest;
+import com.escuela.asignaciones.dto.feign.IncrementarHorasFeignResponse;
+import com.escuela.asignaciones.dto.feign.VehiculoDetailDTO;
 import com.escuela.asignaciones.entity.Asignacion;
 import com.escuela.asignaciones.entity.HistorialEstado;
 import com.escuela.asignaciones.exception.*;
@@ -144,41 +154,131 @@ public class AsignacionServiceImpl implements AsignacionService {
     }
 
     private void validarEntidadesExisten(CreateAsignacionRequest request) {
+        // --- ESTUDIANTE ---
+        EstudianteDetailDTO estudiante;
         try {
-            var estudiante = estudianteClient.obtenerEstudiante(request.estudianteId());
-            // Estados validos para recibir asignaciones: MATRICULADO (ya pago, listo
-            // para arrancar), CURSANDO (en curso, recibe mas clases) y el legado
-            // ACTIVO (defensa por compat). NO se permite PRE_MATRICULADO, COMPLETADO
-            // ni RETIRADO.
-            String estado = estudiante.estado();
-            if (!"MATRICULADO".equals(estado)
-                && !"CURSANDO".equals(estado)
-                && !"ACTIVO".equals(estado)) {
-                throw new EstudianteInactivoException(request.estudianteId());
-            }
+            estudiante = estudianteClient.obtenerEstudiante(request.estudianteId());
         } catch (Exception e) {
-            if (e instanceof EstudianteInactivoException) throw e;
             throw new EstudianteNoEncontradoException(request.estudianteId());
         }
-
-        try {
-            var instructor = instructorClient.obtenerInstructor(request.instructorId());
-            if (!instructor.estado().equals("ACTIVO")) {
-                throw new InstructorInactivoException(request.instructorId());
-            }
-        } catch (Exception e) {
-            if (e instanceof InstructorInactivoException) throw e;
-            throw new InstructorNoEncontradoException(request.instructorId());
+        // Solo MATRICULADO o CURSANDO pueden recibir clases
+        String estadoEst = estudiante.estado();
+        if (!"MATRICULADO".equals(estadoEst) && !"CURSANDO".equals(estadoEst)) {
+            throw new EstudianteInactivoException(request.estudianteId());
+        }
+        if (estudiante.categoriaLicenciaId() == null) {
+            throw new DisponibilidadException(
+                    "El estudiante #" + request.estudianteId() +
+                    " no tiene categoría de licencia asignada. Asigna primero la categoría en su perfil.");
         }
 
+        // --- INSTRUCTOR ---
+        var instructor = instructorClient.obtenerInstructor(request.instructorId());
+        if (instructor == null || instructor.estado() == null) {
+            throw new InstructorNoEncontradoException(request.instructorId());
+        }
+        if (!"ACTIVO".equals(instructor.estado())) {
+            throw new InstructorInactivoException(request.instructorId());
+        }
+
+        // --- VEHÍCULO ---
+        VehiculoDetailDTO vehiculo;
         try {
-            var vehiculo = vehiculoClient.obtenerVehiculo(request.vehiculoId());
-            if (vehiculo.deletedAt() != null) {
-                throw new VehiculoEliminadoException(request.vehiculoId());
-            }
+            vehiculo = vehiculoClient.obtenerVehiculo(request.vehiculoId());
         } catch (Exception e) {
-            if (e instanceof VehiculoEliminadoException) throw e;
             throw new VehiculoNoEncontradoException(request.vehiculoId());
+        }
+        if (vehiculo.deletedAt() != null) {
+            throw new VehiculoEliminadoException(request.vehiculoId());
+        }
+        // Validaciones nuevas: estado operativo, SOAT, RTV, categoría
+        validarVehiculoOperativo(vehiculo, request);
+        validarCategoriaLicencia(estudiante, vehiculo);
+
+        // --- DISPONIBILIDAD REAL DEL INSTRUCTOR (horario semanal + excepciones) ---
+        validarDisponibilidadInstructor(request);
+    }
+
+    /**
+     * Rechaza si el vehículo no está operativo o tiene documentos vencidos.
+     */
+    private void validarVehiculoOperativo(VehiculoDetailDTO v, CreateAsignacionRequest request) {
+        if (v.estado() != null && !"ACTIVO".equals(v.estado())) {
+            throw new DisponibilidadException(
+                    "El vehículo " + (v.placa() != null ? v.placa() : "#" + v.id()) +
+                    " no está disponible (estado: " + v.estado() + ")");
+        }
+        java.time.LocalDate hoy = java.time.LocalDate.now();
+        if (v.soatVencimiento() != null && v.soatVencimiento().isBefore(hoy)) {
+            throw new DisponibilidadException(
+                    "El vehículo " + (v.placa() != null ? v.placa() : "#" + v.id()) +
+                    " tiene el SOAT vencido (caducó el " + v.soatVencimiento() + "). " +
+                    "Renueva el SOAT antes de programar clases.");
+        }
+        if (v.revisionVencimiento() != null && v.revisionVencimiento().isBefore(hoy)) {
+            throw new DisponibilidadException(
+                    "El vehículo " + (v.placa() != null ? v.placa() : "#" + v.id()) +
+                    " tiene la Revisión Técnica vencida (caducó el " + v.revisionVencimiento() + "). " +
+                    "Renueva la RTV antes de programar clases.");
+        }
+        if (v.categoriaLicenciaId() == null) {
+            throw new DisponibilidadException(
+                    "El vehículo " + (v.placa() != null ? v.placa() : "#" + v.id()) +
+                    " no tiene categoría de licencia asignada. Edita su ficha primero.");
+        }
+    }
+
+    /**
+     * Rechaza si la categoría del vehículo no coincide con la que está aprendiendo el estudiante.
+     * Ejemplo: estudiante de categoría B no puede aprender en un camión de categoría C.
+     */
+    private void validarCategoriaLicencia(EstudianteDetailDTO e, VehiculoDetailDTO v) {
+        if (!e.categoriaLicenciaId().equals(v.categoriaLicenciaId())) {
+            throw new DisponibilidadException(
+                    "La categoría del vehículo (id=" + v.categoriaLicenciaId() +
+                    ") no coincide con la del estudiante (id=" + e.categoriaLicenciaId() +
+                    "). Selecciona un vehículo de la misma categoría.");
+        }
+    }
+
+    /**
+     * Rechaza si el instructor no está disponible en la fecha/hora pedida:
+     *  - No tiene franjas configuradas ese día de la semana (horario recurrente)
+     *  - Tiene una AUSENCIA puntual ese día
+     *  - El horario solicitado no cae dentro de ninguna franja
+     */
+    private void validarDisponibilidadInstructor(CreateAsignacionRequest request) {
+        DisponibilidadDelDiaDTO disp;
+        try {
+            disp = instructorClient.obtenerDisponibilidad(request.instructorId(), request.fecha());
+        } catch (Exception ex) {
+            throw new DisponibilidadException(
+                    "No se pudo consultar la disponibilidad del instructor: " + ex.getMessage());
+        }
+        if (disp == null || Boolean.FALSE.equals(disp.disponible())) {
+            String motivo = disp != null && disp.motivoNoDisponible() != null
+                    ? disp.motivoNoDisponible()
+                    : "instructor sin horario configurado o con AUSENCIA ese día";
+            throw new DisponibilidadException(
+                    "El instructor no está disponible el " + request.fecha() + ": " + motivo);
+        }
+        // Verificar que la hora solicitada cae dentro de alguna franja del día
+        if (disp.franjas() == null || disp.franjas().isEmpty()) {
+            throw new DisponibilidadException(
+                    "El instructor no tiene franjas configuradas el " + request.fecha() +
+                    ". Configura su horario semanal primero.");
+        }
+        boolean dentroDeFranja = disp.franjas().stream().anyMatch(f ->
+                !request.horaInicio().isBefore(f.horaInicio()) &&
+                !request.horaFin().isAfter(f.horaFin()));
+        if (!dentroDeFranja) {
+            String franjasStr = disp.franjas().stream()
+                    .map(f -> f.horaInicio() + "-" + f.horaFin())
+                    .reduce((a, b) -> a + ", " + b).orElse("");
+            throw new DisponibilidadException(
+                    "El horario solicitado (" + request.horaInicio() + "-" + request.horaFin() +
+                    ") no está dentro del horario del instructor ese día. " +
+                    "Franjas disponibles: " + franjasStr);
         }
     }
 
@@ -231,5 +331,166 @@ public class AsignacionServiceImpl implements AsignacionService {
                 .observaciones(observaciones)
                 .build();
         historialRepository.save(historial);
+    }
+
+    // =========================================================================
+    //  KILOMETRAJE: iniciar / finalizar / recorrido
+    // =========================================================================
+
+    @Override
+    public RecorridoResponse iniciar(Long id, IniciarAsignacionRequest request) {
+        Asignacion a = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new AsignacionNotFoundException(id));
+
+        if ("COMPLETADA".equals(a.getEstado()) || "CANCELADA".equals(a.getEstado())) {
+            throw new IllegalStateException("No se puede iniciar una clase en estado " + a.getEstado());
+        }
+        if (a.getHoraInicioReal() != null) {
+            throw new IllegalStateException("La clase ya fue iniciada el " + a.getHoraInicioReal());
+        }
+
+        // Si no se envia km_inicial, usar el km actual del vehiculo como referencia
+        Integer kmInicial = request.kmInicial();
+        if (kmInicial == null) {
+            VehiculoDetailDTO v = vehiculoClient.obtenerVehiculo(a.getVehiculoId());
+            kmInicial = (v != null && v.kilometraje() != null) ? v.kilometraje() : 0;
+            log.info("kmInicial no enviado, tomado del vehiculo: vehiculoId={} km={}",
+                    a.getVehiculoId(), kmInicial);
+        }
+
+        String estadoAnterior = a.getEstado();
+        a.setEstado("EN_CURSO");
+        a.setKmInicial(kmInicial);
+        a.setHoraInicioReal(LocalDateTime.now());
+        if (request.observaciones() != null && !request.observaciones().isBlank()) {
+            a.setObservacionesRecorrido(request.observaciones());
+        }
+        a.setUpdatedAt(LocalDateTime.now());
+        a = repository.save(a);
+
+        registrarHistorial(a, estadoAnterior, "EN_CURSO", "Clase iniciada, km=" + kmInicial);
+        log.info("Asignacion iniciada id={} kmInicial={}", id, kmInicial);
+
+        return toRecorridoResponse(a, null, null, null, null);
+    }
+
+    @Override
+    public RecorridoResponse finalizar(Long id, FinalizarAsignacionRequest request) {
+        Asignacion a = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new AsignacionNotFoundException(id));
+
+        if ("COMPLETADA".equals(a.getEstado())) {
+            throw new IllegalStateException("La clase ya está COMPLETADA");
+        }
+        if ("CANCELADA".equals(a.getEstado())) {
+            throw new IllegalStateException("No se puede finalizar una clase CANCELADA");
+        }
+
+        // Si el instructor olvido marcar inicio, lo hacemos ahora (km_inicial = km actual)
+        if (a.getKmInicial() == null) {
+            VehiculoDetailDTO v = vehiculoClient.obtenerVehiculo(a.getVehiculoId());
+            Integer kmActual = (v != null && v.kilometraje() != null) ? v.kilometraje() : 0;
+            a.setKmInicial(kmActual);
+            a.setHoraInicioReal(LocalDateTime.now()); // best-effort: marca el "inicio" en el mismo momento
+            log.warn("Finalizando sin inicio previo. Asignacion id={} kmInicial asumido={}", id, kmActual);
+        }
+
+        if (request.kmFinal() < a.getKmInicial()) {
+            throw new IllegalArgumentException(
+                    "kmFinal (" + request.kmFinal() + ") debe ser >= kmInicial (" + a.getKmInicial() + ")");
+        }
+
+        String estadoAnterior = a.getEstado();
+        a.setEstado("COMPLETADA");
+        a.setKmFinal(request.kmFinal());
+        a.setHoraFinReal(LocalDateTime.now());
+        if (request.observacionesRecorrido() != null && !request.observacionesRecorrido().isBlank()) {
+            String previo = a.getObservacionesRecorrido() == null ? "" : a.getObservacionesRecorrido() + "\n";
+            a.setObservacionesRecorrido(previo + request.observacionesRecorrido());
+        }
+        a.setUpdatedAt(LocalDateTime.now());
+        a = repository.save(a);
+
+        registrarHistorial(a, estadoAnterior, "COMPLETADA",
+                "Clase finalizada. km " + a.getKmInicial() + " -> " + a.getKmFinal()
+                        + " (" + (a.getKmFinal() - a.getKmInicial()) + " km recorridos)");
+
+        // Sync odometro del vehiculo (best-effort; circuit breaker maneja fallos)
+        boolean syncVehOk;
+        String syncVehMsg;
+        try {
+            ActualizarKilometrajeFeignResponse resp = vehiculoClient.actualizarKilometraje(
+                    a.getVehiculoId(),
+                    new ActualizarKilometrajeFeignRequest(a.getKmFinal(), "ASIGNACION_" + a.getId()));
+            syncVehOk = Boolean.TRUE.equals(resp.aplicado());
+            syncVehMsg = resp.observacion();
+            log.info("Sync km vehiculoId={} resultado={} msg={}", a.getVehiculoId(), syncVehOk, syncVehMsg);
+        } catch (Exception ex) {
+            syncVehOk = false;
+            syncVehMsg = "Sync fallo: " + ex.getMessage();
+            log.warn("Sync km vehiculoId={} excepcion={}", a.getVehiculoId(), ex.getMessage());
+        }
+
+        // Sync horas completadas del estudiante (sumar minutos reales de la clase)
+        boolean syncEstOk = false;
+        String syncEstMsg = null;
+        long duracionMin = (a.getHoraInicioReal() != null && a.getHoraFinReal() != null)
+                ? ChronoUnit.MINUTES.between(a.getHoraInicioReal(), a.getHoraFinReal())
+                : (a.getDuracionMinutos() != null ? a.getDuracionMinutos() : 0);
+        // Si la duracion real es 0 (clase relámpago), usar la duración programada como mínimo
+        if (duracionMin <= 0 && a.getDuracionMinutos() != null) {
+            duracionMin = a.getDuracionMinutos();
+        }
+        if (duracionMin > 0) {
+            try {
+                IncrementarHorasFeignResponse respH = estudianteClient.incrementarHoras(
+                        a.getEstudianteId(),
+                        new IncrementarHorasFeignRequest((int) duracionMin, "ASIGNACION_" + a.getId()));
+                syncEstOk = respH.minutosActuales() != null;
+                syncEstMsg = respH.observacion();
+                log.info("Sync horas estudianteId={} {} -> {} transicion={}",
+                        a.getEstudianteId(), respH.minutosAnteriores(), respH.minutosActuales(), respH.transicionAutomatica());
+            } catch (Exception ex) {
+                syncEstMsg = "Sync horas fallo: " + ex.getMessage();
+                log.warn("Sync horas estudianteId={} excepcion={}", a.getEstudianteId(), ex.getMessage());
+            }
+        } else {
+            syncEstMsg = "Duración 0, no se sumaron minutos";
+        }
+
+        return toRecorridoResponse(a, syncVehOk, syncVehMsg, syncEstOk, syncEstMsg);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RecorridoResponse obtenerRecorrido(Long id) {
+        Asignacion a = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new AsignacionNotFoundException(id));
+        return toRecorridoResponse(a, null, null, null, null);
+    }
+
+    private RecorridoResponse toRecorridoResponse(Asignacion a,
+                                                  Boolean syncVehOk, String syncVehMsg,
+                                                  Boolean syncEstOk, String syncEstMsg) {
+        Integer kmRecorridos = (a.getKmInicial() != null && a.getKmFinal() != null)
+                ? (a.getKmFinal() - a.getKmInicial()) : null;
+        Long duracionReal = (a.getHoraInicioReal() != null && a.getHoraFinReal() != null)
+                ? ChronoUnit.MINUTES.between(a.getHoraInicioReal(), a.getHoraFinReal()) : null;
+        return new RecorridoResponse(
+                a.getId(),
+                a.getVehiculoId(),
+                a.getEstado(),
+                a.getKmInicial(),
+                a.getKmFinal(),
+                kmRecorridos,
+                a.getHoraInicioReal(),
+                a.getHoraFinReal(),
+                duracionReal,
+                a.getObservacionesRecorrido(),
+                syncVehOk,
+                syncVehMsg,
+                syncEstOk,
+                syncEstMsg
+        );
     }
 }

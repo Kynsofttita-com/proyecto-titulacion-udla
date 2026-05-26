@@ -89,6 +89,15 @@ public class Estudiante extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    /**
+     * Minutos acumulados de clases COMPLETADAS. Lo incrementa ms-asignaciones
+     * vía PUT /estudiantes/{id}/horas-completadas/incrementar cada vez que un
+     * instructor finaliza una clase.
+     */
+    @Column(name = "minutos_completados", nullable = false)
+    @lombok.Builder.Default
+    private Integer minutosCompletados = 0;
+
     @OneToMany(mappedBy = "estudiante", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @lombok.Builder.Default
     private Set<Documento> documentos = new HashSet<>();

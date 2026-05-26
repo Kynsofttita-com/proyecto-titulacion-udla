@@ -1,5 +1,7 @@
 package com.escuela.asignaciones.feign;
 
+import com.escuela.asignaciones.dto.feign.ActualizarKilometrajeFeignRequest;
+import com.escuela.asignaciones.dto.feign.ActualizarKilometrajeFeignResponse;
 import com.escuela.asignaciones.dto.feign.VehiculoDetailDTO;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +12,11 @@ class VehiculoClientTest {
     private final VehiculoClient client = new VehiculoClient() {
         @Override
         public VehiculoDetailDTO obtenerVehiculo(Long id) {
+            return null;
+        }
+
+        @Override
+        public ActualizarKilometrajeFeignResponse actualizarKilometraje(Long id, ActualizarKilometrajeFeignRequest request) {
             return null;
         }
     };
