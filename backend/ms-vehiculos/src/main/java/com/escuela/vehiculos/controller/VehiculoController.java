@@ -1,6 +1,8 @@
 package com.escuela.vehiculos.controller;
 
 import com.escuela.common.security.headers.UserHeaders;
+import com.escuela.vehiculos.dto.ActualizarKilometrajeRequest;
+import com.escuela.vehiculos.dto.ActualizarKilometrajeResponse;
 import com.escuela.vehiculos.dto.CreateVehiculoRequest;
 import com.escuela.vehiculos.dto.UpdateVehiculoRequest;
 import com.escuela.vehiculos.dto.VehiculoListResponse;
@@ -36,12 +38,14 @@ public class VehiculoController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar vehículos")
+    @Operation(summary = "Listar vehículos con filtros opcionales (search por placa/marca/modelo, estado)")
     public ResponseEntity<Page<VehiculoListResponse>> listar(
             @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
-            @PageableDefault(size = 50, sort = "id") Pageable pageable) {
+            @PageableDefault(size = 50, sort = "id") Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String estado) {
         validarAutenticacion(userEmail);
-        return ResponseEntity.ok(service.findAll(pageable));
+        return ResponseEntity.ok(service.buscar(pageable, search, estado));
     }
 
     @GetMapping("/{id}")
@@ -80,6 +84,18 @@ public class VehiculoController {
         validarAutenticacion(userEmail);
         validarRoles(userRoles, ROLES_ESCRITURA);
         return ResponseEntity.ok(service.update(id, request));
+    }
+
+    @PutMapping("/{id}/kilometraje")
+    @Operation(summary = "Actualizar kilometraje (monotonico, idempotente). Usado por ms-asignaciones al finalizar clase")
+    public ResponseEntity<ActualizarKilometrajeResponse> actualizarKilometraje(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @Valid @RequestBody ActualizarKilometrajeRequest request) {
+        validarAutenticacion(userEmail);
+        validarRoles(userRoles, java.util.Set.of("ADMIN", "STAFF", "INSTRUCTOR"));
+        return ResponseEntity.ok(service.actualizarKilometraje(id, request));
     }
 
     @DeleteMapping("/{id}")

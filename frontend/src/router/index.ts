@@ -104,6 +104,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/configuracion/combustible',
+    name: 'PreciosCombustible',
+    component: () => import('@/views/configuracion/PreciosCombustibleView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/asignaciones',
     name: 'Asignaciones',
     component: () => import('@/views/asignaciones/CalendarioAsignacionesView.vue'),
