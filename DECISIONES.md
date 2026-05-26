@@ -4,9 +4,10 @@
 **Proyecto:** Sistema de Control Administrativo y Financiero para Escuelas de Conducción
 **Universidad:** Universidad de las Américas (UDLA), Quito, Ecuador
 **Fecha de cierre de decisiones:** 2026-05-06
-**Estado:** Definiciones cerradas - Listo para iniciar Sprint 1
+**Última actualización:** 2026-05-26
+**Estado:** Sprints 1-8 y 10 cerrados en `main`. Sprint 9 (Backend Grupo B), Sprint 11 (Testing Grupo B) y Sprint 12 (Cierre global) pendientes.
 
-> Este documento consolida todas las decisiones técnicas, arquitectónicas y de proceso tomadas antes de iniciar el desarrollo. Es la fuente de verdad del proyecto y debe ser respetado durante toda la ejecución de los 12 sprints. Para cambios futuros, registrar como ADR en `/docs/decisions/`.
+> Este documento consolida todas las decisiones técnicas, arquitectónicas y de proceso tomadas antes de iniciar el desarrollo. Es la fuente de verdad del proyecto y debe ser respetado durante toda la ejecución de los 12 sprints. Cambios estructurales posteriores al cierre se incorporan como ADRs en este mismo documento (ver §23 en adelante) o en `/docs/decisions/`.
 
 ---
 
@@ -539,15 +540,16 @@ EUREKA_URL=http://localhost:8761/eureka
 
 ### 13.1 GitHub Actions desde Sprint 1
 
-**Workflows:**
+**Workflows (estado al 2026-05-26):**
 
-| Workflow | Trigger | Acciones |
-|----------|---------|---------|
-| `backend-ci.yml` | Push a feature/develop/main | Maven build, unit tests, JaCoCo report |
-| `frontend-ci.yml` | Push con cambios en `frontend/` | npm install, lint, unit tests, build |
-| `integration-tests.yml` | PR a develop | Levanta Testcontainers, corre integration tests |
-| `e2e-tests.yml` | Post-merge a develop | docker-compose up, Cypress E2E |
-| `deploy-staging.yml` | Merge a main | Build images, push to registry, deploy a Oracle Cloud |
+| Workflow | Trigger | Acciones | Estado |
+|----------|---------|---------|--------|
+| `backend-ci.yml` | Push a feature/main | Maven build, unit tests, JaCoCo report | ✅ Activo |
+| `docker-build.yml` | Push a main / PRs | Build de imágenes Docker de cada MS | ✅ Activo |
+| `frontend-ci.yml` | Push con cambios en `frontend/**` | `npm ci` + `vite build` + upload `dist/` artifact | ✅ Activo (desde Sprint 10) |
+| `integration-tests.yml` | PR / push a main | Services Postgres 15 + RabbitMQ 3.12, `mvn verify`, init-schemas.sql, tests con `@Tag("integration")` | ✅ Activo (desde Sprint 10) |
+| `smoke-e2e.yml` | PR / push a main | `docker compose up` 14 contenedores, Eureka 9 apps, 10 `/actuator/health`, login admin con retry, 12 endpoints, 404 + 400 ProblemDetail. En failure: dump logs como artifact | ✅ Activo (desde Sprint 10, sustituye al `e2e-tests.yml` Cypress original) |
+| `deploy-staging.yml` (planeado) | Merge a main | Build images, push to registry, deploy a Oracle Cloud | ⚠ Pendiente Sprint 12 |
 
 ### 13.2 JaCoCo (cobertura)
 
@@ -795,20 +797,22 @@ Cada tarea, antes de hacerse commit y considerarse "done", debe cumplir:
 | ~~11~~ | ~~Frontend cierre~~ | ~~UI Asignaciones + Reportes + Dashboard + E2E tests~~ | ❌ Sustituido |
 | ~~12~~ | ~~Cierre~~ | ~~Tests 80%+ + Deploy + Documentación final~~ | ✅ Mantiene foco de cierre |
 
-### 20.2 Plan vigente (Sprints 5-12)
+### 20.2 Plan vigente (Sprints 5-12) — estado al 2026-05-26
 
-| Sprint | Fase | Foco |
-|--------|------|------|
-| 5 | Fase 1 — Grupo A | Backend A pt.1: CRUDs Auth+Estudiantes+Instructores+Vehículos |
-| 6 | Fase 1 — Grupo A | Backend A pt.2: CRUDs Asignaciones+Cobros |
-| 7 | Fase 1 — Grupo A | Frontend completo del Grupo A |
-| 8 | Fase 1 — Grupo A | Testing Grupo A (unit+IT+E2E) |
-| 9 | Fase 2 — Grupo B | Backend Grupo B: Notificaciones+Reportes |
-| 10 | Fase 2 — Grupo B | Frontend Grupo B (dashboard, reportes, notif) |
-| 11 | Fase 2 — Grupo B | Testing Grupo B |
-| 12 | Fase 3 — Cierre | E2E cruzado + Performance + OWASP + Deploy + Demo + Docs |
+| Sprint | Fase | Foco planeado | Estado real |
+|--------|------|---------------|-------------|
+| 5 | Fase 1 — Grupo A | Backend A pt.1: CRUDs Auth+Estudiantes+Instructores+Vehículos | ✅ Cerrado |
+| 6 | Fase 1 — Grupo A | Backend A pt.2: CRUDs Asignaciones+Cobros | ✅ Cerrado |
+| 7 | Fase 1 — Grupo A | Frontend completo del Grupo A | ✅ Cerrado |
+| 8 | Fase 1 — Grupo A | Testing Grupo A (unit+IT+E2E) | ✅ Cerrado |
+| 9 | Fase 2 — Grupo B | Backend Grupo B: Notificaciones+Reportes (plantillas, in-app, log envíos, reportes operativos/financieros, exportación PDF/Excel, cache Caffeine) | ⚠ **PENDIENTE** |
+| 10 | Fase 2 — Grupo B | Plan original: Frontend Grupo B (dashboard, reportes, notif) | ⚠ **Ejecutado con scope distinto:** pulido Grupo A (kilometraje, tipos combustible, contratos instructores, StatCards estudiantes) + refactor estados/situacion_pago + 3 nuevos workflows CI/CD + fixes E2E. El Frontend Grupo B queda pendiente |
+| 11 | Fase 2 — Grupo B | Testing Grupo B (unit+IT+E2E Cypress 3 flujos) | ⚠ Pendiente |
+| 12 | Fase 3 — Cierre | E2E cruzado + Performance + OWASP + Rate limiting Gateway + Deploy Oracle Cloud + Demo + Docs final | ⚠ Pendiente |
 
 > **Detalle completo, tareas, subtareas y criterios de aceptación en `PLAN_FASES.md`.**
+>
+> ⚠ Al 2026-05-26 hay **drift entre `PLAN_FASES.md` y la ejecución real** del Sprint 10. Pendiente: reestructurar los sprints restantes para reincorporar Frontend Grupo B (que no se hizo en Sprint 10) y mantener Testing Grupo B + Cierre.
 
 ---
 
@@ -849,11 +853,20 @@ Cada tarea, antes de hacerse commit y considerarse "done", debe cumplir:
 
 ---
 
-## 22. Próximos pasos
+## 22. Próximos pasos (al 2026-05-26)
 
-1. **Pendiente del equipo:** decidir si arrancamos el Sprint 1
-2. **Sprint 0 (no formalizado):** crear repositorio Git en GitHub, estructura de carpetas, archivos iniciales, docker-compose de infraestructura, validar que herramientas estén instaladas
-3. **Sprint 1 (oficial inicio):** implementar la estructura base de los 7 MS + API Gateway + Eureka según el plan en `SPRINTS_PLAN.xlsx`
+1. **Reestructurar el plan restante** — el Sprint 10 ejecutado no coincide con el "Frontend Grupo B" del plan. Redistribuir los entregables pendientes (Backend Grupo B + Frontend Grupo B + Testing Grupo B + Cierre) en los sprints restantes y actualizar `PLAN_FASES.md` y `SPRINTS_PLAN.xlsx` con la nueva secuencia.
+2. **Sprint 9 — Backend Grupo B (pendiente):** MS-Notificaciones (plantillas CRUD, in-app, log envíos, consumer de eventos del Grupo A) + MS-Reportes (endpoints operativos y financieros, exportación PDF/Excel, cache Caffeine). ~6 PRs según `PLAN_FASES.md §4`.
+3. **Frontend Grupo B (pendiente):** NotificacionesDropdown con badge + polling, PlantillasEmailView, DashboardView con KPIs (Chart.js), Reportes UI operativos/financieros. ~5 PRs.
+4. **Testing Grupo B (pendiente):** unit ≥80% MS-Notif + MS-Reportes, integration con Testcontainers + GreenMail SMTP + Feign mocks, E2E Cypress (evento→email→notif in-app, reporte+PDF, plantilla email + envío de prueba). ~5 PRs.
+5. **Sprint 12 — Cierre global (pendiente):** E2E cruzado (matrícula→factura→clases→pago→recibo→reporte), JMeter 50 usuarios p95<500ms, OWASP Top 10, rate limiting Gateway con Bucket4j, limpieza (TODOs, console.log), docs final (README + runbook + manual usuario + C4 actualizado), deploy Oracle Cloud Free Tier + Nginx + Let's Encrypt + backups, video demo 15 min, tag `v1.0.0`. ~8 PRs.
+
+**Hitos cerrados al 2026-05-26:**
+- 5 PRs (#38-#42) del Sprint 10 mergeados en `main` (commit `de106fa`)
+- 3 nuevos workflows CI/CD activos: `frontend-ci.yml`, `integration-tests.yml`, `smoke-e2e.yml`
+- Refactor de estados estudiante + situacion_pago ampliado a VARCHAR(30) (ver §24)
+- Kilometraje E2E en asignaciones + sync cross-MS + 6 validaciones nuevas en crear asignación (ver §24)
+- Estabilización CI/CD y plataforma: TZ JVM Dockerfile, 404/400 ProblemDetail, ajustes GHA Free Tier, V6 fix bcrypt hash (ver §25)
 
 ---
 
@@ -924,9 +937,148 @@ Detalle completo de tareas, subtareas, criterios de aceptación y dependencias: 
 
 ---
 
-> **Este documento está cerrado.** Cambios futuros se registran como ADRs en `/docs/decisions/` o como nuevas secciones aquí cuando son cambios estructurales.
+## 24. ADR-2026-05-Sprint10 — Refactor de dominio y endurecimiento operativo del Grupo A
+
+**Fecha:** Sprint 10 (cerrado en `main` el 2026-05-26)
+**Estado:** ✅ Aceptada e implementada (PRs #36, #37, #39, #40, #42 mergeados)
+**Decisor:** Hernán Mateo Jurado Moran
+
+### Contexto
+
+Durante la validación E2E previa al cierre de la Fase 1 del proyecto se detectaron tres categorías de hallazgos en el Grupo A que requerían ajustes de dominio:
+
+1. **Estados del estudiante y situación de pago** estaban subespecificados: solo existía `PENDIENTE_MATRICULA` y faltaban estados intermedios (`MATRICULADO`, `CURSANDO`) que reflejaran el ciclo de vida real desde la matrícula hasta la finalización del curso. La columna `situacion_pago` tampoco soportaba el flujo de pagos parciales con la granularidad necesaria.
+2. **MS-Cobros** no modelaba la opción de crédito: las facturas se cobraban siempre como pago único, sin posibilidad de plan de cuotas.
+3. **MS-Asignaciones** no registraba el kilometraje real recorrido durante cada clase, lo que rompía la trazabilidad de uso de vehículos y de horas dictadas/recibidas. Adicionalmente, varias validaciones de negocio críticas no se ejecutaban al crear una asignación.
+
+### Decisión
+
+**24.1 Refactor de estados del estudiante + `situacion_pago` ampliado**
+
+- Estados extendidos: `PRE_INSCRITO` → `MATRICULADO` → `CURSANDO` → `FINALIZADO` (más `RETIRADO` como estado terminal alterno).
+- Auto-transiciones por evento:
+  - `MATRICULADO` cuando se emite la primera factura del estudiante.
+  - `CURSANDO` cuando se completa la primera asignación.
+  - `FINALIZADO` cuando `horasCompletadas ≥ horasRequeridas` del tipo de curso.
+- Columna `situacion_pago` ampliada a `VARCHAR(30)` (V4 + V4 fix) y enum: `PENDIENTE_FACTURACION` / `PENDIENTE_PAGO` / `PAGO_PARCIAL` / `PAGADO_TOTAL`.
+- Default de `situacion_pago` cambiado a `PENDIENTE_FACTURACION` (PR #39) — el default anterior (`PENDIENTE_MATRICULA`) violaba el check constraint y rompía todo `POST /estudiantes` con 500.
+- Frontend alineado: `StatusBadge`, `EstadoCuentaView`, `ListaEstudiantes` muestran las nuevas etiquetas.
+
+**24.2 Modelo de crédito en MS-Cobros + tabla `factura_cuotas`**
+
+- La factura puede emitirse con o sin plan de cuotas; si lleva crédito, se generan N registros en `factura_cuotas` con fecha de vencimiento y monto por cuota.
+- El cálculo de saldo de la factura suma los pagos aplicados a cada cuota, no al total directo.
+- Estados de cuota: `PENDIENTE` / `VENCIDA` / `PAGADA`. Estado de factura derivado de sus cuotas.
+
+**24.3 Kilometraje E2E en MS-Asignaciones + sync cross-MS**
+
+- La asignación se inicia con `kilometrajeInicial` y se finaliza con `kilometrajeFinal` y `minutosCompletados`.
+- Al finalizar la clase se publica el evento `AsignacionCompletadaEvent` consumido por:
+  - **MS-Vehículos**: actualiza el odómetro del vehículo via Feign **PUT** (no PATCH — limitación HttpURLConnection de Feign por default, documentada como deuda).
+  - **MS-Estudiantes**: incrementa `minutosCompletados` del progreso académico y recalcula `horasCompletadas/horasRequeridas/porcentaje` on-the-fly contra el `tipoCurso` del estudiante (vía Feign `TipoCursoClient`).
+- El listener de progreso académico **NO usa idempotencia** porque la `IdempotencyStore` actual tiene `UNIQUE(event_id)` y no permite dos consumers del mismo MS bindando el mismo routing key. Trade-off documentado; fix futuro: ampliar a `UNIQUE(event_id, consumer_scope)`.
+
+**24.4 Seis validaciones nuevas obligatorias al crear asignación**
+
+Al ejecutar `POST /asignaciones` se valida ahora (vía Feign cross-MS):
+
+1. La categoría de licencia del **instructor** habilita la categoría que el estudiante está cursando.
+2. La categoría del **vehículo** coincide con la categoría que el estudiante está cursando.
+3. El vehículo tiene **SOAT vigente** a la fecha de la asignación.
+4. El vehículo tiene **RTV (revisión técnica vehicular) vigente** a la fecha.
+5. El **horario semanal del instructor** cubre el rango horario solicitado.
+6. El instructor no está en **AUSENCIA** (vacaciones/licencia) en esa fecha.
+
+Cualquier falla devuelve `409 Conflict` con `ProblemDetail` específico.
+
+### Consecuencias
+
+- El ciclo de vida del estudiante queda trazable y consultable por filtros del frontend.
+- Los reportes financieros (pendientes del Sprint 9) podrán mostrar cartera por vencer con la granularidad de cuota.
+- El uso de vehículos queda auditable: cualquier discrepancia de odómetro se puede reconciliar contra la suma de kilometrajes de las asignaciones.
+- Las 6 validaciones nuevas previenen errores operativos comunes (instructor sin categoría, vehículo sin SOAT, etc.) que antes solo se detectaban manualmente.
+
+### Migraciones BD aplicadas
+
+- MS-Estudiantes V3, V4 (situacion_pago + estados extendidos)
+- MS-Cobros V_factura_cuotas
+- MS-Asignaciones V_kilometraje + V_validaciones
+
+---
+
+## 25. ADR-2026-05-Sprint10 — Estabilización CI/CD y plataforma
+
+**Fecha:** Sprint 10 (cerrado en `main` el 2026-05-26, PR #38)
+**Estado:** ✅ Aceptada e implementada
+**Decisor:** Hernán Mateo Jurado Moran
+
+### Contexto
+
+Al ejecutar el primer pipeline E2E completo en GitHub Actions sobre el stack containerizado real (14 contenedores) salieron a la luz varios problemas operativos que en local no se manifestaban:
+
+- Los `LocalTime/LocalDate` persistidos se desfasaban +5 horas al ir a Postgres porque la JVM dentro del contenedor corría en UTC mientras que el resto del sistema asumía `America/Guayaquil`.
+- Los runners gratuitos de GitHub Actions son significativamente más lentos que una laptop de desarrollo: Spring Boot tardaba ~200 segundos en arrancar dentro del runner, contra ~30 s en local. Los healthchecks y timeouts originales reventaban antes de que los servicios estuvieran listos.
+- El `GlobalExceptionHandler` con un `@ExceptionHandler(Exception.class)` capturaba `NoHandlerFoundException` y devolvía `500` cuando el handler correcto era `404`. Adicionalmente, `MethodArgumentTypeMismatchException` (path variable con tipo inválido, ej. `/estudiantes/abc`) también caía al `500`.
+- El admin seed de `V1_5__Seed_Data.sql` tenía un hash bcrypt que no matcheaba la contraseña documentada `Admin123!`. En las BD locales funcionaba porque alguien lo había cambiado manualmente; en cualquier despliegue limpio el login admin fallaba con `401`.
+
+### Decisión
+
+**25.1 Zona horaria fija en JVM (Dockerfile.spring)**
+
+Se hardcodea en `infrastructure/docker/Dockerfile.spring`:
+```dockerfile
+ENV JAVA_OPTS="-Duser.timezone=America/Guayaquil"
+```
+Sobrescribible por `docker-compose` si en algún ambiente futuro hace falta otra TZ. Sin esto, `LocalDateTime.now()` dentro del contenedor devuelve UTC y se persiste con desfase de +5 h.
+
+**25.2 Ajustes de timing para runner GHA Free Tier**
+
+- Healthcheck del `Dockerfile.spring`: `start-period=180s` + `retries=10` (vs los defaults 30s/3 que reventaban antes de que Spring termine de arrancar).
+- En el workflow `smoke-e2e.yml`: `docker compose up --wait --wait-timeout 600` (10 min de margen).
+- Retry loop 6×10 s al primer login admin contra el Gateway (el `LoadBalancer` interno tarda hasta 30 s en refrescar la cache de Eureka tras el arranque de `ms-auth`).
+
+**25.3 Configuración global de 404/400 con ProblemDetail RFC 7807**
+
+En cada `application.yml` de los MS afectados:
+```yaml
+spring:
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+```
+Esto permite que `NoHandlerFoundException` llegue al `@ExceptionHandler` y devuelva `404` con `ProblemDetail`. Adicionalmente se agregó handler para `MethodArgumentTypeMismatchException` → `400` (path variable de tipo inválido devolvía 500 antes).
+
+**25.4 Migración V6 — corrección de hash bcrypt del admin seed**
+
+`V6__fix_admin_password_hash.sql` regenera el hash bcrypt correcto para `Admin123!` en el usuario `admin@escuela.local` del seed. A partir de cualquier despliegue limpio el login admin funciona sin intervención manual.
+
+**25.5 Tres nuevos workflows CI/CD**
+
+- `frontend-ci.yml` — `npm ci` + `vite build` + upload artifact `dist/`. Dispara con cambios a `frontend/**`.
+- `integration-tests.yml` — services Postgres 15 + RabbitMQ 3.12, `mvn verify -Dgroups=integration` con `init-schemas.sql`, step separado para tests con `@Tag("integration")` (queda preparado; hoy no hay tests con ese tag).
+- `smoke-e2e.yml` — `docker compose up` 14 contenedores, valida Eureka registró 9 apps, `/actuator/health` de los 10 servicios, login admin con retry, 12 endpoints REST, comportamiento 404 y 400 ProblemDetail. En failure: dump de logs de contenedores como artifact.
+
+### Limitaciones conocidas (deuda registrada)
+
+- **Feign no soporta PATCH por default** (HttpURLConnection). El sync de odómetro de vehículo usa `PUT` como workaround. Fix futuro: configurar OkHttp.
+- **IdempotencyStore con `UNIQUE(event_id)`**: impide que dos consumers del mismo MS procesen el mismo evento. El listener de progreso académico fue exento de idempotency. Fix futuro: ampliar schema a `UNIQUE(event_id, consumer_scope)`.
+- **vue-tsc roto en local** por bug upstream de Node 22 + TS 5.6 (no nuestro). El build con `vite build` funciona; el `type-check` por separado no.
+- **4 vulnerabilidades dependabot en `main`** (1 high, 3 moderate). A revisar en limpieza del Sprint 12.
+- **Caffeine cache nunca implementado**; queda como deuda para Sprint 9 (reportes) o Sprint 12.
+
+### Consecuencias
+
+- El pipeline E2E corre verde sobre runners gratuitos de GitHub Actions, permitiendo gate de calidad en cada PR a `main` sin coste.
+- Cualquier despliegue limpio del sistema (Oracle Cloud futuro, DigitalOcean fallback, o re-bootstrap local) tiene admin operativo desde el primer arranque.
+- Las respuestas de error siguen RFC 7807 de forma consistente, alineadas con §15.4 de este documento.
+
+---
+
+> **Este documento está cerrado para decisiones estructurales originales.** Cambios futuros se registran como ADRs nuevos (§24, §25, ...) en este mismo archivo cuando son cambios de dominio o plataforma, o en `/docs/decisions/` cuando son decisiones de menor alcance.
 
 ---
 
 *Documento generado: 2026-05-06*
-*Última actualización: 2026-05-22 — agregada sección 23 (cambio horizontal→vertical por grupos)*
+*Última actualización: 2026-05-26 — agregadas secciones §24 (refactor dominio Grupo A) y §25 (estabilización CI/CD y plataforma); actualizados encabezado, §13.1 workflows, §20 estado real de sprints, §22 próximos pasos*
