@@ -2,6 +2,9 @@
 
 [![Backend CI](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/backend-ci.yml)
 [![Docker Build](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/docker-build.yml/badge.svg)](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/docker-build.yml)
+[![Frontend CI](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/frontend-ci.yml)
+[![Integration Tests](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/integration-tests.yml)
+[![Smoke E2E](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/smoke-e2e.yml/badge.svg)](https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions/workflows/smoke-e2e.yml)
 [![Java](https://img.shields.io/badge/Java-21%20LTS-orange?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.0-green?logo=springboot)](https://spring.io/projects/spring-boot)
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2024.0.0-green?logo=spring)](https://spring.io/projects/spring-cloud)
@@ -18,32 +21,38 @@
 - **Entrega final:** 5 de mayo de 2026
 
 > 📚 **Documentos de referencia (orden de prioridad):**
-> 1. [`DECISIONES.md`](./DECISIONES.md) — 30 decisiones técnicas finales (cerradas 2026-05-06)
-> 2. [`SPRINTS_PLAN.xlsx`](./SPRINTS_PLAN.xlsx) — Plan de los 12 sprints
-> 3. [`CLAUDE.md`](./CLAUDE.md) — Guía operativa
-> 4. [`docs/database/schema.md`](./docs/database/schema.md) — Diseño BD (38 tablas, 9 schemas)
+> 1. [`DECISIONES.md`](./DECISIONES.md) — 32 decisiones técnicas (cerradas 2026-05-06, +2 ADRs Sprint 10)
+> 2. [`PLAN_FASES.md`](./PLAN_FASES.md) — Plan vigente Sprints 5-12 (vertical por grupos)
+> 3. [`SPRINTS_PLAN.xlsx`](./SPRINTS_PLAN.xlsx) — Plan original (referencia histórica)
+> 4. [`CLAUDE.md`](./CLAUDE.md) — Guía operativa
+> 5. [`docs/database/schema.md`](./docs/database/schema.md) — Diseño BD (41 tablas, 9 schemas, 22 migraciones)
 
 ---
 
 ## 📌 Estado actual del proyecto
 
-| Sprint | Tema | Estado |
-|---|---|---|
-| **Sprint 0** | Setup monorepo + infra docker | ✅ Cerrado |
-| **Sprint 1** | Estructura Maven + Eureka + Gateway + Containerización | ✅ Cerrado |
-| **Sprint 2.0** | CI/CD + GitHub Flow | ✅ Cerrado |
-| **Sprint 2** | Diseño BD + Migraciones Flyway + Entidades JPA + Repositorios | ✅ Cerrado (38 tablas, 33 entidades, 34 repositorios) |
-| **Sprint 3** | Mensajería RabbitMQ + eventos asíncronos | ✅ Cerrado (3 PRs, EventPublisher + idempotencia + flujo E2E) |
-| **Sprint 4** | Auth + JWT + API Gateway + Notificaciones | ✅ Cerrado (5 PRs, 129 tests pasados, 11 bugs fixeados) |
-| **Sprint 5** | CRUDs por dominio | 📋 Próximo |
-| Sprints 6–12 | Frontend Vue, Reportes, QA, Deploy | 📋 Planificado |
+| Sprint | Fase | Tema | Estado |
+|---|---|---|---|
+| **Sprint 0** | Setup | Monorepo + infra docker | ✅ Cerrado |
+| **Sprint 1** | Infra | Estructura Maven + Eureka + Gateway + Containerización | ✅ Cerrado |
+| **Sprint 2** | Infra | Diseño BD + Migraciones Flyway + Entidades JPA + Repositorios | ✅ Cerrado (38 tablas, 33 entidades, 34 repositorios) |
+| **Sprint 3** | Infra | Mensajería RabbitMQ + eventos asíncronos | ✅ Cerrado (3 PRs, EventPublisher + idempotencia + flujo E2E) |
+| **Sprint 4** | Infra | Auth + JWT + API Gateway + Notificaciones | ✅ Cerrado (5 PRs, 129 tests pasados, 11 bugs fixeados) |
+| **Sprint 5** | Fase 1 — Grupo A | Backend pt.1: CRUDs Auth + Estudiantes + Instructores + Vehículos | ✅ Cerrado |
+| **Sprint 6** | Fase 1 — Grupo A | Backend pt.2: CRUDs Asignaciones + Cobros + Resilience4j | ✅ Cerrado |
+| **Sprint 7** | Fase 1 — Grupo A | Frontend completo del Grupo A (login, dashboards, formularios) | ✅ Cerrado |
+| **Sprint 8** | Fase 1 — Grupo A | Testing Grupo A (unit + IT + E2E) y cierre Fase 1 | ✅ Cerrado |
+| **Sprint 10** | Estabilización | Pulido Grupo A (kilometraje, contratos, combustibles) + 3 nuevos workflows CI/CD (frontend-ci, integration-tests, smoke-e2e) + refactor estados/situacion_pago + factura_cuotas + 6 validaciones cross-MS | ✅ Cerrado (5 PRs #38-#42 mergeados) |
+| **Sprint 9** | Fase 2 — Grupo B | **Backend Grupo B**: MS-Notificaciones plantillas + in-app, MS-Reportes operativos + financieros + PDF/Excel | 🟡 **EN PROCESO** |
+| Sprint 11 | Fase 2 — Grupo B | Frontend Grupo B (dashboard KPIs, reportes UI, NotificacionesDropdown) | 📋 Planificado |
+| Sprint 12 | Fase 3 — Cierre | E2E cruzado, performance (JMeter 50 usuarios p95<500ms), OWASP, rate limiting, deploy Oracle Cloud, demo + tag v1.0.0 | 📋 Planificado |
+
+> Ver detalle de tareas, subtareas y criterios de aceptación en [`PLAN_FASES.md`](./PLAN_FASES.md).
+> ADRs técnicos del Sprint 10 (refactor dominio + estabilización CI/CD) en [`DECISIONES.md §24-§25`](./DECISIONES.md).
 
 ### Validación funcional
 
-Los flujos críticos (login JWT, CRUDs, asignación tripartita, forgot-password,
-reset, reconciliación de pagos) se validan E2E desde el frontend en
-`http://localhost:5173`. Las suites de testing de Sprint 4 (bash) fueron
-reemplazadas por validación end-to-end vía la UI rediseñada.
+Los flujos críticos (login JWT, CRUDs del Grupo A, asignación tripartita con kilometraje E2E, las 6 validaciones cross-MS al crear asignación, forgot-password, reset, reconciliación de pagos, modelo de crédito con cuotas) están validados desde el frontend en `http://localhost:5173`. El pipeline **smoke-e2e** valida el flujo completo automáticamente en cada PR a `main` (14 contenedores Docker, login admin con retry, 12 endpoints REST, 404/400 ProblemDetail).
 
 ---
 
@@ -78,8 +87,14 @@ Plataforma web responsive unificada · Arquitectura de microservicios · Integra
 | 💳 **Cobros** | MS-Cobros | 8086 | Facturación, pagos, conciliación |
 | 📊 **Reportes** | MS-Reportes | 8087 | Operativos, financieros, exportación PDF/Excel |
 | 🔔 **Notificaciones** | MS-Notificaciones | 8088 | In-app + email (async) |
-| **Gateway** | API Gateway | 8080 | Único punto de entrada, ruteo, rate limit |
+| **Gateway** | API Gateway | 8080 | Único punto de entrada, ruteo, JWT validation |
 | **Discovery** | Eureka Server | 8761 | Service registration & discovery |
+
+**Estado de implementación al 2026-05-26:**
+
+- 🟢 **Grupo A (6 MS principales)** — backend + frontend + testing completos (Sprints 5-8)
+- 🟡 **Grupo B (2 MS)** — schemas creados, controllers REST **en proceso (Sprint 9)**
+- ⚙ **Servicios de soporte** (Eureka, Gateway, RabbitMQ, MinIO) — completos desde Sprint 1-4
 
 ---
 
@@ -99,16 +114,18 @@ Plataforma web responsive unificada · Arquitectura de microservicios · Integra
 - **SpringDoc 2.7.x** — OpenAPI 3
 - **JUnit 5, Mockito, AssertJ, Testcontainers, H2** — testing
 
-### Frontend (Sprint 6+)
+### Frontend (Sprints 7-8, en uso)
 - **Vue.js 3** (SPA) con Composition API + `<script setup lang="ts">`
-- **Vite** + **Pinia** + **Vue Router** + **Axios**
+- **Vite** + **Pinia** + **Vue Router** + **Axios** + **PrimeVue**
 - Diseño responsive mobile-first
+- Login + dashboards + CRUDs del Grupo A funcionales (Auth, Estudiantes, Instructores, Vehículos, Asignaciones, Cobros)
 
 ### Infraestructura
 - **Docker** + **Docker Compose** (14 contenedores)
-- **GitHub Actions** CI/CD (Backend CI obligatorio, Docker Build path-filtered)
+- **GitHub Actions** CI/CD — 5 workflows: `backend-ci`, `docker-build`, `frontend-ci`, `integration-tests`, `smoke-e2e` (con filtros `paths:` para no correr workflows innecesarios)
+- **TZ JVM hardcoded** a `America/Guayaquil` en `Dockerfile.spring` (V10 estabilización)
 - **Email:** Mailtrap (dev) / Gmail SMTP (prod)
-- **Despliegue:** Oracle Cloud Free Tier (fallback DigitalOcean $6/mes)
+- **Despliegue:** Oracle Cloud Free Tier (fallback DigitalOcean $6/mes) — pendiente Sprint 12
 
 ---
 
@@ -214,17 +231,17 @@ cd api-gateway && mvn spring-boot:run
 | RabbitMQ Management | http://localhost:15672 (guest/guest) |
 | MinIO Console | http://localhost:9001 (minioadmin/minioadmin123) |
 | Adminer (BD) | http://localhost:8888 |
-| Frontend (Sprint 6+) | http://localhost:5173 |
+| Frontend Vue (login: `admin@escuela.local` / `Admin123!`) | http://localhost:5173 |
 
 ---
 
 ## 🗄️ Base de Datos
 
 - **PostgreSQL 15** — 1 instancia, **9 schemas separados** (1 por microservicio + `shared_schema`)
-- **38 tablas** distribuidas: `auth_schema` (11) · `vehiculos_schema` (5) · `estudiantes_schema` (5) · `instructores_schema` (4) · `asignaciones_schema` (3) · `cobros_schema` (3) · `notificaciones_schema` (3) · `reportes_schema` (2) · `shared_schema` (2)
-- **FKs solo dentro del mismo schema** — entre MS se referencian IDs sin restricción FK (consistencia eventual vía RabbitMQ)
+- **41 tablas** distribuidas: `auth_schema` (12) · `vehiculos_schema` (6) · `estudiantes_schema` (5) · `instructores_schema` (4) · `asignaciones_schema` (3) · `cobros_schema` (4) · `notificaciones_schema` (3) · `reportes_schema` (2) · `shared_schema` (2)
+- **FKs solo dentro del mismo schema** — entre MS se referencian IDs sin restricción FK (consistencia eventual vía RabbitMQ + Feign)
 - **Auditing global:** `created_at`, `updated_at`, `created_by`, `updated_by` + `deleted_at` (soft delete)
-- **Migraciones Flyway V1** ejecutadas automáticamente al arrancar cada MS
+- **22 migraciones Flyway** ejecutadas automáticamente al arrancar cada MS (V1-V6 en ms-auth, V1-V5 en ms-estudiantes, V1-V2 en ms-instructores/vehiculos/asignaciones/cobros, V1 en ms-notificaciones/ms-reportes)
 
 Ver detalle completo en [`docs/database/schema.md`](./docs/database/schema.md).
 
@@ -244,7 +261,17 @@ mvn test jacoco:report
 # Reportes en: backend/<ms>/target/site/jacoco/index.html
 ```
 
-**Cobertura objetivo:** 80%+ por módulo (medido desde Sprint 4 cuando hay lógica de negocio real).
+**Cobertura objetivo:** 80%+ por módulo (medido desde Sprint 4 cuando hay lógica de negocio real). Testing completo del Grupo A cerrado en Sprint 8; testing del Grupo B pendiente del Sprint 11.
+
+### Pipelines CI/CD activos
+
+| Workflow | Trigger | Acciones |
+|----------|---------|----------|
+| `backend-ci.yml` | Push/PR a main | Maven build + tests unitarios + JaCoCo |
+| `frontend-ci.yml` | Push/PR a main si cambia `frontend/**` | `npm ci` + `vite build` + upload `dist/` |
+| `integration-tests.yml` | Push/PR a main si cambia `backend/**` | Postgres + RabbitMQ + `mvn verify -Dgroups=integration` |
+| `smoke-e2e.yml` | Push/PR a main si cambia `backend/**` o `infrastructure/**` | Stack completo 14 contenedores + login admin + 12 endpoints REST + 404/400 ProblemDetail |
+| `docker-build.yml` | Push a main si cambia `backend/**` o `infrastructure/docker/**` | Build de una imagen Spring de prueba (eureka-server) |
 
 ---
 
@@ -264,7 +291,7 @@ POST /auth/logout         → Logout
 POST /auth/forgot-password
 ```
 
-Ver especificación completa en `docs/api/` (a generar en Sprint 4).
+Especificación OpenAPI completa: pendiente de exportar a `docs/api/` en Sprint 13 (T13.6 Docs final). Mientras tanto, accesible vía SpringDoc en `http://localhost:<puerto>/v3/api-docs` de cada MS.
 
 ---
 
@@ -330,10 +357,12 @@ Ver [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md) para el detalle.
 
 ## 📚 Documentación adicional
 
-- 📘 [DECISIONES.md](./DECISIONES.md) — 30 decisiones técnicas
-- 📗 [SPRINTS_PLAN.xlsx](./SPRINTS_PLAN.xlsx) — Plan detallado por sprint
+- 📘 [DECISIONES.md](./DECISIONES.md) — 30 decisiones técnicas + 2 ADRs Sprint 10 (refactor dominio + estabilización CI/CD)
+- 📗 [PLAN_FASES.md](./PLAN_FASES.md) — Plan vigente Sprints 5-12 (vertical por grupos)
+- 📘 [SPRINTS_PLAN.xlsx](./SPRINTS_PLAN.xlsx) — Plan original (referencia histórica)
 - 📙 [CLAUDE.md](./CLAUDE.md) — Guía operativa para Claude Code
-- 🗄️ [docs/database/schema.md](./docs/database/schema.md) — Diseño completo de BD
+- 🗄️ [docs/database/schema.md](./docs/database/schema.md) — Diseño completo de BD (41 tablas, 9 schemas, 22 migraciones, diagramas Mermaid)
+- 📁 [docs/database/secciones/](./docs/database/secciones/) — Documentación BD partida en 19 secciones temáticas
 - 🔧 [backend/README.md](./backend/README.md) — Cómo levantar el backend
 - 🐳 [infrastructure/docker/README.md](./infrastructure/docker/README.md) — Detalle de Docker Compose
 - 🤝 [.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md) — GitHub Flow + convenciones
@@ -355,4 +384,4 @@ Código propietario de Kynsoft SAS con derechos académicos para UDLA.
 
 ---
 
-**Última actualización:** 2026-05-07 (cierre Sprint 2)
+**Última actualización:** 2026-05-26 — Sprints 1-8 + Sprint 10 (estabilización) cerrados en `main`. Sprint 9 (Backend Grupo B) en proceso.
