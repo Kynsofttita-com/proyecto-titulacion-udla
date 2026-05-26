@@ -19,6 +19,9 @@ public record InstructorResponse(
         String estado,
         LocalDate fechaContratacion,
         BigDecimal salarioMensual,
+        String tipoContrato,
+        Short horasContratoSemanales,
+        BigDecimal tarifaHora,
         Long usuarioId,
         String observaciones
 ) {}

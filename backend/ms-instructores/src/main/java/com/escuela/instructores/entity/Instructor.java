@@ -70,6 +70,15 @@ public class Instructor extends BaseEntity {
     @Column(name = "salario_mensual", precision = 10, scale = 2)
     private BigDecimal salarioMensual;
 
+    @Column(name = "tipo_contrato", nullable = false, length = 20)
+    private String tipoContrato = "TIEMPO_COMPLETO";
+
+    @Column(name = "horas_contrato_semanales", nullable = false)
+    private Short horasContratoSemanales = 40;
+
+    @Column(name = "tarifa_hora", precision = 8, scale = 2)
+    private BigDecimal tarifaHora;
+
     @Column(name = "usuario_id")
     private Long usuarioId;
 

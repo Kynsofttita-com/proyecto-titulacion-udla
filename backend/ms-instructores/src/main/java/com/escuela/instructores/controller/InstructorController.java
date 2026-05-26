@@ -5,10 +5,12 @@ import com.escuela.instructores.dto.CreateInstructorRequest;
 import com.escuela.instructores.dto.DisponibilidadDelDiaResponse;
 import com.escuela.instructores.dto.InstructorListResponse;
 import com.escuela.instructores.dto.InstructorResponse;
+import com.escuela.instructores.dto.ResumenHorasResponse;
 import com.escuela.instructores.dto.UpdateInstructorRequest;
 import com.escuela.instructores.security.AuthHeaderGuard;
 import com.escuela.instructores.service.DisponibilidadService;
 import com.escuela.instructores.service.InstructorService;
+import com.escuela.instructores.service.ResumenHorasService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,10 +37,14 @@ public class InstructorController {
 
     private final InstructorService service;
     private final DisponibilidadService disponibilidadService;
+    private final ResumenHorasService resumenHorasService;
 
-    public InstructorController(InstructorService service, DisponibilidadService disponibilidadService) {
+    public InstructorController(InstructorService service,
+                                DisponibilidadService disponibilidadService,
+                                ResumenHorasService resumenHorasService) {
         this.service = service;
         this.disponibilidadService = disponibilidadService;
+        this.resumenHorasService = resumenHorasService;
     }
 
     @GetMapping
@@ -117,5 +123,18 @@ public class InstructorController {
         AuthHeaderGuard.requireAuth(userEmail);
         AuthHeaderGuard.requireAnyRole(userRoles, ROLES_LECTURA);
         return ResponseEntity.ok(disponibilidadService.disponibilidadDelDia(id, fecha));
+    }
+
+    @GetMapping("/{id}/resumen-horas")
+    @Operation(summary = "Resumen de horas trabajadas y sueldo estimado en un rango")
+    public ResponseEntity<ResumenHorasResponse> resumenHoras(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        AuthHeaderGuard.requireAuth(userEmail);
+        AuthHeaderGuard.requireAnyRole(userRoles, ROLES_LECTURA);
+        return ResponseEntity.ok(resumenHorasService.calcular(id, desde, hasta));
     }
 }
