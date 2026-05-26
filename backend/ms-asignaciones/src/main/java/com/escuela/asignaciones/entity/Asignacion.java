@@ -64,4 +64,21 @@ public class Asignacion extends BaseEntity {
     @Version
     @Column(nullable = false)
     private Long version = 0L;
+
+    // ----- Kilometraje y horas reales (registrados al iniciar/finalizar la clase) -----
+
+    @Column(name = "km_inicial")
+    private Integer kmInicial;
+
+    @Column(name = "km_final")
+    private Integer kmFinal;
+
+    @Column(name = "hora_inicio_real")
+    private LocalDateTime horaInicioReal;
+
+    @Column(name = "hora_fin_real")
+    private LocalDateTime horaFinReal;
+
+    @Column(name = "observaciones_recorrido", columnDefinition = "TEXT")
+    private String observacionesRecorrido;
 }

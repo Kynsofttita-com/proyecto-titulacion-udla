@@ -243,6 +243,39 @@ public class EstudianteServiceImpl implements EstudianteService {
 
     @Override
     @Transactional
+    public com.escuela.estudiantes.dto.IncrementarHorasResponse incrementarMinutosCompletados(
+            Long id, com.escuela.estudiantes.dto.IncrementarHorasRequest request) {
+        Estudiante e = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new EstudianteNotFoundException(id));
+
+        Integer anterior = e.getMinutosCompletados() == null ? 0 : e.getMinutosCompletados();
+        Integer nuevo = anterior + request.minutos();
+        e.setMinutosCompletados(nuevo);
+
+        // Si esta MATRICULADO y aun no esta cursando, lo movemos a CURSANDO
+        boolean transicionado = false;
+        String estadoAnterior = e.getEstado();
+        if ("MATRICULADO".equals(estadoAnterior)) {
+            e.setEstado("CURSANDO");
+            transicionado = true;
+            log.info("Estudiante id={} transicionado MATRICULADO -> CURSANDO al sumar horas", id);
+        }
+
+        // TODO: futura mejora — consultar tipo_curso para obtener total de horas requeridas
+        // y auto-transicionar a COMPLETADO. Por ahora dejamos solo MATRICULADO->CURSANDO.
+        repository.save(e);
+
+        log.info("Estudiante id={} minutos {} -> {} fuente={}", id, anterior, nuevo, request.fuente());
+        String obs = transicionado
+                ? "Sumados " + request.minutos() + " min. Estado: " + estadoAnterior + " -> " + e.getEstado()
+                : "Sumados " + request.minutos() + " min (acumulado: " + nuevo + " min = " + (nuevo / 60) + "h " + (nuevo % 60) + "m)";
+
+        return new com.escuela.estudiantes.dto.IncrementarHorasResponse(
+                id, anterior, nuevo, e.getEstado(), transicionado, obs);
+    }
+
+    @Override
+    @Transactional
     public void softDelete(Long id) {
         Estudiante estudiante = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new EstudianteNotFoundException(id));

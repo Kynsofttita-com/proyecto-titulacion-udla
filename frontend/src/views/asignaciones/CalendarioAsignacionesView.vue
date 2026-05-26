@@ -74,8 +74,33 @@
                 Instructor <span class="text-ink-700 font-medium">#{{ a.instructorId }}</span> ·
                 Vehículo <span class="text-ink-700 font-medium">#{{ a.vehiculoId }}</span>
               </p>
+              <p v-if="a.kmInicial != null || a.kmFinal != null" class="text-xs text-info-600 mt-0.5">
+                <i class="pi pi-car text-xs mr-1" />
+                km {{ a.kmInicial ?? '?' }} → {{ a.kmFinal ?? '?' }}
+                <span v-if="a.kmInicial != null && a.kmFinal != null" class="text-success-700 font-medium ml-1">
+                  ({{ a.kmFinal - a.kmInicial }} km recorridos)
+                </span>
+              </p>
             </div>
-            <StatusBadge :status="a.estado" />
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <StatusBadge :status="a.estado" />
+              <Button
+                v-if="puedeIniciar(a)"
+                label="Iniciar"
+                icon="pi pi-play"
+                size="small"
+                severity="info"
+                @click="abrirDialogIniciar(a)"
+              />
+              <Button
+                v-if="puedeFinalizar(a)"
+                label="Finalizar"
+                icon="pi pi-check"
+                size="small"
+                severity="success"
+                @click="abrirDialogFinalizar(a)"
+              />
+            </div>
           </li>
         </ul>
       </DataTableCard>
@@ -107,9 +132,28 @@
           </template>
         </Column>
         <Column field="tipoClase" header="Tipo" />
+        <Column header="Recorrido">
+          <template #body="{ data }">
+            <span v-if="data.kmInicial != null && data.kmFinal != null" class="text-xs text-success-700 font-medium">
+              {{ data.kmFinal - data.kmInicial }} km
+            </span>
+            <span v-else-if="data.kmInicial != null" class="text-xs text-info-600">
+              Desde {{ data.kmInicial.toLocaleString('es-EC') }}
+            </span>
+            <span v-else class="text-ink-400 text-xs">—</span>
+          </template>
+        </Column>
         <Column header="Estado">
           <template #body="{ data }">
             <StatusBadge :status="data.estado" />
+          </template>
+        </Column>
+        <Column header="" style="width: 200px">
+          <template #body="{ data }">
+            <div class="flex items-center gap-1 justify-end">
+              <Button v-if="puedeIniciar(data)" label="Iniciar" icon="pi pi-play" size="small" severity="info" outlined @click="abrirDialogIniciar(data)" />
+              <Button v-if="puedeFinalizar(data)" label="Finalizar" icon="pi pi-check" size="small" severity="success" outlined @click="abrirDialogFinalizar(data)" />
+            </div>
           </template>
         </Column>
       </DataTable>
@@ -293,6 +337,68 @@
         <Button label="Crear asignación" icon="pi pi-check" :loading="creando" @click="crear" />
       </template>
     </Dialog>
+
+    <!-- Dialog: Iniciar clase (km_inicial) -->
+    <Dialog v-model:visible="dialogIniciarVisible" modal header="Iniciar clase" :style="{ width: '460px' }">
+      <div v-if="asignacionActual" class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 p-3 text-xs text-ink-700">
+          <p><strong>Clase #{{ asignacionActual.id }}</strong> · Vehículo #{{ asignacionActual.vehiculoId }}</p>
+          <p class="mt-1">Registra el kilometraje del odómetro <strong>antes</strong> de empezar la clase. Si lo dejas vacío, usaremos el kilometraje actual del vehículo ({{ kmActualVehiculo ?? '—' }} km).</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-ink-700 mb-1.5">Kilometraje inicial</label>
+          <InputNumber v-model="formIniciar.kmInicial" :min="0" suffix=" km" :placeholder="kmActualVehiculo ? `${kmActualVehiculo} km (actual del vehículo)` : 'km del odómetro'" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-ink-700 mb-1.5">Observaciones <span class="text-xs text-ink-500">(opcional)</span></label>
+          <Textarea v-model="formIniciar.observaciones" rows="2" placeholder="Estado del vehículo, condiciones, etc." class="w-full" />
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Cancelar" outlined @click="dialogIniciarVisible = false" :disabled="iniciando" />
+        <Button label="Iniciar clase" icon="pi pi-play" severity="info" :loading="iniciando" @click="confirmarIniciar" />
+      </template>
+    </Dialog>
+
+    <!-- Dialog: Finalizar clase (km_final) -->
+    <Dialog v-model:visible="dialogFinalizarVisible" modal header="Finalizar clase" :style="{ width: '480px' }">
+      <div v-if="asignacionActual" class="space-y-4">
+        <div class="rounded-lg bg-success-50 border border-success-200 p-3 text-xs text-ink-700">
+          <p><strong>Clase #{{ asignacionActual.id }}</strong> · Vehículo #{{ asignacionActual.vehiculoId }}</p>
+          <p v-if="asignacionActual.kmInicial != null" class="mt-1">
+            km inicial registrado: <strong>{{ asignacionActual.kmInicial.toLocaleString('es-EC') }}</strong>
+          </p>
+          <p v-else class="mt-1 text-warning-700">
+            <i class="pi pi-exclamation-triangle text-xs mr-1" />
+            Sin km inicial registrado — al finalizar se asumirá el km actual del vehículo como inicial.
+          </p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-ink-700 mb-1.5">Kilometraje final *</label>
+          <InputNumber
+            v-model="formFinalizar.kmFinal"
+            :min="asignacionActual.kmInicial ?? 0"
+            suffix=" km"
+            placeholder="km del odómetro al terminar"
+            class="w-full"
+          />
+          <p v-if="kmRecorridosPreview != null" class="text-xs text-success-700 mt-1 font-medium">
+            <i class="pi pi-arrow-right text-xs mr-1" />
+            Recorrido: {{ kmRecorridosPreview }} km
+          </p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-ink-700 mb-1.5">Observaciones del recorrido <span class="text-xs text-ink-500">(opcional)</span></label>
+          <Textarea v-model="formFinalizar.observacionesRecorrido" rows="3" placeholder="Desempeño del estudiante, incidentes, etc." class="w-full" maxlength="500" />
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Cancelar" outlined @click="dialogFinalizarVisible = false" :disabled="finalizando" />
+        <Button label="Finalizar clase" icon="pi pi-check" severity="success" :loading="finalizando" @click="confirmarFinalizar" />
+      </template>
+    </Dialog>
+
+    <Toast />
   </div>
 </template>
 
@@ -311,7 +417,13 @@ import StatCard from '@/components/ui/StatCard.vue'
 import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
+import asignacionesService from '@/services/asignaciones'
+import vehiculosService from '@/services/vehiculos'
+
+const toast = useToast()
 
 // Componente helper para mostrar filas de detalle
 const DetailRow = defineComponent({
@@ -500,6 +612,134 @@ const crear = async () => {
   } catch (e: any) {
     formError.value = e.response?.data?.detail || 'Error al crear la asignación'
   } finally { creando.value = false }
+}
+
+// =========================================================================
+//  KILOMETRAJE: iniciar / finalizar clase
+// =========================================================================
+
+const dialogIniciarVisible = ref(false)
+const dialogFinalizarVisible = ref(false)
+const iniciando = ref(false)
+const finalizando = ref(false)
+const asignacionActual = ref<any>(null)
+const kmActualVehiculo = ref<number | null>(null)
+
+const formIniciar = reactive<{ kmInicial: number | null; observaciones: string }>({
+  kmInicial: null,
+  observaciones: ''
+})
+const formFinalizar = reactive<{ kmFinal: number | null; observacionesRecorrido: string }>({
+  kmFinal: null,
+  observacionesRecorrido: ''
+})
+
+const kmRecorridosPreview = computed(() => {
+  if (!asignacionActual.value) return null
+  const kmI = asignacionActual.value.kmInicial ?? kmActualVehiculo.value
+  if (kmI == null || formFinalizar.kmFinal == null) return null
+  const diff = formFinalizar.kmFinal - kmI
+  return diff >= 0 ? diff : null
+})
+
+const puedeIniciar = (a: any): boolean => {
+  // Se puede iniciar si está PROGRAMADA o CONFIRMADA y aún no fue iniciada (sin km_inicial)
+  const estado = a?.estado
+  return (estado === 'PROGRAMADA' || estado === 'CONFIRMADA') && a?.kmInicial == null
+}
+
+const puedeFinalizar = (a: any): boolean => {
+  // Se puede finalizar si está EN_CURSO, o si está CONFIRMADA pero el instructor olvidó iniciar
+  const estado = a?.estado
+  return estado === 'EN_CURSO' || estado === 'CONFIRMADA' || estado === 'PROGRAMADA'
+}
+
+const abrirDialogIniciar = async (a: any) => {
+  asignacionActual.value = a
+  formIniciar.kmInicial = null
+  formIniciar.observaciones = ''
+  kmActualVehiculo.value = null
+  try {
+    const v = await vehiculosService.obtenerVehiculo(a.vehiculoId)
+    kmActualVehiculo.value = v.kilometraje ?? 0
+  } catch { /* ignore */ }
+  dialogIniciarVisible.value = true
+}
+
+const abrirDialogFinalizar = async (a: any) => {
+  asignacionActual.value = a
+  formFinalizar.kmFinal = null
+  formFinalizar.observacionesRecorrido = ''
+  if (a.kmInicial == null) {
+    try {
+      const v = await vehiculosService.obtenerVehiculo(a.vehiculoId)
+      kmActualVehiculo.value = v.kilometraje ?? 0
+    } catch { /* ignore */ }
+  }
+  dialogFinalizarVisible.value = true
+}
+
+const confirmarIniciar = async () => {
+  if (!asignacionActual.value) return
+  iniciando.value = true
+  try {
+    const r = await asignacionesService.iniciarAsignacion(asignacionActual.value.id, {
+      kmInicial: formIniciar.kmInicial,
+      observaciones: formIniciar.observaciones?.trim() || undefined
+    })
+    toast.add({
+      severity: 'success',
+      summary: 'Clase iniciada',
+      detail: `Clase #${r.asignacionId} en curso (km inicial: ${r.kmInicial})`,
+      life: 3000
+    })
+    dialogIniciarVisible.value = false
+    await cargar()
+  } catch (e: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: e.response?.data?.detail || 'No se pudo iniciar la clase',
+      life: 4000
+    })
+  } finally {
+    iniciando.value = false
+  }
+}
+
+const confirmarFinalizar = async () => {
+  if (!asignacionActual.value) return
+  if (formFinalizar.kmFinal == null || formFinalizar.kmFinal < 0) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Kilometraje final es requerido', life: 3000 })
+    return
+  }
+  finalizando.value = true
+  try {
+    const r = await asignacionesService.finalizarAsignacion(asignacionActual.value.id, {
+      kmFinal: Number(formFinalizar.kmFinal),
+      observacionesRecorrido: formFinalizar.observacionesRecorrido?.trim() || undefined
+    })
+    const detalle = r.syncVehiculoExitoso
+      ? `${r.kmRecorridos} km recorridos. Odómetro del vehículo actualizado.`
+      : `${r.kmRecorridos} km recorridos. ${r.mensajeSyncVehiculo || ''}`
+    toast.add({
+      severity: r.syncVehiculoExitoso ? 'success' : 'warn',
+      summary: 'Clase finalizada',
+      detail: detalle,
+      life: 5000
+    })
+    dialogFinalizarVisible.value = false
+    await cargar()
+  } catch (e: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: e.response?.data?.detail || 'No se pudo finalizar la clase',
+      life: 4000
+    })
+  } finally {
+    finalizando.value = false
+  }
 }
 
 onMounted(cargar)

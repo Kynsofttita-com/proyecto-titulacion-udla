@@ -186,6 +186,26 @@ public class EstudianteController {
     }
 
     // -----------------------------------------------------------------------
+    // PUT /estudiantes/{id}/horas-completadas/incrementar
+    // (llamado por ms-asignaciones al finalizar una clase)
+    // -----------------------------------------------------------------------
+
+    @PutMapping("/{id}/horas-completadas/incrementar")
+    @Operation(summary = "Suma minutos al acumulado de horas completadas",
+            description = "Lo invoca ms-asignaciones cuando un instructor finaliza una clase. " +
+                    "Si el estudiante estaba MATRICULADO, transiciona a CURSANDO automáticamente. " +
+                    "Roles: ADMIN, STAFF, INSTRUCTOR (instructor lo invoca indirectamente vía ms-asignaciones).")
+    public ResponseEntity<com.escuela.estudiantes.dto.IncrementarHorasResponse> incrementarHoras(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @Valid @RequestBody com.escuela.estudiantes.dto.IncrementarHorasRequest request) {
+        validarAutenticacion(userEmail);
+        validarRoles(userRoles, java.util.Set.of("ADMIN", "STAFF", "INSTRUCTOR"));
+        return ResponseEntity.ok(service.incrementarMinutosCompletados(id, request));
+    }
+
+    // -----------------------------------------------------------------------
     // DELETE /estudiantes/{id}
     // -----------------------------------------------------------------------
 
