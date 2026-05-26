@@ -141,12 +141,25 @@ jobs:
       - name: Smoke E2E via API Gateway
         run: |
           set -e
-          echo "=== 1. Login admin ==="
-          TOKEN=$(curl -sf -X POST http://localhost:8080/auth/login \
-            -H "Content-Type: application/json" \
-            -d '{"email":"admin@escuela.local","password":"Admin123!"}' \
-            | python3 -c "import sys,json; print(json.load(sys.stdin)['accessToken'])")
-          [ -z "$TOKEN" ] && { echo "FAIL: login sin token"; exit 1; }
+          echo "=== 1. Login admin (con retry hasta que LB del gateway tenga ms-auth) ==="
+          # El gateway puede responder /actuator/health 200 pero su cache de
+          # Spring Cloud LoadBalancer puede no haber refrescado aun la lista de
+          # instancias desde Eureka. Reintentamos cada 10s hasta 6 veces (60s
+          # max), que cubre el registry-fetch-interval default de Eureka.
+          TOKEN=""
+          for i in $(seq 1 6); do
+            BODY=$(curl -s -X POST http://localhost:8080/auth/login \
+              -H "Content-Type: application/json" \
+              -d '{"email":"admin@escuela.local","password":"Admin123!"}' || true)
+            TOKEN=$(echo "$BODY" | grep -o '"accessToken":"[^"]*"' | sed 's/.*"accessToken":"\([^"]*\)".*/\1/')
+            if [ -n "$TOKEN" ]; then
+              echo "OK: login exitoso intento $i, token len=${#TOKEN}"
+              break
+            fi
+            echo "  intento $i/6 sin token, esperando 10s... body: $(echo "$BODY" | head -c 200)"
+            sleep 10
+          done
+          [ -z "$TOKEN" ] && { echo "FAIL: login no obtuvo token tras 6 intentos"; exit 1; }
           echo "OK: token len=${#TOKEN}"
 
           echo ""
