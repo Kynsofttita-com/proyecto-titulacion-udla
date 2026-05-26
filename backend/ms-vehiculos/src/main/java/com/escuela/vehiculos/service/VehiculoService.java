@@ -9,8 +9,12 @@ import org.springframework.data.domain.Pageable;
 
 public interface VehiculoService {
     Page<VehiculoListResponse> findAll(Pageable pageable);
+    Page<VehiculoListResponse> buscar(Pageable pageable, String search, String estado);
     VehiculoResponse findById(Long id);
     VehiculoResponse create(CreateVehiculoRequest request);
     VehiculoResponse update(Long id, UpdateVehiculoRequest request);
     void softDelete(Long id);
+
+    com.escuela.vehiculos.dto.ActualizarKilometrajeResponse actualizarKilometraje(
+            Long id, com.escuela.vehiculos.dto.ActualizarKilometrajeRequest request);
 }

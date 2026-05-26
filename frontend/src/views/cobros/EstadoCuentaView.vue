@@ -79,7 +79,7 @@
             </div>
             <div class="hidden md:block text-right">
               <p class="text-[10px] uppercase tracking-wider text-ink-500 font-semibold">Situación</p>
-              <StatusBadge :status="est.situacionPago || 'SIN_DEUDA'" />
+              <StatusBadge :status="est.situacionPago || 'PENDIENTE_FACTURACION'" />
             </div>
             <Button
               :label="tabEst === 'sin_pagar' ? 'Facturar' : tabEst === 'con_saldo' ? 'Cobrar' : 'Ver'"
@@ -953,36 +953,42 @@ const DetailRow = defineComponent({
   }
 })
 
-// ============ Pestañas por situación de pago ============
-const tabEst = ref<'sin_pagar' | 'con_saldo' | 'al_dia'>('sin_pagar')
+// ============ Pestañas por situación de pago (modelo nuevo Sprint 9 ext) ============
+// Las 4 pestañas reflejan los 4 valores definidos en backend:
+// PENDIENTE_FACTURACION, PENDIENTE_PAGO, PAGO_PARCIAL, PAGADO_TOTAL.
+// Los valores legacy (PENDIENTE_MATRICULA, AL_DIA, EN_MORA, SIN_DEUDA)
+// también se mapean para no perder filas hasta que la migración termine.
+const tabEst = ref<'sin_factura' | 'sin_pago' | 'parcial' | 'al_dia'>('sin_factura')
 const tabsEstudiantes = [
-  { key: 'sin_pagar', label: 'Sin pagar',  icon: 'pi-exclamation-circle', activeBadge: 'bg-warning-100 text-warning-700' },
-  { key: 'con_saldo', label: 'Con saldo',  icon: 'pi-clock',              activeBadge: 'bg-info-100 text-info-700' },
-  { key: 'al_dia',    label: 'Al día',     icon: 'pi-check-circle',       activeBadge: 'bg-success-100 text-success-700' }
+  { key: 'sin_factura', label: 'Sin facturar', icon: 'pi-file',                 activeBadge: 'bg-warning-100 text-warning-700' },
+  { key: 'sin_pago',    label: 'Por cobrar',   icon: 'pi-exclamation-circle',   activeBadge: 'bg-danger-100 text-danger-700' },
+  { key: 'parcial',     label: 'Pago parcial', icon: 'pi-clock',                activeBadge: 'bg-warning-100 text-warning-700' },
+  { key: 'al_dia',      label: 'Al día',       icon: 'pi-check-circle',         activeBadge: 'bg-success-100 text-success-700' }
 ] as const
 
 const estudiantesPorTab = (key: string) => {
   const sit = (e: any) => e.situacionPago
   return estudiantes.value.filter(e => {
-    if (key === 'sin_pagar') return sit(e) === 'PENDIENTE_MATRICULA'
-    if (key === 'con_saldo') return ['PAGO_PARCIAL', 'EN_MORA', 'AL_DIA'].includes(sit(e))
-    if (key === 'al_dia')    return ['PAGADO_TOTAL', 'SIN_DEUDA'].includes(sit(e))
+    if (key === 'sin_factura') return ['PENDIENTE_FACTURACION', 'PENDIENTE_MATRICULA'].includes(sit(e))
+    if (key === 'sin_pago')    return sit(e) === 'PENDIENTE_PAGO'
+    if (key === 'parcial')     return ['PAGO_PARCIAL', 'EN_MORA'].includes(sit(e))
+    if (key === 'al_dia')      return ['PAGADO_TOTAL', 'SIN_DEUDA', 'AL_DIA'].includes(sit(e))
     return false
   })
 }
 
 const accionEstudiante = (est: any, tab: string) => {
-  if (tab === 'sin_pagar') {
-    // Abrir form factura precargado con este estudiante
+  if (tab === 'sin_factura') {
+    // Aún no le han emitido factura: abrir form de factura precargado.
     abrirFormFactura()
     selEstudiante.value = est
-  } else if (tab === 'con_saldo') {
-    // Abrir form de pago precargado con este estudiante
+  } else if (tab === 'sin_pago' || tab === 'parcial') {
+    // Tiene factura CONTADO pendiente o parcial: abrir form de pago.
     abrirFormPago()
     selEstudiantePago.value = est
     onEstudiantePagoSelect({ value: est })
   } else {
-    // Ver detalle (futuro: navegar a /estudiantes/:id)
+    // Al día (CONTADO pagado o CRÉDITO emitido).
     alert(`${est.nombreCompleto} está al día.`)
   }
 }

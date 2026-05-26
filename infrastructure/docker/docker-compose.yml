@@ -171,6 +171,13 @@ services:
     ports:
       - "8081:8081"
     environment: &ms-environment
+      # JVM forzada a UTC: alineada con PostgreSQL (también UTC) para que
+      # LocalTime/LocalDate no apliquen offsets al insertar (bug detectado en
+      # horarios_trabajo, donde 18:00 local se guardaba como 23:00 UTC porque
+      # el Dockerfile.spring tenía JAVA_OPTS con -Duser.timezone=America/Guayaquil).
+      # JAVA_OPTS se sobreescribe completamente aquí; TZ es para utilidades shell.
+      TZ: UTC
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -Duser.timezone=UTC"
       SPRING_PROFILES_ACTIVE: docker
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"

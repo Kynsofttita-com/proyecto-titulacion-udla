@@ -1,5 +1,6 @@
 package com.escuela.vehiculos.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -8,13 +9,21 @@ public record VehiculoResponse(
         String placa,
         String marca,
         String modelo,
-        Short año,
+        Short anio,
         String vin,
         String color,
-        Long kilometraje,
-        LocalDate fechaMantenimiento,
-        LocalDate fechaInspeccion,
+        Integer kilometraje,
+        String estado,
+        LocalDate soatVencimiento,
+        LocalDate revisionVencimiento,
+        LocalDate fechaCompra,
+        BigDecimal valorCompra,
+        Long categoriaLicenciaId,
+        Long tipoCombustibleId,
+        String numeroMotor,
+        String numeroChasis,
+        Short capacidadPasajeros,
         String observaciones,
-        LocalDateTime dateCreated,
-        LocalDateTime dateUpdated
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {}

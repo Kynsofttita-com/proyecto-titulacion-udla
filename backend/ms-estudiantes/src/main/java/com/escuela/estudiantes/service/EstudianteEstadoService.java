@@ -37,16 +37,16 @@ public class EstudianteEstadoService {
     /**
      * Reacciona a un evento {@code pago.registrado}.
      *
+     * <p><b>Modelo nuevo (Sprint 9 ext):</b> la transicion
+     * {@code PRE_MATRICULADO → MATRICULADO} solo ocurre cuando el estudiante
+     * queda en {@code PAGADO_TOTAL} (saldo financiero = 0). Pagos parciales
+     * NO matriculan; el estudiante sigue en PRE_MATRICULADO hasta saldar.
+     *
      * <ul>
-     *   <li>Si el estudiante esta {@code PRE_MATRICULADO} → pasa a
-     *       {@code MATRICULADO} y se setea {@code fechaMatricula = hoy}.</li>
-     *   <li>Actualiza {@code situacion_pago} segun {@code estadoFactura}
-     *       resultante del pago:
-     *       <ul>
-     *         <li>{@code PAGADA} → {@code PAGADO_TOTAL}</li>
-     *         <li>{@code PARCIAL} → {@code PAGO_PARCIAL}</li>
-     *       </ul>
-     *   </li>
+     *   <li>{@code estadoFactura = PAGADA} → {@code situacion_pago = PAGADO_TOTAL}
+     *       + si PRE_MATRICULADO → MATRICULADO + {@code fechaMatricula = hoy}</li>
+     *   <li>{@code estadoFactura = PARCIAL} → {@code situacion_pago = PAGO_PARCIAL}
+     *       (NO matricula)</li>
      * </ul>
      *
      * @param estudianteId   id del estudiante
@@ -62,20 +62,73 @@ public class EstudianteEstadoService {
         Estudiante e = opt.get();
         boolean dirty = false;
 
-        // Auto-transicion academica al primer pago
-        if ("PRE_MATRICULADO".equals(e.getEstado())) {
-            e.setEstado("MATRICULADO");
-            e.setFechaMatricula(LocalDate.now());
-            dirty = true;
-            log.info("Estudiante {} PRE_MATRICULADO → MATRICULADO (primer pago)", estudianteId);
-        }
-
         // Situacion financiera
         String nuevaSituacion = mapearSituacionPago(estadoFactura);
         if (nuevaSituacion != null && !nuevaSituacion.equals(e.getSituacionPago())) {
             e.setSituacionPago(nuevaSituacion);
             dirty = true;
             log.info("Estudiante {} situacion_pago → {}", estudianteId, nuevaSituacion);
+        }
+
+        // Auto-transicion academica solo si quedo PAGADO_TOTAL
+        if ("PRE_MATRICULADO".equals(e.getEstado())
+                && "PAGADO_TOTAL".equals(e.getSituacionPago())) {
+            e.setEstado("MATRICULADO");
+            e.setFechaMatricula(LocalDate.now());
+            dirty = true;
+            log.info("Estudiante {} PRE_MATRICULADO → MATRICULADO (saldo cero)", estudianteId);
+        }
+
+        if (dirty) {
+            repository.save(e);
+        }
+    }
+
+    /**
+     * Reacciona a un evento {@code factura.emitida}.
+     *
+     * <ul>
+     *   <li>Factura {@code CONTADO} emitida → {@code situacion_pago = PENDIENTE_PAGO}
+     *       (factura existe pero $0 pagado). NO matricula.</li>
+     *   <li>Factura {@code CREDITO} emitida → {@code situacion_pago = PAGADO_TOTAL}
+     *       (asume cobro automatico por tarjeta). Si era PRE_MATRICULADO →
+     *       MATRICULADO con {@code fechaMatricula = hoy}.</li>
+     * </ul>
+     *
+     * <p>Idempotente: si la situacion ya esta en el valor objetivo, no hace nada.
+     */
+    public void procesarFacturaEmitida(Long estudianteId, String tipoPago) {
+        Optional<Estudiante> opt = repository.findByIdAndDeletedAtIsNull(estudianteId);
+        if (opt.isEmpty()) {
+            log.warn("procesarFacturaEmitida: estudiante {} no encontrado", estudianteId);
+            return;
+        }
+        Estudiante e = opt.get();
+        boolean dirty = false;
+
+        String nuevaSituacion;
+        if ("CREDITO".equalsIgnoreCase(tipoPago)) {
+            nuevaSituacion = "PAGADO_TOTAL";
+        } else {
+            // CONTADO o cualquier otro tipo
+            nuevaSituacion = "PENDIENTE_PAGO";
+        }
+
+        if (!nuevaSituacion.equals(e.getSituacionPago())) {
+            e.setSituacionPago(nuevaSituacion);
+            dirty = true;
+            log.info("Estudiante {} situacion_pago → {} (factura emitida tipo={})",
+                    estudianteId, nuevaSituacion, tipoPago);
+        }
+
+        // Auto-transicion: si la emision dejo en PAGADO_TOTAL (caso CREDITO),
+        // matricular al PRE_MATRICULADO.
+        if ("PRE_MATRICULADO".equals(e.getEstado())
+                && "PAGADO_TOTAL".equals(e.getSituacionPago())) {
+            e.setEstado("MATRICULADO");
+            e.setFechaMatricula(LocalDate.now());
+            dirty = true;
+            log.info("Estudiante {} PRE_MATRICULADO → MATRICULADO (CREDITO emitido)", estudianteId);
         }
 
         if (dirty) {
@@ -167,15 +220,12 @@ public class EstudianteEstadoService {
 
     /**
      * Combina la situacion calculada por MS-Cobros con el estado academico
-     * del estudiante. La regla especial: PRE_MATRICULADO + SIN_DEUDA significa
-     * "registrado pero falta cobrarle matricula" — lo mapeamos a
-     * PENDIENTE_MATRICULA para que destaque en la UI.
+     * del estudiante. Con el modelo simplificado (Sprint 9 ext), ms-cobros
+     * ya devuelve directamente los 4 valores correctos
+     * (PENDIENTE_FACTURACION, PENDIENTE_PAGO, PAGO_PARCIAL, PAGADO_TOTAL),
+     * por lo que aqui solo pasamos el valor tal cual.
      */
     private String ajustarSegunEstado(Estudiante e, String situacionCobros) {
-        if (situacionCobros == null) return null;
-        if ("SIN_DEUDA".equals(situacionCobros) && "PRE_MATRICULADO".equals(e.getEstado())) {
-            return "PENDIENTE_MATRICULA";
-        }
         return situacionCobros;
     }
 

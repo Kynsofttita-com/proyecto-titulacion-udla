@@ -108,6 +108,11 @@ public class FacturaServiceImpl implements FacturaService {
         }
 
         log.info("Factura creada con ID: {} y número: {}", guardada.getId(), numeroFactura);
+
+        // Publicar FacturaEmitidaEvent para que ms-estudiantes recalcule
+        // situacion_pago y dispare PRE_MATRICULADO->MATRICULADO si CREDITO.
+        eventDispatcher.publishEmitida(guardada);
+
         return facturaMapper.toResponse(guardada);
     }
 

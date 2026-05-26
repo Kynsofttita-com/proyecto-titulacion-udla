@@ -40,7 +40,7 @@ spring:
         - id: ms-vehiculos
           uri: lb://ms-vehiculos
           predicates:
-            - Path=/vehiculos/**
+            - Path=/vehiculos/**, /tipos-combustible/**
 
         - id: ms-asignaciones
           uri: lb://ms-asignaciones

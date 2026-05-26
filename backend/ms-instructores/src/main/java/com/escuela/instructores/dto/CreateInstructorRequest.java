@@ -49,6 +49,42 @@ public record CreateInstructorRequest(
         @DecimalMin(value = "0.0", inclusive = false, message = "Salario debe ser mayor a 0")
         BigDecimal salarioMensual,
 
+        @NotNull(message = "Tipo de contrato requerido")
+        @Pattern(regexp = "^(TIEMPO_COMPLETO|MEDIO_TIEMPO|POR_HORAS)$",
+                message = "Tipo de contrato debe ser TIEMPO_COMPLETO, MEDIO_TIEMPO o POR_HORAS")
+        String tipoContrato,
+
+        @NotNull(message = "Horas semanales de contrato requeridas")
+        @Min(value = 1, message = "Horas semanales debe ser al menos 1")
+        @Max(value = 60, message = "Horas semanales no puede superar 60")
+        Short horasContratoSemanales,
+
+        @DecimalMin(value = "0.0", inclusive = false, message = "Tarifa por hora debe ser mayor a 0")
+        BigDecimal tarifaHora,
+
         String observaciones
 ) {
+    @AssertTrue(message = "En Ecuador el número de licencia debe coincidir con la cédula")
+    public boolean isLicenciaIgualCedula() {
+        if (cedula == null || licenciaNumero == null) return true; // ya cubierto por @NotBlank
+        return cedula.equals(licenciaNumero);
+    }
+
+    @AssertTrue(message = "Tarifa por hora es obligatoria para contratos POR_HORAS")
+    public boolean isTarifaCoherente() {
+        if (tipoContrato == null) return true;
+        if ("POR_HORAS".equals(tipoContrato)) {
+            return tarifaHora != null && tarifaHora.signum() > 0;
+        }
+        return true;
+    }
+
+    @AssertTrue(message = "Salario mensual es obligatorio para contratos TIEMPO_COMPLETO o MEDIO_TIEMPO")
+    public boolean isSalarioCoherente() {
+        if (tipoContrato == null) return true;
+        if ("TIEMPO_COMPLETO".equals(tipoContrato) || "MEDIO_TIEMPO".equals(tipoContrato)) {
+            return salarioMensual != null && salarioMensual.signum() > 0;
+        }
+        return true;
+    }
 }

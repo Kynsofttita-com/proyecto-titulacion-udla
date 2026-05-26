@@ -30,4 +30,13 @@ public interface EstudianteService {
      * observaciones del estudiante con timestamp.
      */
     EstudianteResponse cambiarEstado(Long id, String nuevoEstado, String motivo);
+
+    /**
+     * Suma minutos al acumulado de horas completadas del estudiante.
+     * Llamado por ms-asignaciones al finalizar una clase. Si el estudiante
+     * alcanza el total requerido por su tipo de curso, transiciona
+     * automáticamente a estado COMPLETADO.
+     */
+    com.escuela.estudiantes.dto.IncrementarHorasResponse incrementarMinutosCompletados(
+            Long id, com.escuela.estudiantes.dto.IncrementarHorasRequest request);
 }

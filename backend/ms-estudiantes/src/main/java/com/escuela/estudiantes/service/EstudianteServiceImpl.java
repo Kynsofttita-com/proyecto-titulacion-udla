@@ -4,7 +4,6 @@ import com.escuela.common.validation.core.CedulaEcuadorValidator;
 import com.escuela.common.events.estudiantes.EstudianteActualizadoEvent;
 import com.escuela.common.events.estudiantes.EstudianteCreadoEvent;
 import com.escuela.common.events.estudiantes.EstudianteEliminadoEvent;
-import com.escuela.common.events.estudiantes.EstudianteMatriculadoEvent;
 import com.escuela.estudiantes.dto.CreateEstudianteRequest;
 import com.escuela.estudiantes.dto.EstudianteDetailResponse;
 import com.escuela.estudiantes.dto.EstudianteListResponse;
@@ -57,15 +56,16 @@ import java.util.Set;
  *   <li>{@code estudiantes.creado} - tras crear un estudiante</li>
  *   <li>{@code estudiantes.actualizado} - tras actualizar</li>
  *   <li>{@code estudiantes.eliminado} - tras soft-delete</li>
- *   <li>{@code estudiantes.matriculado} - cuando el estado pasa a ACTIVO</li>
  * </ul>
+ *
+ * <p>El evento {@code estudiantes.matriculado} se publica desde
+ * {@link EstudianteEstadoService} cuando la auto-transicion
+ * PRE_MATRICULADO &rarr; MATRICULADO ocurre por evento de pago o factura.</p>
  */
 @Service
 public class EstudianteServiceImpl implements EstudianteService {
 
     private static final Logger log = LoggerFactory.getLogger(EstudianteServiceImpl.class);
-
-    private static final String ESTADO_ACTIVO = "ACTIVO";
 
     private final EstudianteRepository repository;
     private final EstudianteEventDispatcher eventDispatcher;
@@ -149,9 +149,6 @@ public class EstudianteServiceImpl implements EstudianteService {
         Estudiante estudiante = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new EstudianteNotFoundException(id));
 
-        // Capturar estado previo para detectar transicion a "matriculado"
-        String estadoPrevio = estudiante.getEstado();
-
         // Si cambian el email, validar unicidad (excepto si es el mismo email)
         if (request.email() != null && !request.email().equalsIgnoreCase(estudiante.getEmail())
                 && repository.existsByEmailAndDeletedAtIsNull(request.email())) {
@@ -170,17 +167,12 @@ public class EstudianteServiceImpl implements EstudianteService {
                 .estado(actualizado.getEstado())
                 .build());
 
-        // Si el estado pasa a ACTIVO, ademas disparamos el evento de matricula
-        if (!Objects.equals(estadoPrevio, ESTADO_ACTIVO)
-                && ESTADO_ACTIVO.equals(actualizado.getEstado())) {
-            eventDispatcher.publishMatriculado(EstudianteMatriculadoEvent.builder()
-                    .estudianteId(actualizado.getId())
-                    .cedula(actualizado.getCedula())
-                    .email(actualizado.getEmail())
-                    .nombreCompleto(nombreCompleto(actualizado))
-                    .fechaMatricula(actualizado.getFechaMatricula())
-                    .build());
-        }
+        // Nota: el evento estudiantes.matriculado se publica desde
+        // EstudianteEstadoService cuando la transicion PRE_MATRICULADO ->
+        // MATRICULADO ocurre por evento (pago saldado o factura CREDITO
+        // emitida). El cambio manual de estado via PATCH /estado tampoco
+        // publica matriculado, ya que ese flujo es para correcciones
+        // administrativas, no para la matricula real.
 
         return getMapper().toResponse(actualizado);
     }
@@ -247,6 +239,39 @@ public class EstudianteServiceImpl implements EstudianteService {
                 .build());
 
         return getMapper().toResponse(actualizado);
+    }
+
+    @Override
+    @Transactional
+    public com.escuela.estudiantes.dto.IncrementarHorasResponse incrementarMinutosCompletados(
+            Long id, com.escuela.estudiantes.dto.IncrementarHorasRequest request) {
+        Estudiante e = repository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new EstudianteNotFoundException(id));
+
+        Integer anterior = e.getMinutosCompletados() == null ? 0 : e.getMinutosCompletados();
+        Integer nuevo = anterior + request.minutos();
+        e.setMinutosCompletados(nuevo);
+
+        // Si esta MATRICULADO y aun no esta cursando, lo movemos a CURSANDO
+        boolean transicionado = false;
+        String estadoAnterior = e.getEstado();
+        if ("MATRICULADO".equals(estadoAnterior)) {
+            e.setEstado("CURSANDO");
+            transicionado = true;
+            log.info("Estudiante id={} transicionado MATRICULADO -> CURSANDO al sumar horas", id);
+        }
+
+        // TODO: futura mejora — consultar tipo_curso para obtener total de horas requeridas
+        // y auto-transicionar a COMPLETADO. Por ahora dejamos solo MATRICULADO->CURSANDO.
+        repository.save(e);
+
+        log.info("Estudiante id={} minutos {} -> {} fuente={}", id, anterior, nuevo, request.fuente());
+        String obs = transicionado
+                ? "Sumados " + request.minutos() + " min. Estado: " + estadoAnterior + " -> " + e.getEstado()
+                : "Sumados " + request.minutos() + " min (acumulado: " + nuevo + " min = " + (nuevo / 60) + "h " + (nuevo % 60) + "m)";
+
+        return new com.escuela.estudiantes.dto.IncrementarHorasResponse(
+                id, anterior, nuevo, e.getEstado(), transicionado, obs);
     }
 
     @Override

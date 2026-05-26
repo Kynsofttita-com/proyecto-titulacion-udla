@@ -35,12 +35,15 @@ const map: Record<string, { tone: string; dot: string }> = {
   RETIRADO:         { tone: 'bg-ink-100 text-ink-600 border-ink-300',               dot: 'bg-ink-400' },
   CANCELADA:        { tone: 'bg-danger-50 text-danger-600 border-danger-500/20',    dot: 'bg-danger-500' },
   NO_ASISTIO:       { tone: 'bg-danger-50 text-danger-600 border-danger-500/20',    dot: 'bg-danger-500' },
-  // situacion_pago
+  // situacion_pago (modelo nuevo Sprint 9 ext: 4 valores)
+  PENDIENTE_FACTURACION: { tone: 'bg-warning-50 text-warning-700 border-warning-500/30', dot: 'bg-warning-500' },
+  PENDIENTE_PAGO:        { tone: 'bg-danger-50 text-danger-600 border-danger-500/20',   dot: 'bg-danger-500' },
+  PAGO_PARCIAL:          { tone: 'bg-warning-50 text-warning-600 border-warning-500/20', dot: 'bg-warning-500' },
+  PAGADO_TOTAL:          { tone: 'bg-success-50 text-success-600 border-success-500/20', dot: 'bg-success-500' },
+  // Legacy (la migracion V4 los recodifico, dejados por compat de UI)
   PENDIENTE_MATRICULA:{ tone: 'bg-warning-50 text-warning-700 border-warning-500/30', dot: 'bg-warning-500' },
   SIN_DEUDA:        { tone: 'bg-success-50 text-success-600 border-success-500/20', dot: 'bg-success-500' },
-  PAGADO_TOTAL:     { tone: 'bg-success-50 text-success-600 border-success-500/20', dot: 'bg-success-500' },
   AL_DIA:           { tone: 'bg-info-50 text-info-600 border-info-500/20',          dot: 'bg-info-500' },
-  PAGO_PARCIAL:     { tone: 'bg-warning-50 text-warning-600 border-warning-500/20', dot: 'bg-warning-500' },
   EN_MORA:          { tone: 'bg-danger-50 text-danger-600 border-danger-500/20',    dot: 'bg-danger-500' },
   // tipo_pago factura
   CONTADO:          { tone: 'bg-ink-100 text-ink-700 border-ink-300',               dot: 'bg-ink-500' },
