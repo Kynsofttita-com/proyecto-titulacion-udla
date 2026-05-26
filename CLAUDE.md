@@ -376,7 +376,7 @@ GET /reportes/financiero?fechaInicio&fechaFin
 POST /reportes/exportar            # Export as PDF/Excel
 ```
 
-See `/docs/api/openapi.yaml` for complete API specification.
+Specs OpenAPI accesibles vía SpringDoc en `http://localhost:<puerto>/v3/api-docs` de cada MS. Export a archivos YAML/JSON está planificado para Sprint 13 (T13.6 Docs final) en una nueva carpeta `docs/api/` que se creará entonces.
 
 ## Code Conventions
 
@@ -551,11 +551,12 @@ kubectl get pods -l app=proyecto-titulacion
 
 ## Useful References
 
-- **Architecture**: See `/docs/architecture/` for C4 diagrams (levels 1-4)
-- **API Spec**: OpenAPI/Swagger at `/docs/api/openapi.yaml`
-- **Database**: ER diagrams and migrations in `/infrastructure/database/`
-- **Frontend Patterns**: Vue.js Composition API guide in `/docs/frontend-guide.md`
-- **Decisions**: Architecture Decision Records (ADRs) in `/docs/decisions/`
+- **Database**: Modelo completo en `docs/database/schema.md` (monolítico) + `docs/database/secciones/` (19 archivos por tema) + `docs/database/er-diagram.dbml` (para dbdiagram.io)
+- **Decisions**: ADRs consolidados en `DECISIONES.md` (raíz). §23 ADR vertical por grupos, §24 ADR refactor dominio Sprint 9, §25 ADR estabilización CI/CD
+- **Plan de sprints**: `PLAN_FASES.md` (13 sprints) + `SPRINTS_PLAN.xlsx` (tabular)
+- **Migraciones BD**: `backend/<ms>/src/main/resources/db/migration/V*.sql`
+- **Architecture (futuro)**: C4 diagrams + runbook + manual usuario pendientes para Sprint 13 (T13.6)
+- **API Spec**: SpringDoc en `http://localhost:<puerto>/v3/api-docs` de cada MS. Export a `docs/api/` planificado para Sprint 13
 
 ## Troubleshooting
 

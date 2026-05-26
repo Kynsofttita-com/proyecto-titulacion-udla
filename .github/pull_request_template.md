@@ -56,17 +56,22 @@
 
 - [ ] Código sigue las convenciones de `DECISIONES.md` (sección 7)
 - [ ] Tests unitarios escritos y pasando
-- [ ] Tests de integración (si aplica) pasando
-- [ ] Cobertura JaCoCo aceptable (threshold 80% se exige desde Sprint 4)
-- [ ] OpenAPI / Swagger actualizado (si hay endpoints nuevos)
-- [ ] Migraciones Flyway probadas (si tocó BD)
+- [ ] Tests de integración (si aplica) pasando con `@Tag("integration")`
+- [ ] Cobertura JaCoCo ≥ 80% por módulo (obligatorio desde Sprint 4)
+- [ ] OpenAPI / Swagger actualizado vía SpringDoc (si hay endpoints nuevos)
+- [ ] Migraciones Flyway probadas, sin gaps en numeración (si tocó BD)
 - [ ] Sin warnings nuevos del compilador
 - [ ] Sin `TODO` o `FIXME` sin issue asociado
-- [ ] CI verde (Backend CI + Docker Build si aplica)
+- [ ] CI verde (los workflows que apliquen según `paths:`):
+  - [ ] `backend-ci.yml` (siempre obligatorio)
+  - [ ] `docker-build.yml` (si cambia `backend/**` o `infrastructure/docker/**`)
+  - [ ] `frontend-ci.yml` (si cambia `frontend/**`)
+  - [ ] `integration-tests.yml` (si cambia `backend/**`)
+  - [ ] `smoke-e2e.yml` (si cambia `backend/**` o `infrastructure/**`)
 - [ ] Probado manualmente en local
-- [ ] Documentación actualizada (`README.md`, `backend/README.md`, etc. si aplica)
+- [ ] Documentación actualizada (`README.md`, `docs/database/schema.md`, etc. si aplica)
 - [ ] No hay vulnerabilidades nuevas (OWASP Top 10)
-- [ ] Memoria del proyecto actualizada (cuando se cierra una tarea/sprint)
+- [ ] Si cierra una tarea/sprint: documentar en commit el cierre + actualizar `PLAN_FASES.md` y/o `SPRINTS_PLAN.xlsx` si corresponde
 
 ## Notas adicionales para el reviewer
 

@@ -1,14 +1,23 @@
-# Docker - Infraestructura
+# Docker — Infraestructura del proyecto
 
-Esta carpeta contiene los archivos de Docker Compose para levantar el entorno del proyecto.
+Esta carpeta contiene los archivos de Docker Compose y el Dockerfile compartido para levantar el entorno del proyecto en local y en CI.
+
+**Última actualización:** 2026-05-26 (estado vigente al cierre del Sprint 9 — Estabilización).
+
+---
 
 ## Archivos
 
 | Archivo | Propósito |
 |---------|-----------|
-| `docker-compose.infra.yml` | **Solo infraestructura** (Postgres, RabbitMQ, MinIO, Adminer). Para desarrollo local con los MS corriendo en el IDE. |
-| `docker-compose.yml` | **Stack completo** (infra + Eureka + API Gateway + 8 microservicios). Disponible y validado desde Sprint 1. |
-| `Dockerfile.spring` | Dockerfile multi-stage compartido para todos los servicios Java (Eureka, Gateway, los 8 MS). |
+| [`docker-compose.infra.yml`](./docker-compose.infra.yml) | **Solo infraestructura** (4 contenedores). Para desarrollo local con los MS corriendo desde el IDE. |
+| [`docker-compose.yml`](./docker-compose.yml) | **Stack completo** (14 contenedores: infra + Eureka + Gateway + 8 MS). Usado por el pipeline `smoke-e2e.yml`. |
+| [`Dockerfile.spring`](./Dockerfile.spring) | Dockerfile **multi-stage parametrizado** compartido por todos los servicios Java (Eureka, Gateway, 8 MS). Build cacheable. |
+| [`../postgres/init-schemas.sql`](../postgres/init-schemas.sql) | Script ejecutado al primer arranque de Postgres. Crea los 9 schemas. |
+
+> El `.env` de esta carpeta **no se commitea** (está en `.gitignore`). Ver `.env.example` en la raíz del proyecto para el template.
+
+---
 
 ## Servicios — `docker-compose.infra.yml` (4 contenedores)
 
@@ -19,7 +28,9 @@ Esta carpeta contiene los archivos de Docker Compose para levantar el entorno de
 | **RabbitMQ Mgmt UI** | 15672 | http://localhost:15672 (guest/guest) |
 | **MinIO API** | 9000 | S3 compatible |
 | **MinIO Console** | 9001 | http://localhost:9001 (minioadmin/minioadmin123) |
-| **Adminer** | 8888 | http://localhost:8888 |
+| **Adminer** | 8888 | http://localhost:8888 (solo dev) |
+
+---
 
 ## Servicios — `docker-compose.yml` (14 contenedores: infra + Eureka + Gateway + 8 MS)
 
@@ -38,10 +49,62 @@ Incluye todos los anteriores **más**:
 | **MS-Reportes** | 8087 | http://localhost:8087/actuator/health |
 | **MS-Notificaciones** | 8088 | http://localhost:8088/actuator/health |
 
+**Credenciales admin:** `admin@escuela.local` / `Admin123!` (fijado correctamente desde Sprint 9 con migración `V6__fix_admin_password_hash.sql` en ms-auth).
+
+---
+
+## `Dockerfile.spring` — Patrón multi-stage parametrizado
+
+Un solo Dockerfile sirve para los 10 servicios Java (Eureka + Gateway + 8 MS). Parámetros:
+
+- `MODULE` — nombre del módulo Maven (ej. `ms-auth`, `api-gateway`)
+- `SERVICE_PORT` — puerto donde escucha el servicio
+
+### Configuraciones clave (Sprint 9 - Estabilización)
+
+| Configuración | Valor | Por qué |
+|---|---|---|
+| **TZ JVM** | `JAVA_OPTS=-Duser.timezone=America/Guayaquil` | Sin esto, `LocalDateTime.now()` dentro del contenedor devuelve UTC y se persiste con desfase de +5 h. Ver `DECISIONES.md §25.1`. |
+| **Container support** | `-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0` | JVM respeta límites de memoria del contenedor |
+| **Healthcheck** | `--interval=30s --timeout=10s --start-period=180s --retries=10` | `start-period=180s` y `retries=10` necesarios porque en runners gratuitos de GitHub Actions Spring tarda ~200 s en arrancar (vs ~30 s en laptop). Ver `DECISIONES.md §25.2`. |
+| **Imagen runtime** | `eclipse-temurin:21-jre-alpine` | JRE 21 ligera (sin JDK) con usuario no-root |
+
+### Estructura multi-stage
+
+- **Stage 1 (build):** maven 3.9 + Java 21 → compila el módulo + shared libs + descarga dependencias cacheadas
+- **Stage 2 (runtime):** JRE 21 alpine + usuario no-root + healthcheck
+
+---
+
+## Schemas de PostgreSQL
+
+Al levantar Postgres por primera vez se ejecuta automáticamente [`../postgres/init-schemas.sql`](../postgres/init-schemas.sql) que crea los **9 schemas**:
+
+`auth_schema`, `estudiantes_schema`, `instructores_schema`, `vehiculos_schema`, `asignaciones_schema`, `cobros_schema`, `reportes_schema`, `notificaciones_schema`, `shared_schema`.
+
+### Migraciones Flyway (22 al 2026-05-26)
+
+Cada microservicio versiona sus migraciones independientemente y las aplica al arrancar:
+
+| MS | Migraciones | Sprint inicial → última |
+|----|-------------|--------------------------|
+| `ms-auth` | V1, V1_5 (seed), V2, V3, V4, V5, V6 | Sprint 2 → Sprint 9 (fix bcrypt admin) |
+| `ms-estudiantes` | V1, V2, V3, V4, V5 | Sprint 2 → Sprint 9 (estados + situacion_pago + minutos_completados) |
+| `ms-instructores` | V1, V2 | Sprint 2 → Sprint 9 (contratos) |
+| `ms-vehiculos` | V1, V2 | Sprint 2 → Sprint 9 (tipos_combustible + campos vehículo) |
+| `ms-asignaciones` | V1, V2 | Sprint 2 → Sprint 9 (kilometraje E2E) |
+| `ms-cobros` | V1, V2 | Sprint 2 → Sprint 9 (factura_cuotas) |
+| `ms-notificaciones` | V1 | Sprint 2 |
+| `ms-reportes` | V1 | Sprint 2 |
+
+Ver detalle completo en [`docs/database/schema.md §6`](../../docs/database/schema.md#6-migraciones-flyway-aplicadas).
+
+---
+
 ## Comandos comunes
 
 ```bash
-# Solo infra (MS corren desde el IDE)
+# Solo infra (los MS corren desde el IDE)
 docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
 
 # Stack completo containerizado
@@ -49,6 +112,9 @@ docker compose -f infrastructure/docker/docker-compose.yml up -d
 
 # Stack completo + rebuild de imágenes (tras cambios de código)
 docker compose -f infrastructure/docker/docker-compose.yml up -d --build
+
+# Esperar a que todos los healthchecks pasen (recomendado para CI)
+docker compose -f infrastructure/docker/docker-compose.yml up -d --wait --wait-timeout 600
 
 # Ver logs en tiempo real
 docker compose -f infrastructure/docker/docker-compose.yml logs -f
@@ -66,20 +132,54 @@ docker compose -f infrastructure/docker/docker-compose.yml down
 docker compose -f infrastructure/docker/docker-compose.yml down -v
 ```
 
-## Configuración
+### Tiempos de arranque esperados
 
-Las credenciales y puertos se configuran vía variables de entorno en el archivo `.env` (raíz del proyecto). Ver `.env.example`.
+| Entorno | Tiempo a "todos healthy" | Notas |
+|---------|--------------------------|-------|
+| Laptop dev (16+ GB RAM) | ~50–60 s | Primera vez ~3 min si no hay imágenes cacheadas |
+| Runner GHA gratis | ~180–250 s | Por eso `start-period=180s` y `wait-timeout 600` |
+| Producción Oracle Cloud (Sprint 13) | ~60–90 s estimado | Pendiente de validar |
 
-## Schemas de PostgreSQL
+---
 
-Al levantar Postgres por primera vez se ejecuta automáticamente `../postgres/init-schemas.sql` que crea los **9 schemas** (uno por microservicio + `shared_schema`):
+## Workflows CI/CD que usan estos archivos
 
-`auth_schema`, `estudiantes_schema`, `instructores_schema`, `vehiculos_schema`, `asignaciones_schema`, `cobros_schema`, `reportes_schema`, `notificaciones_schema`, `shared_schema`.
+| Workflow | Archivo usado |
+|----------|---------------|
+| `docker-build.yml` | `Dockerfile.spring` (build de imagen test de `eureka-server`) |
+| `integration-tests.yml` | Services Postgres + RabbitMQ como GitHub Services (no usa estos compose) |
+| `smoke-e2e.yml` | `docker-compose.yml` completo (14 contenedores) + login admin con retry + 12 endpoints REST + 404/400 ProblemDetail |
 
-Las tablas dentro de cada schema se crean vía **migraciones Flyway V1** que corre cada microservicio al arrancar (Sprint 2).
+Triggers `paths:` filtran cuándo correr — ver `.github/workflows/` y `DECISIONES.md §25.5`.
+
+---
+
+## Configuración por variables de entorno
+
+Las credenciales y puertos se configuran vía `.env` en la raíz del proyecto. Ver `.env.example`. Las variables clave:
+
+- `POSTGRES_*` — credenciales de Postgres
+- `RABBITMQ_*` — credenciales de RabbitMQ
+- `JWT_SECRET` — clave HS512 de 512 bits para JWT (generar con `openssl rand -base64 64`)
+- `MAIL_*` — Mailtrap (dev) o Gmail SMTP (prod)
+- `MINIO_*` — credenciales MinIO
+- `EUREKA_URL` — URL del servidor Eureka
+
+---
 
 ## Notas
 
-- Adminer solo para desarrollo (NO usar en producción).
-- MinIO usa credenciales por defecto en dev — cambiar en producción.
-- El stack completo tarda ~50–60 s en pasar todos los healthchecks la primera vez.
+- **Adminer** solo para desarrollo; NO usar en producción.
+- **MinIO** usa credenciales por defecto en dev; cambiar para producción.
+- El **stack completo** tarda ~50–60 s en pasar todos los healthchecks la primera vez en laptop; bastante más en runners GHA gratuitos.
+- Para limpiar imágenes huérfanas: `docker system prune -a` (cuidado, borra imágenes no usadas).
+- Para reset total (data incluida): `docker compose -f infrastructure/docker/docker-compose.yml down -v` + borrar `data/` si existe.
+
+---
+
+## Referencias
+
+- [`docs/database/schema.md`](../../docs/database/schema.md) — Modelo BD completo (41 tablas, 22 migraciones)
+- [`DECISIONES.md §25`](../../DECISIONES.md) — ADR Sprint 9: Estabilización CI/CD y plataforma (TZ JVM, healthchecks, V6 bcrypt, 404/400)
+- [`PLAN_FASES.md §5`](../../PLAN_FASES.md) — Detalle del Sprint 9 (Estabilización)
+- [`.github/workflows/`](../../.github/workflows/) — 5 workflows CI/CD activos
