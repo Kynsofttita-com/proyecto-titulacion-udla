@@ -20,6 +20,7 @@ public record LoginResponse(
             String email,
             String nombre,
             String apellido,
-            List<String> roles
+            List<String> roles,
+            Boolean mustChangePassword
     ) {}
 }

@@ -1,14 +1,14 @@
 <template>
   <div class="space-y-6">
     <PageHeader
-      title="Estudiantes"
-      description="Gestión de estudiantes matriculados en la escuela."
+      :title="esInstructor ? 'Mis estudiantes' : 'Estudiantes'"
+      :description="esInstructor ? 'Estudiantes que tienen clases programadas contigo.' : 'Gestión de estudiantes matriculados en la escuela.'"
       icon="pi pi-users"
-      :breadcrumbs="[{ label: 'Inicio', to: '/dashboard' }, { label: 'Estudiantes' }]"
+      :breadcrumbs="[{ label: 'Inicio', to: '/dashboard' }, { label: esInstructor ? 'Mis estudiantes' : 'Estudiantes' }]"
     >
       <template #actions>
         <Button label="Exportar" icon="pi pi-download" outlined />
-        <Button label="Nuevo estudiante" icon="pi pi-plus" @click="navigateToForm()" />
+        <Button v-if="!esInstructor" label="Nuevo estudiante" icon="pi pi-plus" @click="navigateToForm()" />
       </template>
     </PageHeader>
 
@@ -233,9 +233,9 @@
           <template #body="{ data }">
             <div class="flex items-center justify-end gap-1">
               <Button icon="pi pi-eye" rounded text size="small" v-tooltip.top="'Ver detalle'" @click="navigateToDetail(data.id)" />
-              <Button icon="pi pi-pencil" rounded text size="small" v-tooltip.top="'Editar datos'" @click="navigateToForm(data.id)" />
-              <Button icon="pi pi-sync" rounded text size="small" v-tooltip.top="'Cambiar estado'" @click="abrirCambioEstado(data)" />
-              <Button icon="pi pi-trash" rounded text size="small" severity="danger" v-tooltip.top="'Eliminar'" @click="confirmarEliminar(data)" />
+              <Button v-if="!esInstructor" icon="pi pi-pencil" rounded text size="small" v-tooltip.top="'Editar datos'" @click="navigateToForm(data.id)" />
+              <Button v-if="!esInstructor" icon="pi pi-sync" rounded text size="small" v-tooltip.top="'Cambiar estado'" @click="abrirCambioEstado(data)" />
+              <Button v-if="!esInstructor" icon="pi pi-trash" rounded text size="small" severity="danger" v-tooltip.top="'Eliminar'" @click="confirmarEliminar(data)" />
             </div>
           </template>
         </Column>
@@ -352,6 +352,10 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import estudiantesService from '@/services/estudiantes'
 import api from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const esInstructor = computed(() => authStore.currentRole === 'INSTRUCTOR')
 import { humanLabel } from '@/utils/labels'
 
 const vTooltip = Tooltip
@@ -394,11 +398,28 @@ const situacionesFilter = [
 const cargar = async () => {
   try {
     loading.value = true
-    // Una sola llamada con tamaño grande; post-filter + paginación local
     const response = await estudiantesService.obtenerEstudiantes(0, 500)
-    estudiantes.value = response.content
-    const list = response.content
-    stats.total              = response.totalElements
+    let list = response.content
+
+    // INSTRUCTOR: filtrar a estudiantes que tienen al menos 1 asignacion con este instructor.
+    // Se hace en cliente pidiendo /asignaciones y reduciendo IDs unicos.
+    if (esInstructor.value) {
+      if (!authStore.currentInstructorId) {
+        await authStore.loadInstructorId()
+      }
+      const miId = authStore.currentInstructorId
+      if (miId) {
+        const asigResp = await api.get('/asignaciones', { params: { size: 500 } })
+        const misAsig = (asigResp.data.content || []).filter((a: any) => a.instructorId === miId)
+        const idsMisEstudiantes = new Set(misAsig.map((a: any) => a.estudianteId))
+        list = list.filter((e: any) => idsMisEstudiantes.has(e.id))
+      } else {
+        list = []
+      }
+    }
+
+    estudiantes.value = list
+    stats.total              = list.length
     stats.preMatriculados    = list.filter((e: any) => e.estado === 'PRE_MATRICULADO').length
     stats.matriculados       = list.filter((e: any) => e.estado === 'MATRICULADO' || e.estado === 'ACTIVO').length
     stats.cursando           = list.filter((e: any) => e.estado === 'CURSANDO').length

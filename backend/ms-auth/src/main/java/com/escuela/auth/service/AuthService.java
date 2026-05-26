@@ -178,7 +178,8 @@ public class AuthService {
         LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo(
                 usuario.getId(), usuario.getEmail(),
                 usuario.getNombre(), usuario.getApellido(),
-                roles);
+                roles,
+                Boolean.TRUE.equals(usuario.getPasswordChangeRequired()));
 
         return new LoginResponse(accessToken, refreshTokenStr,
                 accessExpiresInSec, refreshExpiresInSec, userInfo);
@@ -314,6 +315,47 @@ public class AuthService {
     }
 
     // -----------------------------------------------------------------------
+    // CAMBIAR PASSWORD (self-service: usuario autenticado)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Cambio de contrasenia self-service: requiere que el usuario indique su
+     * contrasenia actual y la nueva. Util para el flujo de
+     * {@code password_change_required = true} (cambio forzado al primer login).
+     *
+     * <p>Tras un cambio exitoso:</p>
+     * <ul>
+     *   <li>Se desactiva el flag {@code passwordChangeRequired}.</li>
+     *   <li>Se resetea el lockout (intentos fallidos).</li>
+     *   <li>Se revocan todos los refresh tokens activos (forzamos relogin).</li>
+     * </ul>
+     */
+    @Transactional
+    public void cambiarPasswordSelfService(String email, String currentPassword, String newPassword) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new InvalidCredentialsException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(currentPassword, usuario.getPassword())) {
+            throw new InvalidCredentialsException("La contrasenia actual no coincide");
+        }
+
+        if (passwordEncoder.matches(newPassword, usuario.getPassword())) {
+            throw new InvalidCredentialsException("La nueva contrasenia debe ser distinta de la actual");
+        }
+
+        usuario.setPassword(passwordEncoder.encode(newPassword));
+        usuario.setPasswordChangeRequired(Boolean.FALSE);
+        usuario.setFailedAttempts((short) 0);
+        usuario.setLocked(false);
+        usuario.setLockUntil(null);
+        usuarioRepository.save(usuario);
+
+        refreshTokenRepository.revocarTodosDelUsuario(usuario.getId(), LocalDateTime.now());
+
+        log.info("Password cambiada self-service para {}", email);
+    }
+
+    // -----------------------------------------------------------------------
     // GET USER (Sprint 4 / T4.2)
     // -----------------------------------------------------------------------
 
@@ -335,7 +377,8 @@ public class AuthService {
                 .sorted()
                 .toList();
         return new LoginResponse.UserInfo(u.getId(), u.getEmail(),
-                u.getNombre(), u.getApellido(), roles);
+                u.getNombre(), u.getApellido(), roles,
+                Boolean.TRUE.equals(u.getPasswordChangeRequired()));
     }
 
     // -----------------------------------------------------------------------
