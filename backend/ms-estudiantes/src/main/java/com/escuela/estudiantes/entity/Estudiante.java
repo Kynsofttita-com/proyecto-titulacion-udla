@@ -64,15 +64,15 @@ public class Estudiante extends BaseEntity {
 
     /**
      * Estado financiero derivado de MS-Cobros (sincronizado via evento
-     * pago.registrado). Valores: PENDIENTE_MATRICULA / SIN_DEUDA /
-     * PAGO_PARCIAL / AL_DIA / EN_MORA / PAGADO_TOTAL.
+     * pago.registrado). Valores (V4): PENDIENTE_FACTURACION /
+     * PENDIENTE_PAGO / PAGO_PARCIAL / PAGADO_TOTAL.
      *
-     * <p>Default = PENDIENTE_MATRICULA porque todo estudiante nuevo se crea en
-     * PRE_MATRICULADO sin facturas aun.</p>
+     * <p>Default = PENDIENTE_FACTURACION: todo estudiante nuevo se crea en
+     * PRE_MATRICULADO sin factura emitida aun.</p>
      */
-    @Column(name = "situacion_pago", nullable = false, length = 20)
+    @Column(name = "situacion_pago", nullable = false, length = 30)
     @lombok.Builder.Default
-    private String situacionPago = "PENDIENTE_MATRICULA";
+    private String situacionPago = "PENDIENTE_FACTURACION";
 
     @Column(name = "fecha_matricula")
     private LocalDate fechaMatricula;
