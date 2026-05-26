@@ -7,7 +7,7 @@
 **Última actualización:** 2026-05-26
 **Estado:** Sprints 1-8 y 10 cerrados en `main`. Sprint 9 (Backend Grupo B), Sprint 11 (Testing Grupo B) y Sprint 12 (Cierre global) pendientes.
 
-> Este documento consolida todas las decisiones técnicas, arquitectónicas y de proceso tomadas antes de iniciar el desarrollo. Es la fuente de verdad del proyecto y debe ser respetado durante toda la ejecución de los 12 sprints. Cambios estructurales posteriores al cierre se incorporan como ADRs en este mismo documento (ver §23 en adelante) o en `/docs/decisions/`.
+> Este documento consolida todas las decisiones técnicas, arquitectónicas y de proceso tomadas antes de iniciar el desarrollo. Es la fuente de verdad del proyecto y debe ser respetado durante toda la ejecución de los 13 sprints. Cambios estructurales posteriores al cierre se incorporan como ADRs en este mismo documento (ver §23 en adelante).
 
 ---
 
@@ -1076,7 +1076,7 @@ Esto permite que `NoHandlerFoundException` llegue al `@ExceptionHandler` y devue
 
 ---
 
-> **Este documento está cerrado para decisiones estructurales originales.** Cambios futuros se registran como ADRs nuevos (§24, §25, ...) en este mismo archivo cuando son cambios de dominio o plataforma, o en `/docs/decisions/` cuando son decisiones de menor alcance.
+> **Este documento está cerrado para decisiones estructurales originales.** Cambios futuros se registran como ADRs nuevos (§24, §25, ...) en este mismo archivo.
 
 ---
 
