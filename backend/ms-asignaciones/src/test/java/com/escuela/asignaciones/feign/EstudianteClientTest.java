@@ -1,6 +1,8 @@
 package com.escuela.asignaciones.feign;
 
 import com.escuela.asignaciones.dto.feign.EstudianteDetailDTO;
+import com.escuela.asignaciones.dto.feign.IncrementarHorasFeignRequest;
+import com.escuela.asignaciones.dto.feign.IncrementarHorasFeignResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -10,6 +12,11 @@ class EstudianteClientTest {
     private final EstudianteClient client = new EstudianteClient() {
         @Override
         public EstudianteDetailDTO obtenerEstudiante(Long id) {
+            return null;
+        }
+
+        @Override
+        public IncrementarHorasFeignResponse incrementarHoras(Long id, IncrementarHorasFeignRequest request) {
             return null;
         }
     };

@@ -58,7 +58,8 @@ class VehiculoServiceImplTest {
 
         VehiculoResponse response = new VehiculoResponse(
                 1L, "ABC-1234", "Toyota", "Corolla", (short)2023, "12345678", "Blanco",
-                5000L, null, null, null, LocalDateTime.now(), LocalDateTime.now()
+                5000, null, null, null, null, null, null, null, null, null, null, null,
+                LocalDateTime.now(), LocalDateTime.now()
         );
 
         when(repository.findByIdAndDeletedAtIsNull(1L)).thenReturn(Optional.of(vehiculo));
@@ -81,7 +82,7 @@ class VehiculoServiceImplTest {
     void testCreate_Success() {
         CreateVehiculoRequest request = new CreateVehiculoRequest(
                 "ABC-1234", "Toyota", "Corolla", (short)2023, "12345678", "Blanco",
-                5000L, null, null, null
+                5000, null, null, null, null, null, null, null, null, null, null, null
         );
 
         Vehiculo vehiculo = Vehiculo.builder()
@@ -94,7 +95,8 @@ class VehiculoServiceImplTest {
 
         VehiculoResponse response = new VehiculoResponse(
                 1L, "ABC-1234", "Toyota", "Corolla", (short)2023, "12345678", "Blanco",
-                5000L, null, null, null, LocalDateTime.now(), LocalDateTime.now()
+                5000, null, null, null, null, null, null, null, null, null, null, null,
+                LocalDateTime.now(), LocalDateTime.now()
         );
 
         when(repository.existsByPlacaAndDeletedAtIsNull("ABC-1234")).thenReturn(false);
@@ -113,7 +115,7 @@ class VehiculoServiceImplTest {
     void testCreate_PlacaDuplicada() {
         CreateVehiculoRequest request = new CreateVehiculoRequest(
                 "ABC-1234", "Toyota", "Corolla", (short)2023, "12345678", "Blanco",
-                5000L, null, null, null
+                5000, null, null, null, null, null, null, null, null, null, null, null
         );
 
         when(repository.existsByPlacaAndDeletedAtIsNull("ABC-1234")).thenReturn(true);

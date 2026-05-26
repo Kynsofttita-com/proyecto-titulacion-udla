@@ -3,6 +3,7 @@ package com.escuela.asignaciones.service;
 import com.escuela.asignaciones.dto.AsignacionResponse;
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
 import com.escuela.asignaciones.dto.UpdateAsignacionReprogramarRequest;
+import com.escuela.asignaciones.dto.feign.DisponibilidadDelDiaDTO;
 import com.escuela.asignaciones.dto.feign.EstudianteDetailDTO;
 import com.escuela.asignaciones.dto.feign.InstructorDetailDTO;
 import com.escuela.asignaciones.dto.feign.VehiculoDetailDTO;
@@ -25,6 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -125,11 +127,19 @@ class AsignacionServiceImplTest {
         );
 
         when(estudianteClient.obtenerEstudiante(1L))
-                .thenReturn(new EstudianteDetailDTO(1L, "MATRICULADO"));
+                .thenReturn(new EstudianteDetailDTO(1L, "MATRICULADO", 1L, 0));
         when(instructorClient.obtenerInstructor(1L))
                 .thenReturn(new InstructorDetailDTO(1L, "ACTIVO"));
         when(vehiculoClient.obtenerVehiculo(1L))
-                .thenReturn(new VehiculoDetailDTO(1L, null));
+                .thenReturn(new VehiculoDetailDTO(
+                        1L, "ABC-1234", "ACTIVO", 0, 1L,
+                        LocalDate.now().plusYears(1), LocalDate.now().plusYears(1), null));
+        when(instructorClient.obtenerDisponibilidad(eq(1L), any(LocalDate.class)))
+                .thenReturn(new DisponibilidadDelDiaDTO(
+                        1L, hoy.toString(), (short) hoy.getDayOfWeek().getValue(),
+                        true, null,
+                        List.of(new DisponibilidadDelDiaDTO.FranjaHoraria(
+                                LocalTime.of(8, 0), LocalTime.of(18, 0)))));
         when(repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
                 eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"))).thenReturn(0L);
         when(repository.countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
@@ -165,7 +175,7 @@ class AsignacionServiceImplTest {
         );
 
         when(estudianteClient.obtenerEstudiante(1L))
-                .thenReturn(new EstudianteDetailDTO(1L, "PRE_MATRICULADO"));
+                .thenReturn(new EstudianteDetailDTO(1L, "PRE_MATRICULADO", null, 0));
 
         assertThrows(EstudianteInactivoException.class, () -> service.create(request));
     }
@@ -178,11 +188,19 @@ class AsignacionServiceImplTest {
         );
 
         when(estudianteClient.obtenerEstudiante(1L))
-                .thenReturn(new EstudianteDetailDTO(1L, "MATRICULADO"));
+                .thenReturn(new EstudianteDetailDTO(1L, "MATRICULADO", 1L, 0));
         when(instructorClient.obtenerInstructor(1L))
                 .thenReturn(new InstructorDetailDTO(1L, "ACTIVO"));
         when(vehiculoClient.obtenerVehiculo(1L))
-                .thenReturn(new VehiculoDetailDTO(1L, null));
+                .thenReturn(new VehiculoDetailDTO(
+                        1L, "ABC-1234", "ACTIVO", 0, 1L,
+                        LocalDate.now().plusYears(1), LocalDate.now().plusYears(1), null));
+        when(instructorClient.obtenerDisponibilidad(eq(1L), any(LocalDate.class)))
+                .thenReturn(new DisponibilidadDelDiaDTO(
+                        1L, hoy.toString(), (short) hoy.getDayOfWeek().getValue(),
+                        true, null,
+                        List.of(new DisponibilidadDelDiaDTO.FranjaHoraria(
+                                LocalTime.of(8, 0), LocalTime.of(18, 0)))));
         when(repository.countByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
                 eq(1L), any(LocalDateTime.class), any(LocalDateTime.class), eq("CONFIRMADA"))).thenReturn(1L);
 
