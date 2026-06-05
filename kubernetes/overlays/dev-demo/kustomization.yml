@@ -13,4 +13,4 @@ resources:
 
 replicas:
   - name: dev-api-gateway
-    count: 1
+    count: 3
