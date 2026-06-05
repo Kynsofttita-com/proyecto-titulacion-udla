@@ -41,18 +41,20 @@ spec:
             - rabbitmq-diagnostics
             - -q
             - ping
-          initialDelaySeconds: 90
-          periodSeconds: 10
-          timeoutSeconds: 10
+          initialDelaySeconds: 120
+          periodSeconds: 15
+          timeoutSeconds: 15
+          failureThreshold: 3
         readinessProbe:
           exec:
             command:
             - rabbitmq-diagnostics
             - -q
             - ping
-          initialDelaySeconds: 60
+          initialDelaySeconds: 90
           periodSeconds: 10
-          timeoutSeconds: 10
+          timeoutSeconds: 15
+          failureThreshold: 3
         volumeMounts:
         - name: rabbitmq-storage
           mountPath: /var/lib/rabbitmq
