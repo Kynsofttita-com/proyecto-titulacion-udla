@@ -1,362 +1,317 @@
-# 🎬 DEMO ARGO CD - PASO A PASO PARA EJECUTAR
+﻿# 🎬 GUION DE DEMO — Argo CD + Kubernetes en clase
 
-**Duración:** 20 minutos  
-**Terminales necesarias:** 5  
-**Resultado:** Demostración de GitOps en vivo
-
----
-
-## 📺 DISPOSICIÓN DE PANTALLA
-
-Acomoda 5 ventanas así:
-
-```
-LAPTOP / PANTALLA:
-
-TOP (70% de la pantalla):
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│         NAVEGADOR (2 pestañas abiertas)                │
-│  ┌──────────────────┬──────────────────────────────┐   │
-│  │ Pestaña 1:       │ Pestaña 2:                   │   │
-│  │ Minikube         │ Argo CD                      │   │
-│  │ http://...       │ https://localhost:8443       │   │
-│  └──────────────────┴──────────────────────────────┘   │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-
-BOTTOM (30% de la pantalla):
-┌──────────────────────┬──────────────────────────────────┐
-│  TERMINAL 4          │  TERMINAL 5                      │
-│  (watch)             │  (git commands)                  │
-│                      │                                  │
-└──────────────────────┴──────────────────────────────────┘
-
-BACKGROUND (no visible, pero corriendo):
-- TERMINAL 1: Minikube Dashboard (DÉJALO CORRIENDO)
-- TERMINAL 2: Argo CD port-forward (DÉJALO CORRIENDO)
-- TERMINAL 3: Disponible para comandos
-```
+**Proyecto:** Sistema de Control Administrativo para Escuelas de Conducción  
+**Duración:** 15-20 minutos  
+**Objetivo:** Demostrar GitOps en vivo — cambios en Git sincronizados automáticamente en Kubernetes  
 
 ---
 
-## ⚡ SETUP INICIAL (5 minutos)
+## 📐 ANTES DE EMPEZAR: MONTAJE DE PANTALLAS
 
-### TERMINAL 1 - MINIKUBE DASHBOARD
+Vas a necesitar **4 terminales + navegador**:
 
-Ejecuta ESTO y déjalo corriendo (se abre solo en navegador):
+```
+┌──────────────────────┬──────────────────────┐
+│  NAVEGADOR           │  TERMINAL 4 (demo)   │
+│  (Argo CD + GitHub)  │  (comandos en vivo)  │
+├──────────────────────┼──────────────────────┤
+│ TERMINAL 1: Minikube │ TERMINAL 2: kubectl  │
+│ (quieta)             │ watch (quieta)       │
+├──────────────────────┼──────────────────────┤
+│ TERMINAL 3: Eureka   │                      │
+│ port-forward (quieta)│                      │
+└──────────────────────┴──────────────────────┘
+```
 
+### Setup Inicial
+
+**Terminal 1:**
 ```bash
 minikube dashboard
 ```
 
-✅ Se abrirá automáticamente en `http://127.0.0.1:xxxxx`
-
----
-
-### TERMINAL 2 - ARGO CD PORT-FORWARD
-
-Ejecuta ESTO y déjalo corriendo (NO lo cierres):
-
+**Terminal 2:**
 ```bash
-kubectl port-forward svc/argocd-server -n argocd 8443:443
+kubectl get pods -n escuela --watch
 ```
 
-✅ Debe mostrar: `Forwarding from 127.0.0.1:8443 -> 443`
-
----
-
-### NAVEGADOR - Abre 2 pestañas
-
-**Pestaña 1 - Minikube Dashboard:**
-```
-http://127.0.0.1:XXXXX  (se abrió automáticamente desde Terminal 1)
+**Terminal 3:**
+```bash
+kubectl port-forward -n escuela svc/dev-eureka-server 8761:8761
 ```
 
-**Pestaña 2 - Argo CD UI:**
+**Navegador:**
 ```
-https://localhost:8443
-Usuario: admin
-Contraseña: rJKEstJ0j0l3WtA7
+Pestaña 1: https://localhost:8443 (Argo CD)
+Pestaña 2: http://localhost:8761 (Eureka)
 ```
 
 ---
 
-## 🎬 ACTO 1 - Verificación inicial (2 minutos)
-
-### TERMINAL 3 - Ejecuta:
+## ✅ PASO 0 — VERIFICAR (Terminal 4)
 
 ```bash
 minikube status
+kubectl get all -n escuela | head -20
+curl http://localhost:8080/actuator/health
 ```
 
-✅ Debes ver:
-```
-host: Running
-kubelet: Running
-apiserver: Running
-```
-
-Luego:
-
-```bash
-kubectl get pods -n escuela-conduccion
-```
-
-✅ Debes ver 6 pods (algunos Running, algunos con problemas - es normal)
+**Qué decir:** "Tengo un cluster con 8 microservicios. Argo CD sincroniza Git con Kubernetes automáticamente. Vamos a verlo en acción."
 
 ---
 
-## 🎬 ACTO 2 - Mostrar arquitectura en Minikube (3 minutos)
+## 🎬 ACTO 1 — ESTADO INICIAL (Argo CD UI)
 
-### NAVEGADOR - Pestaña 1 (Minikube Dashboard)
+En **https://localhost:8443** / Applications / proyecto-titulacion
 
-1. **Selecciona namespace:** Esquina superior, selecciona `escuela-conduccion`
+Mostrar:
+- ✅ SYNC STATUS: Synced (verde)
+- ✅ HEALTH STATUS: Healthy (verde)
+- ✅ 30+ Resources
+- ✅ Timeline
 
-2. **Haz clic en Workloads → Deployments**
-   - Debes ver 6 deployments (api-gateway, ms-auth, ms-estudiantes, frontend, postgres, eureka)
-
-3. **Haz clic en Workloads → Pods**
-   - Debes ver 6 pods
-
-4. **Haz clic en Network → Services**
-   - Debes ver 6 servicios
-
-**QUÉ DICES:**
-> "Aquí ven mi aplicación en Kubernetes. Tengo 6 servicios sincronizados automáticamente por Argo CD desde mi repositorio Git."
+**Qué decir:** "Argo CD sincroniza automáticamente. Todo está verde. Voy a cambiar algo en Git y veremos cómo lo aplica automáticamente."
 
 ---
 
-## 🎬 ACTO 3 - Mostrar Argo CD UI (3 minutos)
+## 🎬 ACTO 2 — EUREKA EN VIVO
 
-### NAVEGADOR - Pestaña 2 (Argo CD)
+En **http://localhost:8761**
 
-1. **En la izquierda, haz clic en `escuela-conduccion`**
+Mostrar: Todas las instancias registradas (EUREKA, GATEWAY, 8 MS)
 
-2. **Observa el árbol de recursos** (ves todo lo que hay desplegado)
-
-3. **Observa el estado** - debe estar **Synced ✅** (verde)
-
-4. **Haz clic en la pestaña "Source"**
-   - Repository: `https://github.com/tu-repo`
-   - Path: `kubernetes/argocd`
-
-**QUÉ DICES:**
-> "Argo CD monitorea continuamente mi repositorio Git. El estado 'Synced' significa que Kubernetes tiene exactamente lo que Git dice que debe tener."
+**Qué decir:** "Todos mis microservicios están registrados. Voy a aumentar replicas del API Gateway."
 
 ---
 
-## 🎬 ACTO 4 - Ver aplicación corriendo (2 minutos)
+## 🎬 ACTO 3 — CAMBIO EN GIT ⭐ (ESTRELLA)
 
-### NAVEGADOR - Nueva pestaña
-
-Abre: `http://localhost:3000`
-
-Debes ver una página HTML con info de tu proyecto.
-
-**QUÉ DICES:**
-> "El frontend está sirviendo desde un contenedor dentro de Kubernetes. Todo sincronizado automáticamente por Argo CD."
-
----
-
-## ⭐ ACTO 5 - DEMO GITOPS EN VIVO (8 minutos - EL MOMENTO IMPORTANTE)
-
-### PASO 1: Preparar visualización
-
-**TERMINAL 4 - Ejecuta ESTO (no cierres después):**
+### PASO 1: Editar (Terminal 4)
 
 ```bash
-kubectl get deployments -n escuela-conduccion -w
+code kubernetes/overlays/dev/kustomization.yml
 ```
 
-✅ Debes ver una lista que se actualiza en tiempo real
+Cambiar:
+```
+replicas:
+  - name: api-gateway
+    count: 1     ← CAMBIAR a 2
+```
 
----
+Guardar.
 
-### PASO 2: Cambiar algo en Git
-
-**TERMINAL 3 - Ejecuta estos comandos:**
+### PASO 2: Commit & Push (Terminal 4)
 
 ```bash
-cd /c/Users/hmate/OneDrive/Desktop/UDLA/Proyecto\ titulacion
-```
-
-Luego abre el archivo en tu editor favorito:
-
-```bash
-code kubernetes/argocd/apps/01-api-gateway.yaml
-```
-
-O si no tienes `code`:
-
-```bash
-notepad kubernetes/argocd/apps/01-api-gateway.yaml
-```
-
-**CAMBIO QUE DEBES HACER:**
-
-Busca esta línea (está en la línea ~6):
-
-```yaml
-  replicas: 1
-```
-
-Cámbiala a:
-
-```yaml
-  replicas: 3
-```
-
-Guarda el archivo (Ctrl+S) y ciérralo.
-
-**QUÉ DICES:**
-> "Acabo de cambiar el número de réplicas de 1 a 3. Ahora voy a hacer commit para que Argo CD lo vea."
-
----
-
-### PASO 3: Commit y push a Git
-
-**TERMINAL 3 - Ejecuta:**
-
-```bash
-git add kubernetes/argocd/apps/01-api-gateway.yaml
-```
-
-Luego:
-
-```bash
-git commit -m "Sprint 12 (Demo - Aumentar réplicas API Gateway a 3)"
-```
-
-Luego:
-
-```bash
+git add kubernetes/overlays/dev/kustomization.yml
+git commit -m "Demo Clase - Aumentar replicas API Gateway a 2"
 git push origin main
 ```
 
-✅ Debes ver respuesta de git (puede tomar 5-10 segundos)
+**Qué decir:** "Acabo de cambiar en Git. Lo empujé a GitHub. Ahora Argo CD lo detectará en ~30 segundos."
 
-**QUÉ DICES:**
-> "Hice commit y push. Ahora Argo CD va a detectar este cambio en los próximos 30 segundos."
+### PASO 3: Observar Argo CD (Navegador pestaña 1)
 
----
-
-### PASO 4: Esperar a que Argo CD detecte el cambio
-
-**NAVEGADOR - Pestaña 2 (Argo CD)**
-
-Mira el estado de "escuela-conduccion" en la UI.
-
-Debe cambiar de **Synced ✅** a **OutOfSync ⚠️** en los próximos 10-30 segundos.
-
-**QUÉ DICES MIENTRAS ESPERAS:**
-> "Argo CD está detectando que Git tiene cambios que no están en Kubernetes. Debería cambiar el estado a 'OutOfSync' en unos segundos..."
-
----
-
-### PASO 5: Ver sincronización en tiempo real
-
-En cuanto veas **OutOfSync** en Argo CD:
-
-**NAVEGADOR - Pestaña 2 (Argo CD)**
-
-Haz clic en el botón **"Sync"** (si no está en auto-sync)
-
-O simplemente espera, Argo CD debería sincronizar automáticamente.
-
-**MIENTRAS TANTO, en TERMINAL 4 (el -w que dejaste corriendo):**
-
-Verás cambios como:
-
+Status cambia:
 ```
-NAME            READY   UP-TO-DATE   AVAILABLE
-api-gateway     1/1     1            1          (ANTES)
+Synced ✅
+  ↓
+OutOfSync ❌ (detectó cambio)
+  ↓
+Syncing 🔄 (aplicando)
+  ↓
+Synced ✅ (listo)
 
-api-gateway     2/3     2            2          (DURANTE - ¡LO VES!)
-
-api-gateway     3/3     3            3          (DESPUÉS - ¡LISTO!)
+Timeline: evento nuevo
 ```
 
-**QUÉ DICES mientras observas:**
-> "¡Miren! En tiempo real, Kubernetes está creando 2 pods adicionales. La columna READY sube de 1/1 a 2/3 a 3/3. Todo esto pasó automáticamente porque cambié un archivo en Git."
+**Qué decir:** "¿Ven? Detectó el cambio en 30 seg, está sincronizando... ¡Ya está hecho en 4 segundos!"
+
+### PASO 4: Validar (Terminal 4)
+
+```bash
+kubectl get deployments -n escuela | grep api-gateway
+
+# Resultado: READY cambió a 2/2 ✅
+
+kubectl get pods -n escuela | grep api-gateway
+
+# Resultado: 2 pods running ✅
+```
+
+**En Terminal 2 (--watch):** Ves pods naciendo en tiempo real.
+
+**Qué decir:** "Nuevo pod nació automáticamente. Git dice 2 replicas, Kubernetes ahora tiene 2. Sin comandos manuales."
 
 ---
 
-### PASO 6: Confirmación final
+## 🎬 ACTO 4 — ROLLBACK INSTANTÁNEO ⭐
 
-Después de ~2 minutos:
+### PASO 1: Revertir (Terminal 4)
 
-**NAVEGADOR - Pestaña 2 (Argo CD)**
+```bash
+nano kubernetes/overlays/dev/kustomization.yml
 
-El estado debe volver a **Synced ✅** (verde)
+# Cambiar de 2 a 1
 
-**TERMINAL 4**
+git add kubernetes/overlays/dev/kustomization.yml
+git commit -m "Demo Clase - Rollback: 1 replica"
+git push origin main
+```
 
-Debes ver 3/3 en la fila de api-gateway
+### PASO 2: Observar rollback
 
-**QUÉ DICES:**
-> "Perfecto. Ahora está 'Synced' de nuevo. Kubernetes tiene exactamente 3 réplicas como Git dice que debe tener. ESO es GitOps - Git es la fuente de verdad."
+**En Argo CD:** OutOfSync → Synced ✅
+**En Terminal 2:** Pod Terminating → desaparece
+**En Terminal 4:** `kubectl get deployments` muestra 1/1
 
----
-
-## 🏁 Resumen final (1 minuto)
-
-**QUÉ DICES:**
-
-> "Lo que acabamos de ver es GitOps en acción:
-> 
-> 1. Cambié un archivo en Git (replicas: 1 → 3)
-> 2. Hice commit y push
-> 3. Argo CD detectó automáticamente el cambio
-> 4. Kubernetes aplicó el cambio sin comandos manuales
-> 5. Los pods se crearon automáticamente
-> 
-> Esto es lo que usan empresas como Google y Netflix. Git es la fuente de verdad, y tu infraestructura siempre coincide con tu código."
+**Qué decir:** "Rollback en Git, Argo CD sincronizó, pod fue destruido. Todo automático."
 
 ---
 
-## 🆘 SI ALGO FALLA
+## 🎬 ACTO 5 (OPCIONAL) — CAMBIO EN VARIABLE
+
+```bash
+nano kubernetes/base/ms-auth.yml
+
+# Cambiar: LOG_LEVEL=DEBUG
+
+git add kubernetes/base/ms-auth.yml
+git commit -m "Demo - LOG_LEVEL DEBUG"
+git push origin main
+```
+
+Resultado: Nuevos pods de ms-auth se crean.
+
+**Qué decir:** "Cada cambio — replicas, variables, versiones — Argo CD sincroniza automáticamente."
+
+---
+
+## 🎬 ACTO 6 — GITHUB HISTORIAL
+
+Abre: **https://github.com/tu-usuario/proyecto-titulacion**
+
+Muestra commits:
+- "Demo Clase - Aumentar replicas..."
+- "Demo Clase - Rollback..."
+- "Demo - LOG_LEVEL..."
+
+Con diffs y timestamps.
+
+**Qué decir:** "Cada cambio de infraestructura está versionado. Auditoría completa."
+
+---
+
+## 🎬 CIERRE — ARCHIVOS YAML
+
+Abre: **kubernetes/** en explorador
+
+Muestra:
+- base/ (14 manifiestos)
+- overlays/dev/ (customizaciones)
+- argocd-application.yml (cómo Argo CD sincroniza)
+
+Abre **kubernetes/base/api-gateway.yml** y muestra:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  replicas: 1              ← Declaramos aquí
+  template:
+    spec:
+      containers:
+      - name: gateway
+        image: escuela/api-gateway:latest
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+```
+
+**Qué decir:** "Toda infraestructura en YAML, versionada, reproducible. Si el cluster falla: `kubectl apply -k kubernetes/overlays/dev` y renace en minutos."
+
+---
+
+## 📋 RESUMEN: QUÉ DEMUESTRA CADA ACTO
+
+| Acto | Demuestra |
+|------|-----------|
+| 1 | Argo CD funciona (SYNC STATUS verde) |
+| 2 | Microservicios vivos (Eureka muestra 10) |
+| 3 | GitOps (cambio Git → nuevos pods) |
+| 4 | Rollback automático (revert → pods destruidos) |
+| 5 | Cambios en variables se aplican |
+| 6 | Auditoría en GitHub (historial de commits) |
+| Cierre | Infrastructure as Code (YAML reproducible) |
+
+---
+
+## 🆘 PLAN B SI FALLA
 
 | Problema | Solución |
 |----------|----------|
-| Argo CD no carga | Verifica Terminal 2, debe decir "Forwarding..." |
-| No veo cambios en -w | Espera 30 segundos, a veces tarda |
-| OutOfSync no aparece | Espera 1 minuto, Argo CD hace polling cada 3 min |
-| Git push falla | Verifica git status, quizás hay conflictos |
+| Argo CD no abre | `kubectl port-forward svc/argocd-server -n argocd 8443:443` |
+| Eureka no muestra | Espera 30 seg, F5 |
+| Git push falla | `git remote -v`, reintenta |
+| Kubernetes caído | `minikube status` / `minikube start` |
+| Pods no se crean | `kubectl logs -f deployment/dev-api-gateway -n escuela` |
+| TODO ROTO | Tengo capturas de respaldo |
+
+---
+
+## 📸 CAPTURAS A GUARDAR
+
+Antes de clase, toma screenshots de:
+
+1. Argo CD Dashboard - Synced ✅
+2. Eureka - 10 servicios
+3. Git diff - cambio en YAML
+4. Argo CD Timeline - cambio detectado
+5. kubectl deployments - READY 2/2
+6. GitHub - commits
+7. Carpeta kubernetes/ - YAML
 
 ---
 
 ## ⏱️ TIMING
 
-```
-Acto 1: 2 min
-Acto 2: 3 min
-Acto 3: 3 min
-Acto 4: 2 min
-Acto 5: 8 min
-Resumen: 1 min
-────────
-TOTAL: 19 minutos ✅
-```
+- Paso 0: 2 min
+- Acto 1-2: 4 min
+- Acto 3: 5 min
+- Acto 4: 3 min
+- Acto 5: 2 min (opcional)
+- Acto 6: 2 min
+- Cierre: 1 min
+
+**TOTAL: 15-20 min** ✅
 
 ---
 
-## 📋 CHECKLIST ANTES DE EMPEZAR
+## 🚀 CHECKLIST
 
-- [ ] Terminal 1 corriendo: `minikube dashboard`
-- [ ] Terminal 2 corriendo: `kubectl port-forward svc/argocd-server...`
-- [ ] Navegador con 2 pestañas abiertas
-- [ ] Minikube Dashboard accesible
-- [ ] Argo CD accesible (login exitoso)
-- [ ] Terminal 3 lista para comandos
-- [ ] Terminal 4 lista para `-w`
-- [ ] Terminal 5 lista para git
-- [ ] Archivos guardados en editor
+- [ ] Minikube running
+- [ ] 4 terminales + navegador listos
+- [ ] Argo CD (https://localhost:8443) ✅
+- [ ] Eureka (http://localhost:8761) ✅
+- [ ] API Gateway responde ✅
+- [ ] Todos pods Running
+- [ ] GitHub accesible
+- [ ] Ensayo completo
+- [ ] Capturas guardadas
 
 ---
 
-## 🎯 LISTO
+## 💡 TIPS
 
-Sigue este documento paso a paso y tu demo de Argo CD + GitOps será exitosa.
+1. Habla lentamente — K8s tarda 5-10 seg
+2. Terminal 2 (--watch) es visual — ponla en grande
+3. "En prod sincroniza cada 3 min, aquí 30 seg con webhooks"
+4. Cierra el loop: Git → detecta → aplica → valida
+5. Ten Plan B — capturas de respaldo
 
-¡Buena suerte! 🚀
+---
+
+**¡Éxito en la presentación! 🚀**
