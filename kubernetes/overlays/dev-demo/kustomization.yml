@@ -10,3 +10,7 @@ resources:
   - minio.yml
   - eureka.yml
   - api-gateway.yml
+
+replicas:
+  - name: api-gateway
+    count: 1
