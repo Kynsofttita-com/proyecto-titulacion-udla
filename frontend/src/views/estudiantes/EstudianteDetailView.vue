@@ -542,7 +542,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import DetailRow from '@/components/ui/DetailRow.vue'
 import api from '@/services/api'
-import estudiantesService, { EstudianteDetailResponse, ProgresoAcademico } from '@/services/estudiantes'
+import estudiantesService, { EstudianteDetailResponse, ProgresoAcademico, ProgresoAcademicoHorasResponse } from '@/services/estudiantes'
 import asignacionesService, { type HistorialAsignacionItem } from '@/services/asignaciones'
 import cobrosService, { type HistorialPagoItem } from '@/services/cobros'
 
@@ -576,7 +576,7 @@ const estudiante = reactive<EstudianteDetailResponse>({
   updatedAt: ''
 })
 
-const progreso = ref<ProgresoAcademico | null>(null)
+const progreso = ref<ProgresoAcademicoHorasResponse | null>(null)
 const loading = ref(false)
 const contactosEmergencia = ref<any[]>([])
 const guardandoContacto = ref(false)
@@ -885,12 +885,24 @@ const confirmarEliminarDocumento = (documentoId: number) => {
 const cargar = async () => {
   loading.value = true
   try {
-    const [est, prog] = await Promise.all([
-      estudiantesService.obtenerEstudiante(parseInt(estudianteId)),
-      estudiantesService.obtenerProgreso(parseInt(estudianteId))
-    ])
+    // Cargar estudiante (REQUERIDO)
+    const est = await estudiantesService.obtenerEstudiante(parseInt(estudianteId))
     Object.assign(estudiante, est)
-    progreso.value = prog
+
+    // Cargar progreso (OPCIONAL: si falla, continúa sin error)
+    try {
+      progreso.value = await estudiantesService.obtenerProgresoHoras(parseInt(estudianteId))
+    } catch (progresoError: any) {
+      console.warn('No se pudo cargar progreso académico:', progresoError)
+      // Default: mostrar 0 horas completadas
+      progreso.value = {
+        horasCompletadas: 0,
+        horasRequeridas: 120,
+        porcentajeComplecion: 0,
+        asignacionesCompletadas: 0,
+        asignacionesPendientes: 0
+      }
+    }
   } catch (e: any) {
     toast.add({
       severity: 'error',

@@ -149,7 +149,34 @@ public class EstudianteServiceImpl implements EstudianteService {
         Specification<Estudiante> spec = Specification.where(EstudianteSpecifications.notDeleted())
                 .and(EstudianteSpecifications.estado(estado))
                 .and(EstudianteSpecifications.searchTerm(search));
-        return repository.findAll(spec, pageable).map(getMapper()::toListResponse);
+        return repository.findAll(spec, pageable).map(e -> toListResponseWithHoras(e));
+    }
+
+    private EstudianteListResponse toListResponseWithHoras(Estudiante entity) {
+        String nombreCompleto = entity.getNombre() + " " + entity.getApellido();
+
+        // Convertir minutos a horas (redondeado hacia arriba)
+        Integer horasCompletadas = entity.getMinutosCompletados() != null
+            ? (int) Math.ceil(entity.getMinutosCompletados() / 60.0)
+            : 0;
+
+        // TODO: Obtener horas requeridas del tipoCurso
+        // Actualmente retorna 0. Se necesita implementar un método en ms-auth
+        // o agregar una columna de duracion_total_horas en estudiantes_schema.
+        Integer horasRequeridas = 120; // Default: 120 horas (estándar para cursos de conducción)
+
+        return new EstudianteListResponse(
+                entity.getId(),
+                entity.getCedula(),
+                nombreCompleto,
+                entity.getEmail(),
+                entity.getTelefono(),
+                entity.getEstado(),
+                entity.getSituacionPago(),
+                entity.getFechaMatricula(),
+                horasCompletadas,
+                horasRequeridas
+        );
     }
 
     @Override

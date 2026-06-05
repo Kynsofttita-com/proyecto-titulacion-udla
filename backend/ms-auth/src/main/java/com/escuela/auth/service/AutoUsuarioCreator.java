@@ -84,6 +84,7 @@ public class AutoUsuarioCreator {
                 .activo(Boolean.TRUE)
                 .locked(Boolean.FALSE)
                 .failedAttempts((short) 0)
+                .passwordChangeRequired(Boolean.TRUE)
                 .roles(roles)
                 .build();
         u = usuarioRepository.save(u);

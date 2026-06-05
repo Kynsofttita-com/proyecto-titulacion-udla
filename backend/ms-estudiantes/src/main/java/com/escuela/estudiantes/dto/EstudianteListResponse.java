@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 /**
  * Vista compacta para listados paginados (GET /estudiantes).
- * Concatena nombre + apellido en un solo campo para reducir payload.
+ * Incluye avance académico (horas) para mostrar en tabla de lista.
  */
 public record EstudianteListResponse(
         Long id,
@@ -14,5 +14,7 @@ public record EstudianteListResponse(
         String telefono,
         String estado,
         String situacionPago,
-        LocalDate fechaMatricula
+        LocalDate fechaMatricula,
+        Integer horasCompletadas,
+        Integer horasRequeridas
 ) {}

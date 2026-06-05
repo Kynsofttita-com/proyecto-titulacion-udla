@@ -1,6 +1,7 @@
 package com.escuela.estudiantes.controller;
 
 import com.escuela.common.security.headers.UserHeaders;
+import com.escuela.estudiantes.dto.ProgresoAcademicoHorasResponse;
 import com.escuela.estudiantes.dto.ProgresoAcademicoResponse;
 import com.escuela.estudiantes.dto.UpdateProgresoAcademicoRequest;
 import com.escuela.estudiantes.security.AuthHeaderGuard;
@@ -36,6 +37,17 @@ public class ProgresoAcademicoController {
         AuthHeaderGuard.requireAuth(userEmail);
         AuthHeaderGuard.requireAnyRole(userRoles, ROLES_LECTURA);
         return ResponseEntity.ok(service.obtener(estudianteId));
+    }
+
+    @GetMapping("/horas")
+    @Operation(summary = "Obtener progreso en horas (para vista detallada)")
+    public ResponseEntity<ProgresoAcademicoHorasResponse> obtenerHoras(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long estudianteId) {
+        AuthHeaderGuard.requireAuth(userEmail);
+        AuthHeaderGuard.requireAnyRole(userRoles, ROLES_LECTURA);
+        return ResponseEntity.ok(service.obtenerHoras(estudianteId));
     }
 
     @PutMapping
