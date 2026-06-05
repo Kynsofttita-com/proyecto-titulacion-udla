@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: escuela-conduccion
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/tu-usuario/tu-repo.git  # CAMBIAR: Tu repositorio
+    path: kubernetes/argocd                              # Ruta donde están los manifiestos
+    targetRevision: HEAD                                 # Rama principal
+
+  destination:
+    server: https://kubernetes.default.svc              # Cluster local (Minikube)
+    namespace: escuela-conduccion
+
+  syncPolicy:
+    automated:
+      prune: true      # Elimina recursos no presentes en Git
+      selfHeal: true   # Sincroniza automáticamente cambios
+    syncOptions:
+    - CreateNamespace=true
+
+  # Información de la aplicación
+  info:
+  - name: Documentación
+    value: "https://github.com/tu-usuario/tu-repo/blob/main/docs/ARGOCD.md"
+  - name: Team
+    value: "Grupo Software Processes"
