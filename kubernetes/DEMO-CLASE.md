@@ -89,14 +89,14 @@ Mostrar: Todas las instancias registradas (EUREKA, GATEWAY, 8 MS)
 ### PASO 1: Editar (Terminal 4)
 
 ```bash
-code kubernetes/overlays/dev/kustomization.yml
+code kubernetes/overlays/dev-demo/kustomization.yml
 ```
 
 Cambiar:
 ```
 replicas:
   - name: api-gateway
-    count: 1     ← CAMBIAR a 2
+    count: 1     ← CAMBIAR a 3
 ```
 
 Guardar.
@@ -104,8 +104,8 @@ Guardar.
 ### PASO 2: Commit & Push (Terminal 4)
 
 ```bash
-git add kubernetes/overlays/dev/kustomization.yml
-git commit -m "Demo Clase - Aumentar replicas API Gateway a 2"
+git add kubernetes/overlays/dev-demo/kustomization.yml
+git commit -m "Demo Clase - Aumentar replicas API Gateway a 3"
 git push origin main
 ```
 
@@ -151,11 +151,11 @@ kubectl get pods -n escuela | grep api-gateway
 ### PASO 1: Revertir (Terminal 4)
 
 ```bash
-nano kubernetes/overlays/dev/kustomization.yml
+code kubernetes/overlays/dev-demo/kustomization.yml
 
-# Cambiar de 2 a 1
+# Cambiar de 3 a 1
 
-git add kubernetes/overlays/dev/kustomization.yml
+git add kubernetes/overlays/dev-demo/kustomization.yml
 git commit -m "Demo Clase - Rollback: 1 replica"
 git push origin main
 ```
