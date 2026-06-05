@@ -1,0 +1,8 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: escuela-conduccion
+  labels:
+    name: escuela-conduccion
+    managed-by: argocd
