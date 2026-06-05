@@ -12,5 +12,5 @@ resources:
   - api-gateway.yml
 
 replicas:
-  - name: api-gateway
+  - name: dev-api-gateway
     count: 1
