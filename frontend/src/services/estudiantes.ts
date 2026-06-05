@@ -88,6 +88,14 @@ export interface ProgresoAcademico {
   asignacionesPendientes: number
 }
 
+export interface ProgresoAcademicoHorasResponse {
+  horasCompletadas: number
+  horasRequeridas: number
+  porcentajeComplecion: number
+  asignacionesCompletadas: number
+  asignacionesPendientes: number
+}
+
 const estudiantesService = {
   async obtenerEstudiantes(page = 0, size = 10): Promise<{ content: EstudianteResponse[]; totalElements: number }> {
     const response = await api.get('/estudiantes', { params: { page, size } })
@@ -125,6 +133,11 @@ const estudiantesService = {
 
   async obtenerProgreso(id: number): Promise<ProgresoAcademico> {
     const response = await api.get<ProgresoAcademico>(`/estudiantes/${id}/progreso`)
+    return response.data
+  },
+
+  async obtenerProgresoHoras(id: number): Promise<ProgresoAcademicoHorasResponse> {
+    const response = await api.get<ProgresoAcademicoHorasResponse>(`/estudiantes/${id}/progreso/horas`)
     return response.data
   },
 

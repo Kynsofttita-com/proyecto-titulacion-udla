@@ -1,5 +1,6 @@
 package com.escuela.estudiantes.service;
 
+import com.escuela.estudiantes.dto.ProgresoAcademicoHorasResponse;
 import com.escuela.estudiantes.dto.ProgresoAcademicoResponse;
 import com.escuela.estudiantes.dto.UpdateProgresoAcademicoRequest;
 import com.escuela.estudiantes.entity.Estudiante;
@@ -34,6 +35,41 @@ public class ProgresoAcademicoService {
         ProgresoAcademico p = progresoRepository.findByEstudianteId(estudianteId)
                 .orElseGet(() -> crearProgresoVacio(estudiante));
         return toResponse(p);
+    }
+
+    @Transactional(readOnly = true)
+    public ProgresoAcademicoHorasResponse obtenerHoras(Long estudianteId) {
+        Estudiante estudiante = estudianteRepository.findByIdAndDeletedAtIsNull(estudianteId)
+                .orElseThrow(() -> new EstudianteNotFoundException(estudianteId));
+
+        // Convertir minutos completados a horas (redondeando hacia arriba)
+        Integer horasCompletadas = estudiante.getMinutosCompletados() != null
+            ? (int) Math.ceil(estudiante.getMinutosCompletados() / 60.0)
+            : 0;
+
+        // TODO: Obtener horas requeridas del tipo de curso
+        // Por ahora usamos 120 como default (estándar para cursos de conducción)
+        Integer horasRequeridas = 120;
+
+        // Calcular porcentaje
+        Integer porcentajeComplecion = horasRequeridas > 0
+            ? Math.min((int) ((horasCompletadas * 100.0) / horasRequeridas), 100)
+            : 0;
+
+        // Obtener asignaciones completadas/pendientes
+        ProgresoAcademico p = progresoRepository.findByEstudianteId(estudianteId)
+                .orElseGet(() -> crearProgresoVacio(estudiante));
+
+        Integer asignacionesCompletadas = p.getClasesCompletadas() != null ? p.getClasesCompletadas().intValue() : 0;
+        Integer asignacionesPendientes = p.getClasesPendientes() != null ? p.getClasesPendientes().intValue() : 0;
+
+        return new ProgresoAcademicoHorasResponse(
+            horasCompletadas,
+            horasRequeridas,
+            porcentajeComplecion,
+            asignacionesCompletadas,
+            asignacionesPendientes
+        );
     }
 
     /** Upsert: crea o actualiza el progreso del estudiante. */

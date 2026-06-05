@@ -101,7 +101,7 @@ escuela:
     jwt:
       # Clave HS512 (minimo 64 chars = 512 bits). Generar con: openssl rand -hex 64
       secret: ${JWT_SECRET}
-      access-token-expiration-minutes: 15
+      access-token-expiration-minutes: 120
       refresh-token-expiration-days: 7
       issuer: escuela-conduccion
     auth:

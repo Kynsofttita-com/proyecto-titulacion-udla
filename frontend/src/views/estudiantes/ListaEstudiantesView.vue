@@ -229,6 +229,27 @@
             <span class="text-sm text-ink-600">{{ data.fechaMatricula || '—' }}</span>
           </template>
         </Column>
+        <Column header="Avance académico" :sortable="false">
+          <template #body="{ data }">
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-ink-600">
+                  {{ data.horasCompletadas || 0 }} / {{ data.horasRequeridas || 0 }} h
+                </span>
+                <span v-if="data.horasRequeridas > 0" class="font-medium text-ink-700">
+                  {{ Math.round((data.horasCompletadas || 0) / (data.horasRequeridas || 1) * 100) }}%
+                </span>
+              </div>
+              <div v-if="data.horasRequeridas > 0" class="h-1.5 bg-ink-200 rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full"
+                  :style="{ width: Math.min((data.horasCompletadas || 0) / (data.horasRequeridas || 1) * 100, 100) + '%' }"
+                />
+              </div>
+              <div v-else class="text-xs text-ink-500 italic">Sin asignaciones</div>
+            </div>
+          </template>
+        </Column>
         <Column header="" style="width: 180px">
           <template #body="{ data }">
             <div class="flex items-center justify-end gap-1">
