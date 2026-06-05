@@ -1,0 +1,295 @@
+================================================================================
+  🚀 ARGO CD + KUBERNETES - GUÍA RÁPIDA PARA EL GRUPO
+  Proyecto: Escuela de Conducción
+  Asignatura: Software Processes - UDLA
+================================================================================
+
+📍 PUNTO DE INICIO: Leer en este orden
+================================================================================
+
+1. RESUMEN-EJECUTIVO.md (5 min)
+   └─> Te dice exactamente qué hacer, cuándo y por qué
+
+2. README.md (10 min)
+   └─> Estructura general del proyecto
+
+3. SETUP-ARGOCD.md (Hacer el setup mientras lees)
+   └─> Pasos detallados para instalar todo
+
+4. ARQUITECTURA-ARGOCD.md (Entender cómo funciona)
+   └─> Explicaciones técnicas y diagramas
+
+5. EVIDENCIA-PRESENTACION.md (Para documentar)
+   └─> Plantilla con capturas de pantalla
+
+================================================================================
+⚡ COMANDO PARA EMPEZAR AHORA (Windows)
+================================================================================
+
+Abre PowerShell como Administrador y ejecuta:
+
+    powershell -ExecutionPolicy Bypass -File kubernetes/setup-minikube-argocd.ps1
+
+(O haz el setup manual siguiendo SETUP-ARGOCD.md)
+
+================================================================================
+✅ CHECKLIST - ¿QUÉ HACER?
+================================================================================
+
+SEMANA 1: INSTALAR
+  [ ] Leer RESUMEN-EJECUTIVO.md
+  [ ] Leer SETUP-ARGOCD.md
+  [ ] Ejecutar script de setup
+  [ ] Verificar: kubectl get pods -n escuela-conduccion
+  [ ] Verificar: Argo CD UI en https://localhost:8443
+
+SEMANA 2: DOCUMENTAR
+  [ ] Practicar setup 2-3 veces
+  [ ] Capturar pantallas (ver EVIDENCIA-PRESENTACION.md)
+  [ ] Completar documento de evidencia
+  [ ] Git → Kubernetes sync demo
+
+SEMANA 3: PRESENTAR
+  [ ] Preparar slides (5-10 slides)
+  [ ] Ensayar presentación 2-3 veces
+  [ ] Demostración en vivo
+  [ ] Preguntas y respuestas
+
+================================================================================
+🎯 LO MÁS IMPORTANTE A ENTENDER
+================================================================================
+
+Git es la FUENTE DE VERDAD:
+
+  [Tu código en GitHub]
+           ↓
+    [Argo CD lo monitorea]
+           ↓
+    [Detecta cambios automáticamente]
+           ↓
+    [Actualiza Kubernetes sin comandos manuales]
+           ↓
+    [Sistema siempre coincide con el código]
+
+
+¿QUÉ SIGNIFICA ESTO?
+  - Cambios en Git → automáticamente en Kubernetes
+  - Si alguien modifica Kubernetes manualmente → Argo CD lo revierte
+  - Sin "kubectl apply" manuales, todo es declarativo
+  - Auditoría completa: git log = historial de cambios
+
+================================================================================
+🏗️ ESTRUCTURA DE CARPETAS
+================================================================================
+
+kubernetes/
+├── README.md                          ← Leer primero
+├── RESUMEN-EJECUTIVO.md               ← Resumen ejecutivo
+├── SETUP-ARGOCD.md                    ← Guía paso a paso
+├── ARQUITECTURA-ARGOCD.md             ← Explicación técnica
+├── EVIDENCIA-PRESENTACION.md          ← Para documentar capturas
+├── GUIA-RAPIDA.txt                    ← Este archivo
+├── setup-minikube-argocd.ps1          ← Script para Windows
+├── setup-minikube-argocd.sh           ← Script para Linux/Mac
+│
+└── argocd/                            ← MANIFIESTOS KUBERNETES
+    ├── 00-namespace.yaml              ← Crea namespace
+    ├── argo-app.yaml                  ← Sincronización
+    ├── infrastructure/
+    │   ├── 01-postgresql.yaml         ← Base de datos
+    │   └── 02-eureka.yaml             ← Service discovery
+    └── apps/
+        ├── 01-api-gateway.yaml        ← API Gateway
+        ├── 02-ms-auth.yaml            ← Auth service
+        ├── 03-ms-estudiantes.yaml     ← Estudiantes service
+        └── 04-frontend.yaml           ← Frontend Vue
+
+================================================================================
+🔄 FLUJO TÍPICO - GitOps en acción (5 minutos)
+================================================================================
+
+PASO 1: Cambiar algo en Git
+  → Edita: kubernetes/argocd/apps/01-api-gateway.yaml
+  → Cambio: replicas: 1 → replicas: 3
+  → Commit: git add . && git commit -m "Sprint 12 (..."
+  → Push: git push origin main
+
+PASO 2: Argo CD lo detecta (10-30 segundos)
+  → Entra a UI: https://localhost:8443
+  → Ve: Estado "OutOfSync" ⚠️
+  → Espera o clickea "Sync"
+
+PASO 3: Argo CD aplica cambios (automático)
+  → kubectl apply -f manifiestos nuevos
+  → Kubernetes crea 2 pods más de api-gateway
+
+PASO 4: Verificar sincronización
+  → UI muestra: "Synced" ✅
+  → Terminal: kubectl get pods -n escuela-conduccion | grep api-gateway
+  → Resultado: 3 pods corriendo (antes había 1)
+
+================================================================================
+📸 EVIDENCIA NECESARIA (Para presentación)
+================================================================================
+
+OBLIGATORIO (mínimo 10 screenshots):
+  1. Minikube status (minikube status + kubectl cluster-info)
+  2. Argo CD login exitoso (UI)
+  3. Pods corriendo (kubectl get pods -n escuela-conduccion)
+  4. Frontend en navegador (http://localhost:3000)
+  5. API Gateway health (http://localhost:8080/actuator/health)
+  6. Cambio en Git (git diff)
+  7. OutOfSync en Argo CD (UI)
+  8. Sincronización en proceso
+  9. Synced confirmado (UI)
+  10. Pods después del sync (3 replicas en lugar de 1)
+
+OPCIONAL (bonus):
+  11. Self-healing demo (pod eliminado y recreado automáticamente)
+  12. Error handling / troubleshooting
+
+Ver EVIDENCIA-PRESENTACION.md para plantilla completa con ejemplos.
+
+================================================================================
+🚀 COMANDOS ÚTILES (Copy-paste)
+================================================================================
+
+# EMPEZAR
+minikube start --cpus=4 --memory=8192
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# ACCEDER
+kubectl port-forward svc/argocd-server -n argocd 8443:443        # Argo CD UI
+kubectl port-forward svc/frontend -n escuela-conduccion 3000:80   # Frontend
+kubectl port-forward svc/api-gateway -n escuela-conduccion 8080:8080  # Gateway
+
+# VERIFICAR
+kubectl get pods -n argocd                                        # Argo CD pods
+kubectl get pods -n escuela-conduccion                            # App pods
+kubectl get svc -n escuela-conduccion                             # Services
+kubectl logs <pod-name> -n escuela-conduccion -f                  # Logs
+
+# GIT (GitOps demo)
+git add kubernetes/
+git commit -m "Sprint 12 (Cambio de replicas)"
+git push origin main
+
+# VER ESTADO ARGO CD
+kubectl get application -n argocd
+kubectl describe application escuela-conduccion -n argocd
+
+# BORRAR TODO (reset)
+kubectl delete namespace escuela-conduccion
+kubectl delete namespace argocd
+minikube delete
+
+================================================================================
+⚠️  PROBLEMAS COMUNES Y SOLUCIONES
+================================================================================
+
+PROBLEMA: "ImagePullBackOff" en pods
+SOLUCIÓN:
+  eval $(minikube docker-env)              # Configurar Docker
+  docker build -t api-gateway:latest ./backend/api-gateway
+  docker build -t ms-auth:latest ./backend/ms-auth
+  docker build -t ms-estudiantes:latest ./backend/ms-estudiantes
+  docker build -t frontend:latest ./frontend
+  docker pull springcloud/eureka:latest && docker tag ... eureka-server:latest
+
+PROBLEMA: No puedo entrar a Argo CD UI
+SOLUCIÓN:
+  kubectl port-forward svc/argocd-server -n argocd 8443:443
+  Abrir en navegador: https://localhost:8443
+
+PROBLEMA: Application está OutOfSync y no sincroniza
+SOLUCIÓN:
+  1. Editar kubernetes/argocd/argo-app.yaml
+  2. Reemplazar URL de repositorio con la tuya
+  3. kubectl apply -f kubernetes/argocd/argo-app.yaml
+  4. Clickear "Sync" en UI
+
+PROBLEMA: PostgreSQL falla
+SOLUCIÓN:
+  kubectl logs postgres-... -n escuela-conduccion -f
+  Ver qué dice el error
+
+PROBLEMA: Minikube se queda sin memoria
+SOLUCIÓN:
+  minikube stop
+  minikube start --memory=12288  # Aumentar memoria
+
+Ver más en: SETUP-ARGOCD.md → Troubleshooting
+
+================================================================================
+💡 TIPS PARA LA PRESENTACIÓN
+================================================================================
+
+1. PRACTICA
+   - Haz el setup completo 2-3 veces antes de presentar
+   - Toma notas de cuánto tiempo toma cada paso
+   - Prepara respuestas a preguntas comunes
+
+2. CONTINGENCIA
+   - Ten screenshots de respaldo si algo falla en vivo
+   - Prepara un script bash/powershell que corra rápido
+   - Tener Minikube pre-iniciado puede ahorrar tiempo
+
+3. EXPLICACIÓN CLARA
+   - GitOps = "Git es la fuente de verdad de tu infraestructura"
+   - Argo CD = "Herramienta que sincroniza Git con Kubernetes"
+   - Manifiestos = "Archivos YAML que dicen cómo debe verse el sistema"
+
+4. TIMING
+   - Setup completo: 5-10 min en vivo (o pre-iniciado)
+   - Demo GitOps: 5-10 min (cambio + sync automático)
+   - Q&A: 5 min
+   - Total: 15-20 min presentación
+
+5. AMBIENTE
+   - Terminal con fuente grande (40pt mínimo, visible para todos)
+   - Navegador en ventana maximizada
+   - Minikube ya iniciado antes de empezar
+   - Conexión a internet estable
+
+================================================================================
+📞 ¿PREGUNTAS?
+================================================================================
+
+Ver:
+  - README.md (respuestas generales)
+  - SETUP-ARGOCD.md (detalles técnicos)
+  - ARQUITECTURA-ARGOCD.md (explicaciones visuales)
+  - EVIDENCIA-PRESENTACION.md (guía de documentación)
+
+Recursos externos:
+  - Argo CD oficial: https://argo-cd.readthedocs.io/
+  - Kubernetes: https://kubernetes.io/
+  - Minikube: https://minikube.sigs.k8s.io/
+  - GitOps: https://gitops.tech/
+
+================================================================================
+✅ RESUMEN FINAL
+================================================================================
+
+Tienes:
+  ✅ Manifiestos Kubernetes listos en kubernetes/argocd/
+  ✅ Scripts de setup (Windows + Linux/Mac)
+  ✅ Documentación completa en 5 archivos
+  ✅ Plantilla de evidencia para capturas
+  ✅ Todo lo necesario para aprobar
+
+Próximo paso:
+  1. Leer RESUMEN-EJECUTIVO.md (5 minutos)
+  2. Ejecutar setup (30 minutos)
+  3. Documentar evidencia (1 hora)
+  4. Preparar presentación (2 horas)
+  5. Practicar (1 hora)
+
+Total: ~5 horas repartidas en 3 semanas = Proyecto exitoso ✨
+
+================================================================================
+Grupo: Software Processes - UDLA
+Junio 2026
+¡Éxito con tu presentación! 🚀
+================================================================================
