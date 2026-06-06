@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: escuela
+
+commonLabels:
+  environment: dev
+
+replicas:
+  - name: postgres
+    count: 1
+  - name: eureka-server
+    count: 1
+  - name: api-gateway
+    count: 1
+  - name: ms-auth
+    count: 1
+  - name: ms-estudiantes
+    count: 1
