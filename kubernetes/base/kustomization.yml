@@ -6,6 +6,7 @@ namespace: escuela
 resources:
   - namespace.yml
   - postgres.yml
+  - rabbitmq.yml
   - eureka-server.yml
   - api-gateway.yml
   - ms-auth.yml

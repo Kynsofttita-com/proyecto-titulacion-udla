@@ -12,6 +12,8 @@ commonLabels:
 replicas:
   - name: postgres
     count: 1
+  - name: rabbitmq
+    count: 1
   - name: eureka-server
     count: 1
   - name: api-gateway
