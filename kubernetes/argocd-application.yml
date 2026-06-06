@@ -9,7 +9,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/tu-usuario/proyecto-titulacion.git
+    repoURL: https://github.com/Kynsofttita-com/proyecto-titulacion-udla.git
     targetRevision: main
     path: kubernetes/overlays/dev
 

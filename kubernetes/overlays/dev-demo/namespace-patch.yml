@@ -3,5 +3,4 @@ kind: Namespace
 metadata:
   name: escuela
   labels:
-    name: escuela
-    environment: development
+    environment: demo

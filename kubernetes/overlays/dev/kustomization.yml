@@ -16,7 +16,7 @@ replicas:
   - name: eureka-server
     count: 1
   - name: api-gateway
-    count: 3
+    count: 2
   - name: ms-auth
     count: 1
   - name: ms-estudiantes
