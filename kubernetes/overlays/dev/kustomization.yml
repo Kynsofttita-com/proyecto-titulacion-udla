@@ -13,7 +13,7 @@ replicas:
   - name: postgres
     count: 1
   - name: rabbitmq
-    count: 1
+    count: 2
   - name: eureka-server
     count: 3
   - name: api-gateway
