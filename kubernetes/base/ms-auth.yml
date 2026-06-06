@@ -37,6 +37,8 @@ spec:
             secretKeyRef:
               name: postgres-secret
               key: POSTGRES_PASSWORD
+        - name: JWT_SECRET
+          value: "c2VjcmV0LWp3dC1rZXktZm9yLWVzY3VlbGEtY29uZHVjY2lvbi1taW5pa3ViZS1kZW1vLXZhbGlkLTUxMi1iaXRzLWxlbmd0aC1tdXN0LWJl"
         resources:
           requests:
             memory: "384Mi"
