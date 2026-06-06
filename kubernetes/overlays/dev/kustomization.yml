@@ -15,7 +15,7 @@ replicas:
   - name: rabbitmq
     count: 1
   - name: eureka-server
-    count: 1
+    count: 3
   - name: api-gateway
     count: 1
   - name: ms-auth
