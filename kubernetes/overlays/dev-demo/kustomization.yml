@@ -13,6 +13,6 @@ resources:
 
 replicas:
   - name: dev-api-gateway
-    count: 3
+    count: 1
   - name: dev-eureka-server
-    count: 2
+    count: 1
