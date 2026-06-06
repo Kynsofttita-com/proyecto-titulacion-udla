@@ -39,6 +39,14 @@ spec:
               key: POSTGRES_PASSWORD
         - name: JWT_SECRET
           value: "c2VjcmV0LWp3dC1rZXktZm9yLWVzY3VlbGEtY29uZHVjY2lvbi1taW5pa3ViZS1kZW1vLXZhbGlkLTUxMi1iaXRzLWxlbmd0aC1tdXN0LWJl"
+        - name: RABBITMQ_HOST
+          value: "rabbitmq"
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: SPRING_RABBITMQ_HOST
+          value: "rabbitmq"
+        - name: SPRING_RABBITMQ_PORT
+          value: "5672"
         resources:
           requests:
             memory: "384Mi"
