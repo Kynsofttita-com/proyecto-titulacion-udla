@@ -69,17 +69,21 @@ spec:
             command:
             - /bin/sh
             - -c
-            - pg_isready -U escuela_user
+            - pg_isready -U escuela_user -d escuela_db
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           exec:
             command:
             - /bin/sh
             - -c
-            - pg_isready -U escuela_user
-          initialDelaySeconds: 5
+            - pg_isready -U escuela_user -d escuela_db
+          initialDelaySeconds: 10
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
