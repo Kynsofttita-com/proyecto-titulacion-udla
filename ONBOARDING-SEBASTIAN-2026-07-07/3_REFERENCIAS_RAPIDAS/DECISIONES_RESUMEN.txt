@@ -1,0 +1,376 @@
+================================================================================
+DECISIONES TÉCNICAS — RESUMEN PARA SPRINT 12
+================================================================================
+
+Leer completo: DECISIONES.md (en el repo)
+Este es solo un RESUMEN de lo que necesitás saber para Sprint 12.
+
+Para detalles completos y decisiones históricas, abrí DECISIONES.md.
+
+================================================================================
+§ 1 — ARQUITECTURA MICROSERVICIOS
+================================================================================
+
+Decisión: 8 microservicios independientes + Gateway + Eureka
+
+Impacto para Sprint 12:
+  - MS-Notificaciones es independiente (puerto 8088)
+  - MS-Reportes es independiente (puerto 8087)
+  - Ambos se registran automáticamente en Eureka
+  - Gateway rutea las llamadas automáticamente
+
+Cómo lo ves:
+  http://localhost:8761 → Debe mostrarte 9 servicios
+
+================================================================================
+§ 2 — BASE DE DATOS: 1 PostgreSQL, 9 SCHEMAS
+================================================================================
+
+Decisión: Una sola BD compartida, pero 9 schemas separados (uno por MS)
+
+Para ti:
+  - MS-Notificaciones: schema "notificaciones_schema"
+  - MS-Reportes: schema "reportes_schema"
+  - Datos de otros MS (estudiantes, instructores, etc.) están en otros schemas
+  - NO hay FKs entre schemas (evita acoplamiento)
+  - Consistencia = eventual (vía eventos RabbitMQ)
+
+Migraciones:
+  - Tus migraciones van en backend/ms-notificaciones/src/main/resources/db/migration/V*.sql
+  - Flyway las ejecuta automáticamente al arrancar
+
+================================================================================
+§ 3 — MESSAGING: RABBITMQ
+================================================================================
+
+Decisión: RabbitMQ para eventos asíncronos (no Kafka)
+
+Para Sprint 12 (Tarea 1.2 - Listeners):
+  - Tu MS-Notificaciones **escucha** eventos de dominio
+  - Cuando llega un evento, envías un email
+  - Si falla, reintentás (máx 3 veces)
+  - Si sigue fallando, va a DLQ (Dead Letter Queue)
+
+Eventos que escucharás:
+  - EstudianteMatriculado (desde MS-Estudiantes)
+  - PagoRecibido (desde MS-Cobros)
+  - ClaseAsignada (desde MS-Asignaciones)
+
+Cómo funciona:
+  1. MS-Estudiantes publica evento en exchange "eventos_domain"
+  2. RabbitMQ lo enruta a cola "notificaciones.estudiante-matriculado"
+  3. Tu listener lo consume
+  4. Genera email y lo envía por Mailtrap/Gmail
+
+URL para ver colas:
+  http://localhost:15672 (guest/guest)
+
+================================================================================
+§ 4 — AUTENTICACIÓN JWT
+================================================================================
+
+Decisión: HS512 (simétrica), 24 horas expiración, HttpOnly cookies
+
+Para ti (Sprint 12):
+  - Tus endpoints en MS-Notificaciones y MS-Reportes requieren JWT
+  - El Gateway valida el JWT automáticamente
+  - No necesitás hacer nada especial, Spring Security lo maneja
+
+Ejemplo (con Postman):
+  1. POST /auth/login → obtienes accessToken
+  2. GET /notificaciones → header Authorization: Bearer <token>
+
+================================================================================
+§ 5 — ORM: SPRING DATA JPA + HIBERNATE
+================================================================================
+
+Decisión: JPA entities, Repositories, Service layer
+
+Para ti:
+  ```java
+  // Entity
+  @Entity
+  @Table(name = "plantillas_email", schema = "notificaciones_schema")
+  public class PlantillaEmail {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String nombre;
+    private String asunto;
+    private String contenido;  // con placeholders: {nombre}, {email}, etc.
+    // getters, setters...
+  }
+
+  // Repository
+  @Repository
+  public interface PlantillaEmailRepository extends JpaRepository<PlantillaEmail, Long> {
+    Optional<PlantillaEmail> findByNombre(String nombre);
+  }
+
+  // Service
+  @Service
+  public class PlantillaEmailService {
+    private final PlantillaEmailRepository repo;
+    public PlantillaEmail crear(PlantillaEmailRequest request) { ... }
+    public List<PlantillaEmail> listar() { ... }
+  }
+  ```
+
+Auditoría automática:
+  - created_at, updated_at, created_by, updated_by se asignan automáticamente
+  - Vienen de BaseEntity (en common-jpa)
+
+================================================================================
+§ 6 — MAPEO DTO ↔ ENTITY: MAPSTRUCT
+================================================================================
+
+Decisión: MapStruct para evitar boilerplate
+
+Para ti:
+  ```java
+  @Mapper(componentModel = "spring")
+  public interface PlantillaEmailMapper {
+    PlantillaEmailResponse toResponse(PlantillaEmail entity);
+    PlantillaEmail toEntity(PlantillaEmailRequest request);
+  }
+
+  // En Service:
+  private PlantillaEmailMapper mapper;
+
+  public PlantillaEmailResponse crear(PlantillaEmailRequest request) {
+    PlantillaEmail entity = mapper.toEntity(request);
+    PlantillaEmail saved = repo.save(entity);
+    return mapper.toResponse(saved);
+  }
+  ```
+
+================================================================================
+§ 7 — EXCEPTION HANDLING: RFC 7807 (ProblemDetail)
+================================================================================
+
+Decisión: Todas las excepciones retornan ProblemDetail (estándar REST)
+
+Para ti:
+  ```java
+  @ExceptionHandler(PlantillaNotFound.class)
+  public ResponseEntity<ProblemDetail> handlePlantillaNotFound(
+      PlantillaNotFound ex, HttpServletRequest request) {
+    ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+      HttpStatus.NOT_FOUND,
+      ex.getMessage()
+    );
+    pd.setInstance(URI.create(request.getRequestURI()));
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(pd);
+  }
+  ```
+
+Ya hay un GlobalExceptionHandler, solo agregás tus excepciones custom.
+
+================================================================================
+§ 8 — CACHE: CAFFEINE IN-MEMORY
+================================================================================
+
+Decisión: Caffeine (no Redis)
+
+Para Sprint 12 (Tarea 2.4 - KPIs):
+  ```java
+  @Cacheable(value = "kpis", key = "'all'", cacheManager = "caffeineManager")
+  public KPIsResponse getKPIs() {
+    // Lógica que tarda, se cachea 1 hora
+  }
+  ```
+
+Configuración:
+  - Caducidad: 1 hora (en application.yml)
+  - Tamaño máximo: 1000 entradas
+  - Ya está configurado, solo usás @Cacheable
+
+================================================================================
+§ 9 — TESTING: JUNIT5, MOCKITO, TESTCONTAINERS
+================================================================================
+
+Decisión: Unit tests (80%+) + Integration tests (Testcontainers)
+
+Para ti (Sprint 12):
+  ```java
+  // Unit test
+  @ExtendWith(MockitoExtension.class)
+  class PlantillaEmailServiceTest {
+    @Mock private PlantillaEmailRepository repo;
+    @InjectMocks private PlantillaEmailService service;
+
+    @Test
+    void testCrear() {
+      PlantillaEmail expected = new PlantillaEmail(...);
+      when(repo.save(any())).thenReturn(expected);
+      // test...
+    }
+  }
+
+  // Integration test
+  @SpringBootTest
+  @Tag("integration")
+  class PlantillaEmailIntegrationTest {
+    @Autowired private PlantillaEmailRepository repo;
+
+    @Test
+    void testCRUD() {
+      PlantillaEmail saved = repo.save(new PlantillaEmail(...));
+      assertNotNull(saved.getId());
+    }
+  }
+  ```
+
+Mínimo:
+  - 80% cobertura en Notificaciones
+  - 75% cobertura en Reportes
+
+================================================================================
+§ 10 — LOGGING: SLF4J + LOGBACK
+================================================================================
+
+Decisión: SLF4J (simple facade), Logback implementación
+
+Para ti:
+  ```java
+  private static final Logger log = LoggerFactory.getLogger(PlantillaEmailService.class);
+
+  public PlantillaEmailResponse crear(PlantillaEmailRequest request) {
+    log.info("Creando plantilla: {}", request.getNombre());
+    try {
+      PlantillaEmail entity = mapper.toEntity(request);
+      PlantillaEmail saved = repo.save(entity);
+      log.debug("Plantilla creada con ID: {}", saved.getId());
+      return mapper.toResponse(saved);
+    } catch (Exception ex) {
+      log.error("Error creando plantilla", ex);
+      throw new PlantillaEmailException(ex.getMessage());
+    }
+  }
+  ```
+
+Niveles:
+  - DEBUG: Información detallada (variables, valores)
+  - INFO: Punto de referencia (inicio de proceso, éxito)
+  - WARN: Algo inusual pero no crítico
+  - ERROR: Error que se puede recuperar
+
+================================================================================
+DECISIONES ADICIONALES ESPECÍFICAS PARA NOTIFICACIONES (§23)
+================================================================================
+
+§ 23 — SISTEMA DE NOTIFICACIONES: MULTI-CANAL
+
+Decisión: Email (síncrono inicial) + In-app (async RabbitMQ)
+
+Para ti:
+  - Listener RabbitMQ recibe evento
+  - Busca plantilla de email
+  - Reemplaza placeholders ({nombre}, {email}, {fecha})
+  - Envía por Mailtrap (dev) / Gmail (prod)
+  - Crea registro en tabla "notificaciones" (in-app)
+  - Si hay error, reintentá y va a DLQ
+
+Flujo:
+  EstudianteMatriculado
+    ↓
+  RabbitMQ → Cola notificaciones.estudiante-matriculado
+    ↓
+  Listener PlantillaEmailListener
+    ↓
+  EmailService.enviar(PlantillaEmail)
+    ↓
+  Mailtrap SMTP (dev) / Gmail (prod)
+
+Base de datos:
+  - plantillas_email: nombre, asunto, contenido
+  - notificaciones: usuario_id, tipo, mensaje, leida_at
+  - logs: para auditoría de envíos
+
+================================================================================
+STACK RÁPIDO PARA SPRINT 12
+================================================================================
+
+Java 21 (LTS)
+Spring Boot 3.4.0
+Spring Cloud 2024.0.0 (Gateway, Eureka, OpenFeign, Feign)
+Spring Security + JWT (HS512)
+Spring Data JPA + Hibernate
+Spring AMQP + RabbitMQ
+Caffeine Cache
+MapStruct 1.6
+SpringDoc 2.7 (OpenAPI 3)
+Apache POI (Excel)
+iText 7 (PDF)
+Lombok (opcionalmente, para @Getter/@Setter)
+JUnit 5
+Mockito
+Testcontainers
+H2 (tests en memory)
+
+================================================================================
+REGEX VALIDATIONS (ECUADOR)
+================================================================================
+
+Si validás inputs en Controllers (Spring):
+
+Cédula (10 dígitos):
+  @Pattern(regexp = "^[0-9]{10}$")
+  private String cedula;
+
+Email:
+  @Email
+  private String email;
+
+Teléfono (Ecuador: 09XXXXXXXX):
+  @Pattern(regexp = "^09[0-9]{8}$")
+  private String telefono;
+
+Placa vehículo (ABC-1234 o AB-1234A):
+  @Pattern(regexp = "^[A-Z]{2,3}-[0-9]{3,4}[A-Z]?$")
+  private String placa;
+
+================================================================================
+CONVENCIONES QUE DEBES SEGUIR
+================================================================================
+
+Paquetes:
+  com.escuela.notificaciones.controller
+  com.escuela.notificaciones.service
+  com.escuela.notificaciones.repository
+  com.escuela.notificaciones.entity
+  com.escuela.notificaciones.dto
+  com.escuela.notificaciones.event
+  com.escuela.notificaciones.mapper
+  com.escuela.notificaciones.exception
+
+Nombres:
+  Entidades: PlantillaEmail, Notificacion
+  Services: PlantillaEmailService, NotificacionService
+  Controllers: PlantillaEmailController, NotificacionController
+  Repositories: PlantillaEmailRepository, NotificacionRepository
+  DTOs: PlantillaEmailRequest, PlantillaEmailResponse, NotificacionResponse
+  Mappers: PlantillaEmailMapper, NotificacionMapper
+  Excepciones: PlantillaEmailException, PlantillaNotFound
+  Listeners: PlantillaEmailListener (o EventNotificacionListener)
+
+================================================================================
+REFERENCIAS COMPLETAS
+================================================================================
+
+Para toda la verdad, abrí en el repo:
+  DECISIONES.md (32 decisiones, §1-§32)
+  CLAUDE.md (guía operativa)
+  docs/database/schema.md (diseño BD completo)
+
+================================================================================
+¡YA SABES! 🚀
+================================================================================
+
+Con estas decisiones principales, estás armado para Sprint 12.
+
+Cuando algo no esté claro:
+  1. Revisar DECISIONES.md (la sección específica)
+  2. Ver ejemplos en MS-Auth o MS-Estudiantes (ya implementado)
+  3. Preguntá a Hernán
+
+¡A codificar!

@@ -1,0 +1,399 @@
+================================================================================
+DOCKER COMPOSE — INFO RÁPIDA
+================================================================================
+
+Ubicación del archivo:
+  infrastructure/docker/docker-compose.yml (stack completo)
+  infrastructure/docker/docker-compose.infra.yml (solo infra)
+
+Para levantar TODO:
+  docker compose -f infrastructure/docker/docker-compose.yml up -d
+
+Para levantar solo infraestructura (si corres MS en IDE):
+  docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
+
+Para detener:
+  docker compose -f infrastructure/docker/docker-compose.yml down
+
+Para borrar todo (cuidado con BD):
+  docker compose -f infrastructure/docker/docker-compose.yml down -v
+
+================================================================================
+SERVICIOS QUE SE LEVANTAN (14 contenedores)
+================================================================================
+
+INFRAESTRUCTURA (4 contenedores):
+
+  1. postgresql:15-alpine
+     Puerto: 5432
+     Credenciales: usuario escuela_user, contraseña <en .env>
+     Propósito: Base de datos principal (9 schemas)
+
+  2. rabbitmq:3.12-management-alpine
+     Puerto AMQP: 5672
+     Puerto Management UI: 15672
+     Credenciales: guest / guest
+     Propósito: Mensajería asíncrona
+
+  3. minio
+     Puerto API: 9000
+     Puerto Console: 9001
+     Credenciales: minioadmin / minioadmin123
+     Propósito: Almacenamiento S3 compatible
+
+  4. adminer
+     Puerto: 8888
+     Credenciales: PostgreSQL (en .env)
+     Propósito: UI para administrar BD
+
+SERVICIOS SPRING BOOT (10 contenedores):
+
+  5. eureka-server
+     Puerto: 8761
+     Propósito: Service discovery (registro de servicios)
+
+  6. api-gateway
+     Puerto: 8080
+     Propósito: Enrutador centralizado (único entry point)
+
+  7. ms-auth
+     Puerto: 8081
+     Propósito: Autenticación + JWT
+
+  8. ms-estudiantes
+     Puerto: 8082
+     Propósito: Gestión de estudiantes
+
+  9. ms-instructores
+     Puerto: 8083
+     Propósito: Gestión de instructores
+
+  10. ms-vehiculos
+      Puerto: 8084
+      Propósito: Gestión de vehículos
+
+  11. ms-asignaciones
+      Puerto: 8085
+      Propósito: Programación de clases
+
+  12. ms-cobros
+      Puerto: 8086
+      Propósito: Facturación + pagos
+
+  13. ms-reportes
+      Puerto: 8087
+      Propósito: Reportes (TÚ lo completarás)
+
+  14. ms-notificaciones
+      Puerto: 8088
+      Propósito: Notificaciones (TÚ lo completarás)
+
+================================================================================
+VARIABLES DE ENTORNO DEL DOCKER COMPOSE
+================================================================================
+
+El archivo docker-compose.yml lee variables de .env (en la raíz del proyecto).
+
+Principales:
+  POSTGRES_USER=escuela_user                    (usuario BD)
+  POSTGRES_PASSWORD=<tu-contraseña>             (contraseña BD)
+  POSTGRES_DB=escuela_db                        (nombre BD)
+  POSTGRES_INITDB_ARGS=-c shared_preload_libraries=pg_stat_statements
+
+  JWT_SECRET=<tu-clave-512-bits>                (para tokens JWT)
+
+  MAILTRAP_USER=<usuario-mailtrap>              (dev email)
+  MAILTRAP_PASSWORD=<contraseña-mailtrap>       (dev email)
+
+  MINIO_ROOT_USER=minioadmin                    (S3)
+  MINIO_ROOT_PASSWORD=minioadmin123             (S3)
+
+  TZ=America/Guayaquil                          (timezone — CRÍTICO para JVM)
+
+================================================================================
+FLUJO DE STARTUP — POR QUÉ TARDA LOS PRIMEROS 60s
+================================================================================
+
+Orden de inicio:
+
+  1. PostgreSQL inicia (5-10s)
+     - Crea los 9 schemas
+     - Ejecuta migraciones Flyway (V1, V2, etc. de cada MS)
+     - Listo para recibir conexiones
+
+  2. RabbitMQ inicia (5-10s)
+     - Crea exchanges, colas, bindings
+     - Management UI disponible
+
+  3. MinIO inicia (3-5s)
+     - Crea bucket escuela-bucket
+     - API disponible
+
+  4. Eureka inicia (10-15s)
+     - Espera a que PostgreSQL esté listo
+     - Se registra a sí mismo
+
+  5. API Gateway inicia (10-15s)
+     - Espera a Eureka
+     - Carga configuración de rutas
+     - Listo en puerto 8080
+
+  6. MS-Auth inicia (10-15s)
+     - Conecta a PostgreSQL (corre migraciones)
+     - Se registra en Eureka
+     - Listo en puerto 8081
+
+  7. Otros MS inician en paralelo (10-20s cada uno)
+     - Igual proceso: BD → Eureka → Ready
+
+Total: 50-60 segundos primera vez, 20-30 segundos siguientes (sin rebuilds)
+
+DURANTE TODO ESTO, verás en los logs:
+  "Caused by: org.postgresql.util.PSQLException: Connection refused"
+    → Normal, MS retentando conectarse a BD mientras levanta
+  "Retrying...Attempt 3 of 10"
+    → Normal, Resilience4j reintentando
+
+CUANDO ESTÁ LISTO:
+  docker compose ps
+
+  Todos deben decir "healthy" (no puede haber "unhealthy" o "exited")
+
+================================================================================
+HEALTH CHECKS — POR QUÉ ALGUNOS TARDAN MÁS
+================================================================================
+
+Cada contenedor Spring Boot tiene healthcheck:
+
+  start_period: 180s        (esperar 180s antes de empezar a chequear)
+  interval: 10s             (chequear cada 10s)
+  timeout: 5s               (si no responde en 5s, es unhealthy)
+  retries: 10               (máximo 10 reintentos antes de marcar unhealthy)
+
+Esto significa:
+  - Primer chequeo: después de 180s
+  - Si falla, reintentar 10 veces
+  - Si los 10 fallan, marcar unhealthy
+  - Pero el contenedor NO se detiene (sigue corriendo)
+
+Por eso ves "unhealthy" pero el contenedor está vivo:
+  docker ps | grep unhealthy
+
+  El contenedor sigue corriendo, solo que falla el health check.
+  Generalmente es porque:
+  1. PostgreSQL tardó mucho en levantar
+  2. Network timeout
+  3. Migraciones Flyway tardaron más
+
+SOLUCIÓN: Esperar más (puede tardar 90+ segundos en PCs lentas)
+
+================================================================================
+NETWORK — CÓMO SE COMUNICAN LOS CONTAINERS
+================================================================================
+
+Docker Compose crea una network automática: proyecto-titulacion_default
+
+Los MS se llaman entre sí por hostname (NO localhost):
+  - ms-auth.proyecto-titulacion_default:8081
+  - ms-estudiantes.proyecto-titulacion_default:8082
+  - postgres.proyecto-titulacion_default:5432
+
+Pero desde tu máquina (IDE, Postman, curl):
+  - http://localhost:8081
+  - http://localhost:8082
+  - localhost:5432
+
+Esto es importante si debuggeas: los logs de MS verán "postgres" pero en tu IDE verás "localhost".
+
+================================================================================
+VOLUMES — PERSISTENCIA DE DATOS
+================================================================================
+
+Volúmenes configurados:
+
+  1. PostgreSQL: postgres_data:/var/lib/postgresql/data
+     - Persiste la BD entre restarts
+     - Se borra con: docker compose down -v
+
+  2. RabbitMQ: rabbitmq_data:/var/lib/rabbitmq
+     - Persiste colas y mensajes (en desarrollo)
+
+  3. MinIO: minio_data:/data
+     - Persiste archivos cargados
+
+Esto significa:
+  - Si haces `docker compose down`, se detienen pero no se pierden datos
+  - Si haces `docker compose down -v`, se pierden TODOS los datos
+
+Para desarrollo local, está bien hacer `down -v` (como reset).
+
+================================================================================
+LOGGING — CÓMO VER LOS LOGS
+================================================================================
+
+Ver logs de TODO:
+  docker compose -f infrastructure/docker/docker-compose.yml logs
+
+Ver logs de un MS específico:
+  docker logs -f ms-notificaciones
+  docker logs -f ms-reportes
+  docker logs -f postgres
+  docker logs -f rabbitmq
+
+Ver últimas N líneas:
+  docker logs --tail 50 ms-notificaciones
+
+Ver logs con timestamps:
+  docker logs -t -f ms-notificaciones
+
+Búsqueda de errores:
+  docker logs ms-notificaciones 2>&1 | grep -i error
+  docker logs ms-notificaciones 2>&1 | grep -i exception
+
+================================================================================
+DEBUGGING — CUANDO ALGO NO FUNCIONA
+================================================================================
+
+Escenario 1: Contenedor tarda mucho en levantar
+
+  docker compose logs postgres
+  → Ver si tiene error en migraciones Flyway
+
+  docker compose logs ms-auth
+  → Ver si está retry-ing conexión a BD
+
+Escenario 2: Contenedor "exited" (se murió)
+
+  docker compose logs ms-auth
+  → Ver qué error causó el exit
+
+  Común: Puerto ya en uso
+
+  Solución:
+    lsof -i :8081  (qué proceso ocupa el puerto)
+    kill -9 <PID>
+    docker compose up -d
+
+Escenario 3: BD no tiene datos (tablas vacías)
+
+  docker compose down -v  (borra TODOS los volúmenes)
+  docker compose up -d    (levanta limpio)
+
+  → Flyway va a ejecutar todas las migraciones (V1, V2, etc.)
+  → Seed data se carga automáticamente
+
+Escenario 4: RabbitMQ tiene colas muertas o mensajes atrasados
+
+  http://localhost:15672
+  → Ir a Queues
+  → Ver si hay mensajes en DLQ
+  → Purgar si es necesario
+
+================================================================================
+RECURSOS — CPU/MEMORIA
+================================================================================
+
+Docker Compose (por defecto) usa:
+  - CPU: Sin límite (usa lo que necesite)
+  - Memoria: Sin límite (pero host hace swap)
+
+Si tu máquina anda lenta:
+  1. Límitar recursos en docker-compose.yml:
+
+     postgresql:
+       deploy:
+         resources:
+           limits:
+             cpus: '1'
+             memory: 512M
+
+  2. O parar algunos containers que no uses:
+     docker stop ms-reportes ms-notificaciones
+     (Siguen en red, pero no consumen recursos)
+
+  3. O levantar solo infra:
+     docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
+     (PostgreSQL + RabbitMQ + MinIO, sin los MS)
+
+================================================================================
+REBUILD — CUANDO CAMBIAS EL CÓDIGO BACKEND
+================================================================================
+
+Cambias código de MS-Notificaciones:
+
+  docker compose down
+
+  (En el IDE o consola)
+  cd backend/ms-notificaciones
+  mvn clean install -DskipTests
+  docker build -f infrastructure/docker/Dockerfile.spring -t ms-notificaciones:latest .
+
+  docker compose up -d
+
+O más simple: que Docker reconstruya automáticamente:
+
+  docker compose up -d --build ms-notificaciones
+
+================================================================================
+COMANDOS MÁS ÚTILES
+================================================================================
+
+Ver estado:
+  docker compose -f infrastructure/docker/docker-compose.yml ps
+
+Ver logs en vivo:
+  docker compose -f infrastructure/docker/docker-compose.yml logs -f
+
+Detener TODO (pero guardar datos):
+  docker compose down
+
+Detener Y borrar datos:
+  docker compose down -v
+
+Reiniciar un servicio:
+  docker compose restart ms-notificaciones
+
+Entrar en un contenedor (shell):
+  docker exec -it ms-notificaciones bash
+  docker exec -it postgres bash
+  docker exec -it postgres psql -U escuela_user -d escuela_db
+
+Ejecutar query SQL:
+  docker exec -it postgres psql -U escuela_user -d escuela_db -c "SELECT * FROM notificaciones_schema.plantillas_email;"
+
+Ver variables de entorno en un contenedor:
+  docker exec ms-notificaciones env | grep JWT
+
+================================================================================
+TIPS PRO
+================================================================================
+
+1. Guardar docker-compose.yml en memory para acceso rápido:
+   alias dc="docker compose -f infrastructure/docker/docker-compose.yml"
+   dc ps
+   dc logs -f ms-notificaciones
+
+2. Script para rebuildear y levantar rápido:
+   #!/bin/bash
+   docker compose down
+   cd backend/ms-notificaciones
+   mvn clean install -DskipTests
+   docker compose up -d --build
+
+3. Ver solo los problemas:
+   docker compose logs | grep -i "error\|exception"
+
+4. Limpiar Docker (borrar imágenes no usadas, volúmenes huérfanos, etc.):
+   docker system prune -a --volumes
+
+================================================================================
+¡YA TIENES LA INFO! 🚀
+================================================================================
+
+Guarda este archivo como referencia.
+Lo vas a consultar constantemente en Sprint 12.
+
+Dudas sobre Docker:
+  → Google "docker [concepto]"
+  → Preguntá a Hernán
+  → Ver logs (siempre la respuesta está en los logs)
