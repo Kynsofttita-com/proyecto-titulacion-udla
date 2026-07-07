@@ -1,0 +1,239 @@
+================================================================================
+CONVENCIÓN DE COMMITS — Sprint 12
+================================================================================
+
+IMPORTANTE: Lee .github/CONTRIBUTING.md para detalles completos.
+Este archivo es un resumen rápido.
+
+================================================================================
+FORMATO DEL COMMIT
+================================================================================
+
+Patrón:
+  Sprint N (Tarea X - Descripción corta)
+
+Ejemplos válidos:
+  ✓ "Sprint 12 (Tarea 1 - CRUD Plantillas Email)"
+  ✓ "Sprint 12 (Tarea 1.1 - Service PlantillaEmail)"
+  ✓ "Sprint 12 (Tarea 2.3 - Export PDF con iText)"
+  ✓ "Sprint 12 (Fix Tarea 1 - Validación email regex)"
+
+Ejemplos INVÁLIDOS (NO hagas esto):
+  ✗ "Sprint 12 implementa notificaciones"
+  ✗ "feature: add email notifications"
+  ✗ "agregué validaciones"
+  ✗ "hotfix"
+
+================================================================================
+CONVENCIÓN DE BRANCHES
+================================================================================
+
+Pattern:
+  feature/sprint-N-X-descripcion-corta
+
+Ejemplos:
+  ✓ feature/sprint-12-1-plantillas-crud
+  ✓ feature/sprint-12-1-service-plantilla
+  ✓ feature/sprint-12-2-reportes-operacionales
+
+Cómo crear:
+  git checkout -b feature/sprint-12-1-plantillas-crud
+  # hacer cambios
+  git commit -m "Sprint 12 (Tarea 1 - Plantillas CRUD)"
+  git push origin feature/sprint-12-1-plantillas-crud
+
+================================================================================
+WORKFLOW DE PULL REQUEST (PR)
+================================================================================
+
+Paso 1: Crear rama desde main
+  git checkout main
+  git pull origin main
+  git checkout -b feature/sprint-12-X-descripcion
+
+Paso 2: Hacer cambios + commits
+  # Editar archivos
+  git add <archivo1> <archivo2>
+  git commit -m "Sprint 12 (Tarea X - Descripción)"
+
+Paso 3: Pushear rama
+  git push origin feature/sprint-12-X-descripcion
+
+Paso 4: Crear PR en GitHub
+  - Ir a: https://github.com/Kynsofttita-com/proyecto-titulacion-udla/pulls
+  - Click "New Pull Request"
+  - Base: main ← Compare: tu rama
+  - Título: "Sprint 12 (Tarea X - Descripción)"
+  - Descripción: Qué hace, cómo probarlo
+  - Click "Create Pull Request"
+
+Paso 5: Esperar CI
+  - GitHub Actions corre automáticamente:
+    ✓ backend-ci (Maven build + tests)
+    ✓ integration-tests (Postgres + RabbitMQ)
+  - Todos deben pasar ✅ (no puede haber rojo)
+
+Paso 6: Revisión de Hernán
+  - Hernán revisa el código
+  - Comenta cambios si es necesario
+  - Aprueba ("Approve")
+
+Paso 7: Mergear
+  - Click "Squash and merge"
+  - Confirmar merge
+  - Automáticamente entra a main
+
+Paso 8: Limpiar rama local
+  git checkout main
+  git pull origin main
+  git branch -D feature/sprint-12-X-descripcion
+
+================================================================================
+REGLAS IMPORTANTES
+================================================================================
+
+1. NUNCA commitees:
+   ✗ .env (contiene credenciales)
+   ✗ node_modules/ (instalar con npm install)
+   ✗ target/ (generar con mvn clean install)
+   ✗ .DS_Store, *.class, *.jar
+
+   (Ya están en .gitignore, pero asegúrate)
+
+2. UN commit = UNA tarea
+   ✓ "Sprint 12 (Tarea 1 - Plantillas CRUD)" — Bien
+   ✓ "Sprint 12 (Tarea 1.1 - Service)" — Bien
+   ✗ "Sprint 12 (Tareas 1, 2, 3, 4, 5)" — Mal
+
+3. UN PR = UN commit
+   - 1 rama = 1 commit
+   - 1 PR = 1 rama = 1 commit
+   - Si tienes múltiples commits, squashear antes de pushear
+
+   Cómo squashear (si ya hiciste múltiples commits):
+   git rebase -i HEAD~3  # (rebase de los últimos 3 commits)
+   # En el editor: cambiar "pick" a "squash" en commits 2 y 3
+   # Guardar (Ctrl+X si estás en nano)
+
+4. SIEMPRE testea antes de pushear
+   cd backend
+   mvn test  # Tests unitarios pasan
+   mvn verify -Dgroups=integration  # Tests de integración
+
+   No hagas push si los tests fallan.
+
+5. COMMIT MESSAGE EN ESPAÑOL
+   ✓ "Sprint 12 (Tarea 1 - CRUD Plantillas)"
+   ✓ "Sprint 12 (Fix Tarea 1 - Validación email)"
+   ✗ "Sprint 12 (Add email templates)" — No, inglés no
+
+================================================================================
+COMANDOS GIT RÁPIDOS
+================================================================================
+
+Ver estado:
+  git status
+
+Agregar archivos:
+  git add archivo1 archivo2
+  git add .  # Todos (CUIDADO: verificar que no agregues .env o target/)
+
+Commitear:
+  git commit -m "Sprint 12 (Tarea X - Descripción)"
+
+Pushear:
+  git push origin feature/sprint-12-X-descripcion
+
+Ver commits:
+  git log --oneline -5  # Últimos 5
+
+Ver diferencias:
+  git diff  # Cambios unstaged
+  git diff --staged  # Cambios staged
+
+Cambiar último commit (SOLO si no hiciste push):
+  git commit --amend -m "Sprint 12 (Tarea X - Nueva descripción)"
+
+Cancelar cambios en un archivo:
+  git checkout archivo
+
+================================================================================
+VALIDACIÓN PRE-PUSH
+================================================================================
+
+Antes de hacer `git push`:
+
+☑ Verificar que compiló:
+  mvn clean install -DskipTests
+
+☑ Verificar tests unitarios:
+  mvn test
+
+☑ Verificar que .env NO está staged:
+  git status | grep .env  # Debe estar vacío
+
+☑ Verificar que target/ NO está staged:
+  git status | grep target/  # Debe estar vacío
+
+☑ Revisar qué files estás commiteando:
+  git status  # Ver que solo están tus cambios
+
+☑ Revisar el commit message:
+  git log -1 --pretty=full  # Ver último commit
+
+Si todo ✓, entonces:
+  git push origin feature/sprint-12-X-descripcion
+
+================================================================================
+SI ALGO SALE MAL
+================================================================================
+
+"Hice commit pero no quería"
+  git reset HEAD~1  # Deshace el commit, pero mantiene los cambios
+  # O si no quieres los cambios:
+  git reset --hard HEAD~1
+
+"Pushée pero el commit estaba mal"
+  NO hagas `git push --force` (destruye historia)
+  En su lugar:
+  1. Haz un nuevo commit que FIXeé el problema:
+     git commit -m "Sprint 12 (Fix Tarea X - Corrección)"
+  2. Pushea normal:
+     git push origin feature/sprint-12-X-descripcion
+
+"Estoy en la rama equivocada"
+  git branch -a  # Ver todas
+  git checkout main  # Volver a main
+  git checkout -b feature/sprint-12-X-descripcion  # Crear rama correcta
+
+"Mi rama está behind de main"
+  git fetch origin
+  git rebase origin/main
+  # O merge:
+  git merge origin/main
+
+================================================================================
+REFERENCIAS
+================================================================================
+
+Leer completo: .github/CONTRIBUTING.md (en el repo)
+
+Dudas sobre Git:
+  → Google "git <concepto>" (hay muy buena documentación)
+  → Preguntá a Hernán
+
+Cheat sheet Git: https://github.github.com/training-kit/downloads/github-git-cheat-sheet.pdf
+
+================================================================================
+¡YA SABES! 🚀
+================================================================================
+
+Resumen rápido:
+  1. Branch: feature/sprint-12-X-descripcion
+  2. Commit: "Sprint 12 (Tarea X - Descripción)"
+  3. Tests: mvn test (pasan antes de pushear)
+  4. Push: git push origin feature/sprint-12-X-descripcion
+  5. PR: En GitHub, "Squash and merge" cuando CI pase
+  6. Main: Automáticamente actualizado
+
+¡A por ello!
