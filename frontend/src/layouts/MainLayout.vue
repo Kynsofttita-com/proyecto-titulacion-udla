@@ -54,6 +54,12 @@
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Notificaciones</p>
           <NavItem to="/plantillas"    icon="pi-envelope"  label="Plantillas" />
           <NavItem to="/log-envios"    icon="pi-history"   label="Histórico" />
+
+          <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Reportes</p>
+          <NavItem to="/reportes/operativos/estudiantes" icon="pi-chart-bar" label="Estudiantes" />
+          <NavItem to="/reportes/operativos/instructores" icon="pi-chart-bar" label="Instructores" />
+          <NavItem to="/reportes/operativos/vehiculos" icon="pi-chart-bar" label="Vehículos" />
+          <NavItem to="/reportes/operativos/asistencia" icon="pi-chart-bar" label="Asistencia" />
         </template>
 
         <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Mi cuenta</p>
