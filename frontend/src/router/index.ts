@@ -222,6 +222,24 @@ const routes: RouteRecordRaw[] = [
     name: 'ReporteAsistencia',
     component: () => import('@/views/reportes/operativos/ReporteAsistenciaView.vue'),
     meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/financieros/ingresos',
+    name: 'ReporteIngresos',
+    component: () => import('@/views/reportes/financieros/ReporteIngresosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/financieros/morosidad',
+    name: 'ReporteMorosidad',
+    component: () => import('@/views/reportes/financieros/ReporteMorosidadView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/financieros/recibos',
+    name: 'ReporteRecibos',
+    component: () => import('@/views/reportes/financieros/ReporteRecibosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
   }
 ]
 
