@@ -612,10 +612,12 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useDashboardStore } from '@/stores/dashboard'
 import api from '@/services/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const dashboardStore = useDashboardStore()
 const esAdmin = computed(() => authStore.currentRole === 'ADMIN')
 const esInstructor = computed(() => authStore.currentRole === 'INSTRUCTOR')
 const esEstudiante = computed(() => authStore.currentRole === 'ESTUDIANTE')
@@ -916,6 +918,13 @@ const finalizarClase = async (id: number) => {
 // Cargar datos para vista ADMIN / STAFF
 // =============================================================
 const cargarAdmin = async () => {
+  // Intentar cargar KPIs desde reportes (Sprint 11)
+  try {
+    await dashboardStore.obtenerKPIs()
+  } catch (err) {
+    console.log('KPIs no disponibles aún', err)
+  }
+
   const [est, ins, veh, asig, fact] = await Promise.allSettled([
       api.get('/estudiantes', { params: { size: 200 } }),
       api.get('/instructores', { params: { size: 200 } }),
