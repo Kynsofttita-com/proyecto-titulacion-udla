@@ -50,6 +50,10 @@
 
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Finanzas</p>
           <NavItem to="/cobros"        icon="pi-wallet"    label="Cobros y Pagos" />
+
+          <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Notificaciones</p>
+          <NavItem to="/plantillas"    icon="pi-envelope"  label="Plantillas" />
+          <NavItem to="/log-envios"    icon="pi-history"   label="Histórico" />
         </template>
 
         <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Mi cuenta</p>

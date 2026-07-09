@@ -186,6 +186,18 @@ const routes: RouteRecordRaw[] = [
     name: 'MisPagos',
     component: () => import('@/views/estudiantes/MisPagosView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/plantillas',
+    name: 'Plantillas',
+    component: () => import('@/views/notificaciones/PlantillasEmailView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/log-envios',
+    name: 'LogEnvios',
+    component: () => import('@/views/notificaciones/LogEnviosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
   }
 ]
 
