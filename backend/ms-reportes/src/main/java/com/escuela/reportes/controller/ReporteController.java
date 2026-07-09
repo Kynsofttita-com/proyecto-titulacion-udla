@@ -1,6 +1,8 @@
 package com.escuela.reportes.controller;
 
 import com.escuela.reportes.dto.CreateReporteOperativoRequest;
+import com.escuela.reportes.dto.DashboardKPIResponse;
+import com.escuela.reportes.dto.ReporteFinancieroResponse;
 import com.escuela.reportes.dto.ReporteOperativoResponse;
 import com.escuela.reportes.service.ReporteService;
 import jakarta.validation.Valid;
@@ -65,5 +67,51 @@ public class ReporteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(
             service.generarReporteHorasAsignaciones(request)
         );
+    }
+
+    @PostMapping("/ingresos-periodo")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ReporteFinancieroResponse> generarReporteIngresoPeriodo(
+        @Valid @RequestBody CreateReporteOperativoRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            service.generarReporteIngresoPeriodo(request)
+        );
+    }
+
+    @PostMapping("/saldos-estudiante")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ReporteFinancieroResponse> generarReporteSaldosEstudiante(
+        @Valid @RequestBody CreateReporteOperativoRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            service.generarReporteSaldosEstudiante(request)
+        );
+    }
+
+    @PostMapping("/morosidad")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ReporteFinancieroResponse> generarReporteMorosidad(
+        @Valid @RequestBody CreateReporteOperativoRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            service.generarReporteMorosidad(request)
+        );
+    }
+
+    @PostMapping("/recibos")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ReporteFinancieroResponse> generarReporteRecibos(
+        @Valid @RequestBody CreateReporteOperativoRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            service.generarReporteRecibos(request)
+        );
+    }
+
+    @GetMapping("/kpis")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<DashboardKPIResponse> obtenerDashboardKPIs() {
+        return ResponseEntity.ok(service.generarDashboardKPIs());
     }
 }
