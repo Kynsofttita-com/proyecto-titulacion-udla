@@ -23,6 +23,24 @@ public class NotificacionesExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(NotificacionNotFoundException.class)
+    public ProblemDetail handleNotificacionNotFound(NotificacionNotFoundException ex, WebRequest request) {
+        log.warn("Notificación no encontrada: {}", ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Recurso no encontrado");
+        problem.setProperty("timestamp", Instant.now());
+        return problem;
+    }
+
+    @ExceptionHandler(PreferenciaNotFoundException.class)
+    public ProblemDetail handlePreferenciaNotFound(PreferenciaNotFoundException ex, WebRequest request) {
+        log.warn("Preferencia no encontrada: {}", ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Recurso no encontrado");
+        problem.setProperty("timestamp", Instant.now());
+        return problem;
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
         log.warn("Argumento inválido: {}", ex.getMessage());
