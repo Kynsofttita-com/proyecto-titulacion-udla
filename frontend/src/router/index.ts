@@ -198,6 +198,30 @@ const routes: RouteRecordRaw[] = [
     name: 'LogEnvios',
     component: () => import('@/views/notificaciones/LogEnviosView.vue'),
     meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/operativos/estudiantes',
+    name: 'ReporteEstudiantes',
+    component: () => import('@/views/reportes/operativos/ReporteEstudiantesView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/operativos/instructores',
+    name: 'ReporteInstructores',
+    component: () => import('@/views/reportes/operativos/ReporteInstructoresView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/operativos/vehiculos',
+    name: 'ReporteVehiculos',
+    component: () => import('@/views/reportes/operativos/ReporteVehiculosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/operativos/asistencia',
+    name: 'ReporteAsistencia',
+    component: () => import('@/views/reportes/operativos/ReporteAsistenciaView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
   }
 ]
 
