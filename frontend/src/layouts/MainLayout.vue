@@ -109,10 +109,7 @@
         </div>
 
         <div class="flex items-center gap-1">
-          <button class="relative w-10 h-10 rounded-lg hover:bg-ink-100 text-ink-600 flex items-center justify-center transition">
-            <i class="pi pi-bell" />
-            <span class="absolute top-1.5 right-1.5 w-4 h-4 bg-danger-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center">2</span>
-          </button>
+          <NotificacionesDropdown />
           <button class="w-10 h-10 rounded-lg hover:bg-ink-100 text-ink-600 flex items-center justify-center transition" title="Ayuda">
             <i class="pi pi-question-circle" />
           </button>
@@ -178,6 +175,7 @@ import Menu from 'primevue/menu'
 import Tooltip from 'primevue/tooltip'
 import NavItem from '@/components/ui/NavItem.vue'
 import Avatar from '@/components/ui/Avatar.vue'
+import NotificacionesDropdown from '@/components/notificaciones/NotificacionesDropdown.vue'
 
 const vTooltip = Tooltip
 
