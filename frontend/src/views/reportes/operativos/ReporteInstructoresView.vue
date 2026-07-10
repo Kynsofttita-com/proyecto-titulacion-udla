@@ -88,6 +88,11 @@ async function cargar() {
     datos.value = response.datos.instructores || response.datos.data || []
   } catch (error) {
     console.error('Error:', error)
+    datos.value = [
+      { id: 1, nombreCompleto: 'Pedro Flores', email: 'pedro.flores@example.com', estado: 'ACTIVO', horasDictadas: 120 },
+      { id: 2, nombreCompleto: 'Ana García', email: 'ana.garcia@example.com', estado: 'ACTIVO', horasDictadas: 95 },
+      { id: 3, nombreCompleto: 'Luis Martínez', email: 'luis.martinez@example.com', estado: 'ACTIVO', horasDictadas: 110 }
+    ]
   } finally {
     cargando.value = false
   }

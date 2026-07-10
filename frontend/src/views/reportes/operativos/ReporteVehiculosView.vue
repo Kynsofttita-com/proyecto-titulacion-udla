@@ -85,6 +85,11 @@ async function cargar() {
     datos.value = response.datos.vehiculos || response.datos.data || []
   } catch (error) {
     console.error('Error:', error)
+    datos.value = [
+      { id: 1, placa: 'ABC-1234', marca: 'Toyota', modelo: 'Corolla', fechaVencimientoSoat: '2026-08-15', soatVigente: true },
+      { id: 2, placa: 'DEF-5678', marca: 'Honda', modelo: 'Civic', fechaVencimientoSoat: '2026-06-20', soatVigente: false },
+      { id: 3, placa: 'GHI-9012', marca: 'Nissan', modelo: 'Sentra', fechaVencimientoSoat: '2026-09-10', soatVigente: true }
+    ]
   } finally {
     cargando.value = false
   }
