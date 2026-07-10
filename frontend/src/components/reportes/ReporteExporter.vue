@@ -28,8 +28,7 @@ interface Props {
   tienesDatos?: boolean
 }
 
-defineProps<Props>()
-
+const props = defineProps<Props>()
 const cargando = ref(false)
 
 async function exportar(formato: 'EXCEL' | 'CSV') {
@@ -48,6 +47,4 @@ async function exportar(formato: 'EXCEL' | 'CSV') {
     cargando.value = false
   }
 }
-
-const props = defineProps<Props>()
 </script>
