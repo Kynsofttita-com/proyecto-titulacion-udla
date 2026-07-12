@@ -70,7 +70,7 @@ public class Estudiante extends BaseEntity {
      * <p>Default = PENDIENTE_FACTURACION porque todo estudiante nuevo se crea en
      * PRE_MATRICULADO sin facturas aun.</p>
      */
-    @Column(name = "situacion_pago", nullable = false, length = 20)
+    @Column(name = "situacion_pago", nullable = false, length = 30)
     @lombok.Builder.Default
     private String situacionPago = "PENDIENTE_FACTURACION";
 
