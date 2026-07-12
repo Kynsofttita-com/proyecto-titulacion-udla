@@ -186,6 +186,60 @@ const routes: RouteRecordRaw[] = [
     name: 'MisPagos',
     component: () => import('@/views/estudiantes/MisPagosView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/plantillas',
+    name: 'Plantillas',
+    component: () => import('@/views/notificaciones/PlantillasEmailView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/log-envios',
+    name: 'LogEnvios',
+    component: () => import('@/views/notificaciones/LogEnviosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/operativos/estudiantes',
+    name: 'ReporteEstudiantes',
+    component: () => import('@/views/reportes/operativos/ReporteEstudiantesView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/operativos/instructores',
+    name: 'ReporteInstructores',
+    component: () => import('@/views/reportes/operativos/ReporteInstructoresView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/operativos/vehiculos',
+    name: 'ReporteVehiculos',
+    component: () => import('@/views/reportes/operativos/ReporteVehiculosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/operativos/asistencia',
+    name: 'ReporteAsistencia',
+    component: () => import('@/views/reportes/operativos/ReporteAsistenciaView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/financieros/ingresos',
+    name: 'ReporteIngresos',
+    component: () => import('@/views/reportes/financieros/ReporteIngresosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/financieros/morosidad',
+    name: 'ReporteMorosidad',
+    component: () => import('@/views/reportes/financieros/ReporteMorosidadView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/reportes/financieros/recibos',
+    name: 'ReporteRecibos',
+    component: () => import('@/views/reportes/financieros/ReporteRecibosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
   }
 ]
 
