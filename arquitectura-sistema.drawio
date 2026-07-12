@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-07-12T18:45:00.000Z" agent="5.0" version="20.0.0" type="device">
+  <diagram id="arquitectura-sistema" name="Arquitectura Sistema Completo">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- TÍTULO -->
+        <mxCell id="titulo" value="ARQUITECTURA DEL SISTEMA - ESCUELAS DE CONDUCCIÓN" style="text;html=1;fontSize=20;fontStyle=1;align=center;verticalAlign=top;fillColor=#667eea;fontColor=#ffffff;rounded=1;padding=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="20" width="1400" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- CAPA 1: CLIENTE/FRONTEND -->
+        <mxCell id="cliente" value="🖥️ CLIENTE&#xa;Vue.js 3 SPA&#xa;TypeScript + Vite&#xa;PrimeVue + Responsive" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4caf50;fontColor=#ffffff;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="600" y="100" width="400" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- LÍNEA DE SEPARACIÓN -->
+        <mxCell id="linea1" value="" style="line;html=1;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#cccccc;dashed=1;" edge="1" parent="1" source="cliente" target="gateway">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- CAPA 2: API GATEWAY -->
+        <mxCell id="gateway" value="🌐 API GATEWAY:8080&#xa;Spring Cloud Gateway&#xa;• Routing&#xa;• JWT Validation&#xa;• Rate Limiting&#xa;• CORS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2196f3;fontColor=#ffffff;fontSize=11;align=center;verticalAlign=top;padding=5;" vertex="1" parent="1">
+          <mxGeometry x="550" y="220" width="500" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- CAPA 3: MICROSERVICIOS (8) -->
+        <mxCell id="ms-auth" value="🔐 MS-Auth:8081&#xa;Autenticación&#xa;JWT + Roles" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#388e3c;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="100" y="350" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ms-est" value="📚 MS-Estudiantes:8082&#xa;Matrícula&#xa;Progreso" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d32f2f;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="260" y="350" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ms-inst" value="👨‍🏫 MS-Instructores:8083&#xa;Perfiles&#xa;Disponibilidad" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f57c00;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="420" y="350" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ms-veh" value="🚗 MS-Vehículos:8084&#xa;Flota&#xa;SOAT/RTV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7b1fa2;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="580" y="350" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ms-asig" value="📅 MS-Asignaciones:8085&#xa;Programación&#xa;6 Validaciones" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0097a7;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="740" y="350" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ms-cob" value="💰 MS-Cobros:8086&#xa;Facturación&#xa;Pagos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c2185b;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="900" y="350" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ms-rep" value="📊 MS-Reportes:8087&#xa;KPIs&#xa;Exportación" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#558b2f;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="350" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ms-not" value="📧 MS-Notificaciones:8088&#xa;Emails&#xa;Alertas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e64a19;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="350" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- CONEXIONES GATEWAY -> MICROSERVICIOS -->
+        <mxCell id="con-gw-auth" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#999999;exitX=0.1;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gateway" target="ms-auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="con-gw-est" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#999999;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gateway" target="ms-est">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="con-gw-inst" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#999999;exitX=0.35;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gateway" target="ms-inst">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="con-gw-veh" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#999999;exitX=0.45;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gateway" target="ms-veh">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="con-gw-asig" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#999999;exitX=0.55;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gateway" target="ms-asig">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="con-gw-cob" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#999999;exitX=0.65;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gateway" target="ms-cob">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="con-gw-rep" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#999999;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gateway" target="ms-rep">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="con-gw-not" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#999999;exitX=0.9;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gateway" target="ms-not">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- CAPA 4: SERVICIOS DE INFRAESTRUCTURA -->
+        <mxCell id="eureka" value="🔍 Eureka:8761&#xa;Service Discovery" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00bcd4;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="100" y="500" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="postgresql" value="💾 PostgreSQL:5432&#xa;9 Schemas&#xa;Flyway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f57c00;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="260" y="500" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rabbitmq" value="🐰 RabbitMQ:5672&#xa;Messaging&#xa;Async Events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#9c27b0;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="420" y="500" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="minio" value="🗄️ MinIO:9000&#xa;S3 Storage&#xa;Documents" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5d4037;fontColor=#ffffff;fontSize=10;align=center;verticalAlign=top;padding=3;" vertex="1" parent="1">
+          <mxGeometry x="580" y="500" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- CONEXIONES MICROSERVICIOS -> INFRAESTRUCTURA -->
+        <mxCell id="con-ms-eureka" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;exitX=0.3;exitY=1;entryX=0.5;entryY=0;dashed=1;" edge="1" parent="1" source="ms-auth" target="eureka">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="con-ms-db" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor#666666;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ms-asig" target="postgresql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="con-ms-mq" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;exitX=0.7;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ms-cob" target="rabbitmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ESTADÍSTICAS LADO DERECHO -->
+        <mxCell id="stats" value="📊 ESTADÍSTICAS&#xa;━━━━━━━━━━━━━━━&#xa;• 8 Microservicios&#xa;• 172 Tests&#xa;• 80%+ Coverage&#xa;• 9 Schemas BD&#xa;• 14 Containers&#xa;• 15 Validaciones" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;fontSize=10;align=left;verticalAlign=top;padding=10;border=2;borderColor=#667eea;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="100" width="180" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- LEYENDA DE CONEXIONES -->
+        <mxCell id="legend" value="━━ HTTP/Feign (Síncrono)&#xa;┄┄┄ RabbitMQ (Asíncrono)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffacd;fontColor=#333333;fontSize=9;align=left;verticalAlign=top;padding=5;" vertex="1" parent="1">
+          <mxGeometry x="100" y="600" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- TABLA DE MICROSERVICIOS -->
+        <mxCell id="tabla-titulo" value="MICROSERVICIOS DETALLADOS" style="text;html=1;fontSize=14;fontStyle=1;align=left;verticalAlign=top;fillColor=#667eea;fontColor=#ffffff;padding=5;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="680" width="400" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tabla" value="&lt;div style='font-family:Arial;font-size:9px;text-align:left;padding:5px;'&gt;&lt;b&gt;MS-Auth&lt;/b&gt;: JWT + RBAC + Lockout&lt;br/&gt;&lt;b&gt;MS-Estudiantes&lt;/b&gt;: Matrícula + Progreso&lt;br/&gt;&lt;b&gt;MS-Instructores&lt;/b&gt;: Perfil + Certificaciones&lt;br/&gt;&lt;b&gt;MS-Vehículos&lt;/b&gt;: Flota + Mantenimiento + SOAT/RTV&lt;br/&gt;&lt;b&gt;MS-Asignaciones&lt;/b&gt;: 6 Validaciones + Sync km/horas&lt;br/&gt;&lt;b&gt;MS-Cobros&lt;/b&gt;: Facturación + Cuotas + Pagos&lt;br/&gt;&lt;b&gt;MS-Reportes&lt;/b&gt;: KPI + Exportación PDF/Excel&lt;br/&gt;&lt;b&gt;MS-Notificaciones&lt;/b&gt;: Email async + RabbitMQ&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;fontColor=#333333;fontSize=9;align=left;verticalAlign=top;padding=10;border=1;borderColor=#cccccc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="710" width="700" height="110" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="procesos-principales" name="Procesos Principales">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="titulo2" value="PROCESOS PRINCIPALES DEL SISTEMA" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=top;fillColor=#667eea;fontColor=#ffffff;rounded=1;padding=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="20" width="1400" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- PROCESO 1: AUTENTICACIÓN -->
+        <mxCell id="p1-titulo" value="1️⃣ AUTENTICACIÓN" style="text;html=1;fontSize=12;fontStyle=1;align=left;fillColor=#e3f2fd;padding=5;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="80" width="300" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1-paso1" value="Usuario ingresa credenciales" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;fontColor=#000000;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="115" width="140" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1-arrow1" value="→" style="text;html=1;fontSize=16;align=center;" vertex="1" parent="1">
+          <mxGeometry x="250" y="115" width="30" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1-paso2" value="MS-Auth valida (bcrypt)" style="rounded=1;whiteSpace=wrap;html=1;fillColor#64b5f6;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="280" y="115" width="140" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1-arrow2" value="→" style="text;html=1;fontSize=16;align=center;" vertex="1" parent="1">
+          <mxGeometry x="430" y="115" width="30" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1-paso3" value="JWT 120min + HttpOnly cookie" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#42a5f5;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="460" y="115" width="140" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- PROCESO 2: MATRÍCULA -->
+        <mxCell id="p2-titulo" value="2️⃣ MATRÍCULA ESTUDIANTE" style="text;html=1;fontSize=12;fontStyle=1;align=left;fillColor=#f3e5f5;padding=5;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="80" width="300" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2-paso1" value="Validar cédula Ecuador" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ce93d8;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="700" y="115" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2-arrow1" value="→" style="text;html=1;fontSize=16;align=center;" vertex="1" parent="1">
+          <mxGeometry x="840" y="115" width="30" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2-paso2" value="Crear en BD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ba68c8;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="870" y="115" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2-arrow2" value="→" style="text;html=1;fontSize=16;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="115" width="30" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2-paso3" value="Enviar email bienvenida" style="rounded=1;whiteSpace=wrap;html=1;fillColor#ab47bc;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="115" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- PROCESO 3: PROGRAMACIÓN -->
+        <mxCell id="p3-titulo" value="3️⃣ PROGRAMACIÓN DE CLASE (6 VALIDACIONES)" style="text;html=1;fontSize=12;fontStyle=1;align=left;fillColor=#fff3e0;padding=5;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="180" width="700" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p3-validaciones" value="1. Instructor disponible ✓&#xa;2. Vehículo disponible ✓&#xa;3. Estudiante activo ✓&#xa;4. SOAT vigente ✓&#xa;5. RTV vigente ✓&#xa;6. Sin conflictos horarios ✓" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;fontColor=#333333;fontSize=9;align=left;verticalAlign=top;padding=5;" vertex="1" parent="1">
+          <mxGeometry x="100" y="215" width="200" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p3-arrow" value="OK" style="text;html=1;fontSize=12;align=center;fontColor=#4caf50;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="250" width="50" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p3-resultado" value="Crear Asignación&#xa;+ Sync km/horas&#xa;+ Notificaciones" style="rounded=1;whiteSpace=wrap;html=1;fillColor#ffd54f;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="360" y="215" width="140" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- PROCESO 4: COBROS -->
+        <mxCell id="p4-titulo" value="4️⃣ COBROS Y PAGOS" style="text;html=1;fontSize=12;fontStyle=1;align=left;fillColor=#fce4ec;padding=5;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="180" width="300" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4-paso1" value="Clase completa" style="rounded=1;whiteSpace=wrap;html=1;fillColor#f8bbd0;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="700" y="215" width="100" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4-arrow1" value="→" style="text;html=1;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="810" y="215" width="30" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4-paso2" value="Crear factura" style="rounded=1;whiteSpace=wrap;html=1;fillColor#f48fb1;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="840" y="215" width="100" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4-arrow2" value="→" style="text;html=1;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="950" y="215" width="30" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4-paso3" value="Pago/Cuotas" style="rounded=1;whiteSpace=wrap;html=1;fillColor#ec407a;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="980" y="215" width="100" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- PROCESO 5: REPORTES -->
+        <mxCell id="p5-titulo" value="5️⃣ REPORTES Y ANALYTICS" style="text;html=1;fontSize=12;fontStyle=1;align=left;fillColor#e8f5e9;padding=5;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="180" width="300" height="25" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p5-paso1" value="Dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor#c8e6c9;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="215" width="90" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p5-arrow1" value="→" style="text;html=1;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="215" width="30" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p5-paso2" value="Agregar datos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d6a7;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="215" width="90" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p5-arrow2" value="→" style="text;html=1;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1330" y="215" width="30" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p5-paso3" value="Exportar" style="rounded=1;whiteSpace=wrap;html=1;fillColor#81c784;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="215" width="90" height="40" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+</mxfile>
