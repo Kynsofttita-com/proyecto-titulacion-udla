@@ -8,27 +8,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 
-@FeignClient(name = "ms-cobros", url = "${app.services.cobros.url:http://ms-cobros:8084}")
+@FeignClient(name = "ms-cobros", url = "${app.services.cobros.url:http://ms-cobros:8086}")
 public interface CobrosClient {
 
-    @GetMapping("/cobros/estudiante/{id}")
+    @GetMapping("/facturas/estudiante/{id}")
     JsonNode obtenerEstudianteCobros(@PathVariable Long id);
 
-    @GetMapping("/cobros")
+    @GetMapping("/facturas")
     JsonNode listarCobros(
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "50") int size
     );
 
-    @GetMapping("/cobros/rango")
+    @GetMapping("/facturas")
     JsonNode listarPorRango(
-        @RequestParam LocalDate desde,
-        @RequestParam LocalDate hasta,
+        @RequestParam(required = false) LocalDate desde,
+        @RequestParam(required = false) LocalDate hasta,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "50") int size
     );
 
-    @GetMapping("/cobros/estado")
+    @GetMapping("/pagos")
     JsonNode listarPorEstado(
         @RequestParam String estado,
         @RequestParam(defaultValue = "0") int page,
