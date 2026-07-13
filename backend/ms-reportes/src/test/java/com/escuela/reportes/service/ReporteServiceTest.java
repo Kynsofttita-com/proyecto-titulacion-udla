@@ -3,6 +3,7 @@ package com.escuela.reportes.service;
 import com.escuela.reportes.client.CobrosClient;
 import com.escuela.reportes.client.EstudiantesClient;
 import com.escuela.reportes.client.InstructoresClient;
+import com.escuela.reportes.client.VehiculosClient;
 import com.escuela.reportes.dto.CreateReporteOperativoRequest;
 import com.escuela.reportes.dto.ReporteOperativoResponse;
 import com.escuela.reportes.repository.EjecucionReporteRepository;
@@ -36,6 +37,9 @@ class ReporteServiceTest {
 
     @Mock
     private InstructoresClient instructoresClient;
+
+    @Mock
+    private VehiculosClient vehiculosClient;
 
     @Mock
     private EjecucionReporteRepository ejecucionReporteRepository;
@@ -102,11 +106,22 @@ class ReporteServiceTest {
 
     @Test
     void testGenerarReporteVehiculosSoat() {
+        List<Map<String, Object>> vehiculos = new ArrayList<>();
+        Map<String, Object> veh = new HashMap<>();
+        veh.put("id", 1L);
+        veh.put("placa", "ABC-1234");
+        veh.put("marca", "Toyota");
+        vehiculos.add(veh);
+
+        JsonNode jsonNode = new ObjectMapper().valueToTree(vehiculos);
+        when(vehiculosClient.listarAlertasSoat(30)).thenReturn(jsonNode);
+
         ReporteOperativoResponse response = service.generarReporteVehiculosSoat(request);
 
         assertNotNull(response);
         assertEquals("vehiculos_soat", response.tipoReporte());
-        assertEquals(0, response.totalRegistros().intValue());
+        assertEquals(1, response.totalRegistros().intValue());
+        verify(vehiculosClient).listarAlertasSoat(30);
     }
 
     @Test
