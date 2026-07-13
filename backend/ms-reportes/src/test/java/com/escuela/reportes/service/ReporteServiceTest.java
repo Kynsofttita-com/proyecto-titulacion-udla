@@ -12,8 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -63,8 +63,11 @@ class ReporteServiceTest {
         est.put("nombre", "Juan Pérez");
         estudiantes.add(est);
 
-        Page<Map<String, Object>> page = new PageImpl<>(estudiantes);
-        when(estudiantesClient.listarEstudiantes(0, 1000)).thenReturn(page);
+        Map<String, Object> pageJson = new HashMap<>();
+        pageJson.put("content", estudiantes);
+        pageJson.put("totalElements", 1L);
+        JsonNode jsonNode = new ObjectMapper().valueToTree(pageJson);
+        when(estudiantesClient.listarEstudiantes(0, 1000)).thenReturn(jsonNode);
 
         ReporteOperativoResponse response = service.generarReporteEstudiantesActivos(request);
 
@@ -83,8 +86,11 @@ class ReporteServiceTest {
         inst.put("nombre", "Carlos López");
         instructores.add(inst);
 
-        Page<Map<String, Object>> page = new PageImpl<>(instructores);
-        when(instructoresClient.listarInstructores(0, 100)).thenReturn(page);
+        Map<String, Object> pageJson = new HashMap<>();
+        pageJson.put("content", instructores);
+        pageJson.put("totalElements", 1L);
+        JsonNode jsonNode = new ObjectMapper().valueToTree(pageJson);
+        when(instructoresClient.listarInstructores(0, 100)).thenReturn(jsonNode);
 
         ReporteOperativoResponse response = service.generarReporteInstructoresHoras(request);
 
