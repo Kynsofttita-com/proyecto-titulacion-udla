@@ -1,5 +1,6 @@
 package com.escuela.instructores.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
 
 public record InstructorListResponse(
@@ -14,4 +15,11 @@ public record InstructorListResponse(
         LocalDate licenciaCaducidad,
         String estado,
         String tipoContrato
-) {}
+) {
+    @JsonProperty("nombreCompleto")
+    public String getNombreCompleto() {
+        if (nombre == null) return "";
+        if (apellido == null) return nombre;
+        return nombre + " " + apellido;
+    }
+}
