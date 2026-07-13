@@ -3,6 +3,7 @@ package com.escuela.reportes.service;
 import com.escuela.reportes.client.CobrosClient;
 import com.escuela.reportes.client.EstudiantesClient;
 import com.escuela.reportes.client.InstructoresClient;
+import com.escuela.reportes.client.VehiculosClient;
 import com.escuela.reportes.dto.CreateReporteOperativoRequest;
 import com.escuela.reportes.dto.DashboardKPIResponse;
 import com.escuela.reportes.dto.ReporteFinancieroResponse;
@@ -31,6 +32,7 @@ public class ReporteService {
     private final EstudiantesClient estudiantesClient;
     private final CobrosClient cobrosClient;
     private final InstructoresClient instructoresClient;
+    private final VehiculosClient vehiculosClient;
     private final EjecucionReporteRepository ejecucionReporteRepository;
 
     private String obtenerNombreEstudiante(Long estudianteId) {
@@ -150,7 +152,21 @@ public class ReporteService {
 
         try {
             Map<String, Object> datos = new HashMap<>();
-            datos.put("mensaje", "Reporte de vehículos SOAT - Implementar en T10.3");
+            JsonNode response = vehiculosClient.listarAlertasSoat(30);
+
+            List<Map<String, Object>> vehiculosList = new ArrayList<>();
+            long totalVehiculos = 0;
+
+            if (response != null && response.isArray()) {
+                response.forEach(node ->
+                    vehiculosList.add(new ObjectMapper().convertValue(node, Map.class))
+                );
+                totalVehiculos = vehiculosList.size();
+            }
+
+            datos.put("totalVehiculos", totalVehiculos);
+            datos.put("diasAlerta", 30);
+            datos.put("vehiculos", vehiculosList);
 
             long duracion = System.currentTimeMillis() - inicio;
             log.info("Reporte vehiculos_soat generado en {}ms", duracion);
@@ -160,7 +176,7 @@ public class ReporteService {
                 datos,
                 LocalDateTime.now(),
                 duracion,
-                0
+                (int) totalVehiculos
             );
         } catch (Exception ex) {
             long duracion = System.currentTimeMillis() - inicio;
