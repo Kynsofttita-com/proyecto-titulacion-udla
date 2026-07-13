@@ -53,7 +53,6 @@
 
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Notificaciones</p>
           <NavItem to="/plantillas"    icon="pi-envelope"  label="Plantillas" />
-          <NavItem to="/log-envios"    icon="pi-history"   label="Histórico" />
 
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Reportes Operativos</p>
           <NavItem to="/reportes/operativos/estudiantes" icon="pi-chart-bar" label="Estudiantes" />
