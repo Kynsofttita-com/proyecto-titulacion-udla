@@ -9,14 +9,17 @@ import com.escuela.reportes.dto.ReporteFinancieroResponse;
 import com.escuela.reportes.dto.ReporteOperativoResponse;
 import com.escuela.reportes.entity.EjecucionReporte;
 import com.escuela.reportes.repository.EjecucionReporteRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -36,10 +39,31 @@ public class ReporteService {
 
         try {
             Map<String, Object> datos = new HashMap<>();
-            Page<Map<String, Object>> estudiantes = estudiantesClient.listarEstudiantes(0, 1000);
+            JsonNode response = estudiantesClient.listarEstudiantes(0, 1000);
 
-            datos.put("totalActivos", estudiantes.getTotalElements());
-            datos.put("estudiantes", estudiantes.getContent());
+            List<Map<String, Object>> estudiantesLista = new ArrayList<>();
+            long totalActivos = 0;
+
+            if (response != null) {
+                // Spring devuelve la respuesta PageImpl como JSON con estructura: { content: [...], totalElements: N, ... }
+                if (response.has("content")) {
+                    response.get("content").forEach(node ->
+                        estudiantesLista.add(new ObjectMapper().convertValue(node, Map.class))
+                    );
+                }
+                if (response.has("totalElements")) {
+                    totalActivos = response.get("totalElements").asLong();
+                } else if (response.isArray()) {
+                    estudiantesLista.clear();
+                    response.forEach(node ->
+                        estudiantesLista.add(new ObjectMapper().convertValue(node, Map.class))
+                    );
+                    totalActivos = estudiantesLista.size();
+                }
+            }
+
+            datos.put("totalActivos", totalActivos);
+            datos.put("estudiantes", estudiantesLista);
 
             long duracion = System.currentTimeMillis() - inicio;
             log.info("Reporte estudiantes_activos generado en {}ms", duracion);
@@ -49,7 +73,7 @@ public class ReporteService {
                 datos,
                 LocalDateTime.now(),
                 duracion,
-                (int) estudiantes.getTotalElements()
+                (int) totalActivos
             );
         } catch (Exception ex) {
             log.error("Error generando reporte estudiantes_activos", ex);
@@ -63,10 +87,30 @@ public class ReporteService {
 
         try {
             Map<String, Object> datos = new HashMap<>();
-            Page<Map<String, Object>> instructores = instructoresClient.listarInstructores(0, 100);
+            JsonNode response = instructoresClient.listarInstructores(0, 100);
 
-            datos.put("totalInstructores", instructores.getTotalElements());
-            datos.put("instructores", instructores.getContent());
+            List<Map<String, Object>> instructoresLista = new ArrayList<>();
+            long totalInstructores = 0;
+
+            if (response != null) {
+                if (response.has("content")) {
+                    response.get("content").forEach(node ->
+                        instructoresLista.add(new ObjectMapper().convertValue(node, Map.class))
+                    );
+                }
+                if (response.has("totalElements")) {
+                    totalInstructores = response.get("totalElements").asLong();
+                } else if (response.isArray()) {
+                    instructoresLista.clear();
+                    response.forEach(node ->
+                        instructoresLista.add(new ObjectMapper().convertValue(node, Map.class))
+                    );
+                    totalInstructores = instructoresLista.size();
+                }
+            }
+
+            datos.put("totalInstructores", totalInstructores);
+            datos.put("instructores", instructoresLista);
 
             long duracion = System.currentTimeMillis() - inicio;
             log.info("Reporte instructores_horas generado en {}ms", duracion);
@@ -76,7 +120,7 @@ public class ReporteService {
                 datos,
                 LocalDateTime.now(),
                 duracion,
-                (int) instructores.getTotalElements()
+                (int) totalInstructores
             );
         } catch (Exception ex) {
             log.error("Error generando reporte instructores_horas", ex);
@@ -178,17 +222,46 @@ public class ReporteService {
         long inicio = System.currentTimeMillis();
         try {
             Map<String, Object> datos = new HashMap<>();
-            Page<Map<String, Object>> cobros = cobrosClient.listarPorRango(request.desde(), request.hasta(), 0, 1000);
+            JsonNode response = cobrosClient.listarPorRango(request.desde(), request.hasta(), 0, 1000);
 
-            long totalIngresos = cobros.getContent().stream()
-                .mapToLong(c -> ((Number) c.getOrDefault("monto", 0)).longValue())
-                .sum();
+            List<Map<String, Object>> cobrosList = new ArrayList<>();
+            long totalIngresos = 0;
+            long totalTransacciones = 0;
+
+            if (response != null && response.has("content")) {
+                response.get("content").forEach(node ->
+                    cobrosList.add(new ObjectMapper().convertValue(node, Map.class))
+                );
+                totalTransacciones = response.get("totalElements").asLong(0);
+                totalIngresos = cobrosList.stream()
+                    .mapToLong(c -> {
+                        Object monto = c.getOrDefault("montoOriginal", c.getOrDefault("monto", 0));
+                        if (monto instanceof Number) {
+                            return ((Number) monto).longValue();
+                        }
+                        return 0;
+                    })
+                    .sum();
+            }
+
+            List<Map<String, Object>> ingresos = new ArrayList<>();
+            for (Map<String, Object> factura : cobrosList) {
+                Map<String, Object> ingreso = new HashMap<>();
+                ingreso.put("id", factura.get("id"));
+                ingreso.put("estudianteNombre", "Estudiante " + factura.get("estudianteId"));
+                ingreso.put("concepto", factura.get("tipoPago") != null ? "Pago " + factura.get("tipoPago") : "Pago");
+                ingreso.put("monto", factura.get("montoOriginal"));
+                ingreso.put("fecha", factura.get("fechaEmision"));
+                ingreso.put("estado", factura.get("estado"));
+                ingresos.add(ingreso);
+            }
 
             datos.put("totalIngresos", totalIngresos);
-            datos.put("totalTransacciones", cobros.getTotalElements());
+            datos.put("totalTransacciones", totalTransacciones);
             datos.put("periodoDesde", request.desde());
             datos.put("periodoHasta", request.hasta());
-            datos.put("promedioTransaccion", cobros.getTotalElements() > 0 ? totalIngresos / cobros.getTotalElements() : 0);
+            datos.put("promedioTransaccion", totalTransacciones > 0 ? totalIngresos / totalTransacciones : 0);
+            datos.put("ingresos", ingresos);
 
             long duracion = System.currentTimeMillis() - inicio;
             log.info("Reporte ingresos_periodo generado en {}ms", duracion);
@@ -220,9 +293,20 @@ public class ReporteService {
         long inicio = System.currentTimeMillis();
         try {
             Map<String, Object> datos = new HashMap<>();
-            Page<Map<String, Object>> morosos = cobrosClient.listarPorEstado("VENCIDO", 0, 500);
-            datos.put("totalMorosos", morosos.getTotalElements());
-            datos.put("cobrosMorosos", morosos.getContent());
+            JsonNode response = cobrosClient.listarPorEstado("VENCIDO", 0, 500);
+
+            List<Map<String, Object>> morosos = new ArrayList<>();
+            long totalMorosos = 0;
+
+            if (response != null && response.has("content")) {
+                response.get("content").forEach(node ->
+                    morosos.add(new ObjectMapper().convertValue(node, Map.class))
+                );
+                totalMorosos = response.get("totalElements").asLong(0);
+            }
+
+            datos.put("totalMorosos", totalMorosos);
+            datos.put("cobrosMorosos", morosos);
             long duracion = System.currentTimeMillis() - inicio;
             log.info("Reporte morosidad generado en {}ms", duracion);
             return new ReporteFinancieroResponse("morosidad", datos, LocalDateTime.now(), duracion);
@@ -237,9 +321,28 @@ public class ReporteService {
         long inicio = System.currentTimeMillis();
         try {
             Map<String, Object> datos = new HashMap<>();
-            Page<Map<String, Object>> recibos = cobrosClient.listarCobros(0, 100);
-            datos.put("totalRecibos", recibos.getTotalElements());
-            datos.put("recibos", recibos.getContent());
+            JsonNode response = cobrosClient.listarCobros(0, 100);
+
+            List<Map<String, Object>> recibos = new ArrayList<>();
+            long totalRecibos = 0;
+
+            if (response != null && response.has("content")) {
+                response.get("content").forEach(node -> {
+                    Map<String, Object> factura = new ObjectMapper().convertValue(node, Map.class);
+                    Map<String, Object> recibo = new HashMap<>();
+                    recibo.put("id", factura.get("id"));
+                    recibo.put("numero", factura.get("numeroFactura"));
+                    recibo.put("estudianteNombre", "Estudiante " + factura.get("estudianteId"));
+                    recibo.put("monto", factura.get("montoOriginal"));
+                    recibo.put("fechaEmision", factura.get("fechaEmision"));
+                    recibo.put("estado", factura.get("estado"));
+                    recibos.add(recibo);
+                });
+                totalRecibos = response.get("totalElements").asLong(0);
+            }
+
+            datos.put("totalRecibos", totalRecibos);
+            datos.put("recibos", recibos);
             long duracion = System.currentTimeMillis() - inicio;
             log.info("Reporte recibos generado en {}ms", duracion);
             return new ReporteFinancieroResponse("recibos", datos, LocalDateTime.now(), duracion);
@@ -254,13 +357,24 @@ public class ReporteService {
         long inicio = System.currentTimeMillis();
         try {
             Map<String, Object> kpis = new HashMap<>();
-            Page<Map<String, Object>> estudiantes = estudiantesClient.listarEstudiantes(0, 1);
-            Page<Map<String, Object>> instructores = instructoresClient.listarInstructores(0, 1);
-            kpis.put("totalEstudiantes", estudiantes.getTotalElements());
-            kpis.put("totalInstructores", instructores.getTotalElements());
+            JsonNode estudiantesResponse = estudiantesClient.listarEstudiantes(0, 1);
+            JsonNode instructoresResponse = instructoresClient.listarInstructores(0, 1);
+
+            long totalEstudiantes = 0;
+            long totalInstructores = 0;
+
+            if (estudiantesResponse != null && estudiantesResponse.has("totalElements")) {
+                totalEstudiantes = estudiantesResponse.get("totalElements").asLong(0);
+            }
+            if (instructoresResponse != null && instructoresResponse.has("totalElements")) {
+                totalInstructores = instructoresResponse.get("totalElements").asLong(0);
+            }
+
+            kpis.put("totalEstudiantes", totalEstudiantes);
+            kpis.put("totalInstructores", totalInstructores);
             kpis.put("tasaAsistencia", 85.5);
             kpis.put("ingresosEsteMes", 0);
-            kpis.put("estudiantesActivos", estudiantes.getTotalElements());
+            kpis.put("estudiantesActivos", totalEstudiantes);
             kpis.put("horasProgramadas", 0);
             long duracion = System.currentTimeMillis() - inicio;
             log.info("Dashboard KPIs generado en {}ms", duracion);
