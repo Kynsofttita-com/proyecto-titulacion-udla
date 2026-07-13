@@ -33,6 +33,22 @@ public class ReporteService {
     private final InstructoresClient instructoresClient;
     private final EjecucionReporteRepository ejecucionReporteRepository;
 
+    private String obtenerNombreEstudiante(Long estudianteId) {
+        try {
+            JsonNode estudianteNode = estudiantesClient.obtenerEstudiante(estudianteId);
+            if (estudianteNode != null) {
+                String nombre = estudianteNode.has("nombre") ? estudianteNode.get("nombre").asText("") : "";
+                String apellido = estudianteNode.has("apellido") ? estudianteNode.get("apellido").asText("") : "";
+                if (!nombre.isEmpty() || !apellido.isEmpty()) {
+                    return (nombre + " " + apellido).trim();
+                }
+            }
+        } catch (Exception ex) {
+            log.debug("No se pudo obtener nombre del estudiante {}: {}", estudianteId, ex.getMessage());
+        }
+        return "Estudiante " + estudianteId;
+    }
+
     @Transactional(readOnly = true)
     public ReporteOperativoResponse generarReporteEstudiantesActivos(CreateReporteOperativoRequest request) {
         long inicio = System.currentTimeMillis();
@@ -248,7 +264,8 @@ public class ReporteService {
             for (Map<String, Object> factura : cobrosList) {
                 Map<String, Object> ingreso = new HashMap<>();
                 ingreso.put("id", factura.get("id"));
-                ingreso.put("estudianteNombre", "Estudiante " + factura.get("estudianteId"));
+                Long estudianteId = ((Number) factura.get("estudianteId")).longValue();
+                ingreso.put("estudianteNombre", obtenerNombreEstudiante(estudianteId));
                 ingreso.put("concepto", factura.get("tipoPago") != null ? "Pago " + factura.get("tipoPago") : "Pago");
                 ingreso.put("monto", factura.get("montoOriginal"));
                 ingreso.put("fecha", factura.get("fechaEmision"));
@@ -332,7 +349,8 @@ public class ReporteService {
                     Map<String, Object> recibo = new HashMap<>();
                     recibo.put("id", factura.get("id"));
                     recibo.put("numero", factura.get("numeroFactura"));
-                    recibo.put("estudianteNombre", "Estudiante " + factura.get("estudianteId"));
+                    Long estudianteId = ((Number) factura.get("estudianteId")).longValue();
+                    recibo.put("estudianteNombre", obtenerNombreEstudiante(estudianteId));
                     recibo.put("monto", factura.get("montoOriginal"));
                     recibo.put("fechaEmision", factura.get("fechaEmision"));
                     recibo.put("estado", factura.get("estado"));
