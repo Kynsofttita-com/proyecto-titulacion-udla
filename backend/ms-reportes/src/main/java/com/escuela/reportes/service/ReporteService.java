@@ -234,7 +234,13 @@ public class ReporteService {
                 );
                 totalTransacciones = response.get("totalElements").asLong(0);
                 totalIngresos = cobrosList.stream()
-                    .mapToLong(c -> ((Number) c.getOrDefault("monto", 0)).longValue())
+                    .mapToLong(c -> {
+                        Object monto = c.getOrDefault("montoOriginal", c.getOrDefault("monto", 0));
+                        if (monto instanceof Number) {
+                            return ((Number) monto).longValue();
+                        }
+                        return 0;
+                    })
                     .sum();
             }
 
