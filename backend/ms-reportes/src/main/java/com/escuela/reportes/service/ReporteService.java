@@ -244,11 +244,24 @@ public class ReporteService {
                     .sum();
             }
 
+            List<Map<String, Object>> ingresos = new ArrayList<>();
+            for (Map<String, Object> factura : cobrosList) {
+                Map<String, Object> ingreso = new HashMap<>();
+                ingreso.put("id", factura.get("id"));
+                ingreso.put("estudianteNombre", "Estudiante " + factura.get("estudianteId"));
+                ingreso.put("concepto", factura.get("tipoPago") != null ? "Pago " + factura.get("tipoPago") : "Pago");
+                ingreso.put("monto", factura.get("montoOriginal"));
+                ingreso.put("fecha", factura.get("fechaEmision"));
+                ingreso.put("estado", factura.get("estado"));
+                ingresos.add(ingreso);
+            }
+
             datos.put("totalIngresos", totalIngresos);
             datos.put("totalTransacciones", totalTransacciones);
             datos.put("periodoDesde", request.desde());
             datos.put("periodoHasta", request.hasta());
             datos.put("promedioTransaccion", totalTransacciones > 0 ? totalIngresos / totalTransacciones : 0);
+            datos.put("ingresos", ingresos);
 
             long duracion = System.currentTimeMillis() - inicio;
             log.info("Reporte ingresos_periodo generado en {}ms", duracion);
@@ -314,9 +327,17 @@ public class ReporteService {
             long totalRecibos = 0;
 
             if (response != null && response.has("content")) {
-                response.get("content").forEach(node ->
-                    recibos.add(new ObjectMapper().convertValue(node, Map.class))
-                );
+                response.get("content").forEach(node -> {
+                    Map<String, Object> factura = new ObjectMapper().convertValue(node, Map.class);
+                    Map<String, Object> recibo = new HashMap<>();
+                    recibo.put("id", factura.get("id"));
+                    recibo.put("numero", factura.get("numeroFactura"));
+                    recibo.put("estudianteNombre", "Estudiante " + factura.get("estudianteId"));
+                    recibo.put("monto", factura.get("montoOriginal"));
+                    recibo.put("fechaEmision", factura.get("fechaEmision"));
+                    recibo.put("estado", factura.get("estado"));
+                    recibos.add(recibo);
+                });
                 totalRecibos = response.get("totalElements").asLong(0);
             }
 
