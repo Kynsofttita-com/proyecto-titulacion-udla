@@ -152,7 +152,17 @@ public class ReporteService {
 
         try {
             Map<String, Object> datos = new HashMap<>();
+
+            log.debug("VehiculosClient inyectado: {}", vehiculosClient != null);
+            log.debug("Llamando a vehiculosClient.listarVehiculos(0, 100)");
+
             JsonNode response = vehiculosClient.listarVehiculos(0, 100);
+
+            log.debug("Respuesta recibida. Response null: {}", response == null);
+            if (response != null) {
+                log.debug("Respuesta JSON: {}", response.toString());
+                log.debug("Tiene 'content': {}, Es array: {}", response.has("content"), response.isArray());
+            }
 
             List<Map<String, Object>> vehiculosList = new ArrayList<>();
             long totalVehiculos = 0;
@@ -160,19 +170,26 @@ public class ReporteService {
             if (response != null) {
                 // Spring devuelve la respuesta PageImpl como JSON con estructura: { content: [...], totalElements: N, ... }
                 if (response.has("content")) {
+                    log.debug("Procesando como Page con 'content'");
                     response.get("content").forEach(node -> {
                         Map<String, Object> veh = new ObjectMapper().convertValue(node, Map.class);
                         vehiculosList.add(veh);
                     });
                     totalVehiculos = response.get("totalElements").asLong(0);
+                    log.debug("Vehículos extraídos de content: {}", vehiculosList.size());
                 } else if (response.isArray()) {
-                    // Si es un array directo
+                    log.debug("Procesando como array directo");
                     response.forEach(node -> {
                         Map<String, Object> veh = new ObjectMapper().convertValue(node, Map.class);
                         vehiculosList.add(veh);
                     });
                     totalVehiculos = vehiculosList.size();
+                    log.debug("Vehículos extraídos de array: {}", vehiculosList.size());
+                } else {
+                    log.warn("Respuesta no tiene 'content' ni es array. Estructura desconocida: {}", response.toString());
                 }
+            } else {
+                log.warn("VehiculosClient devolvió null");
             }
 
             log.info("Total vehículos obtenidos: {}", totalVehiculos);
