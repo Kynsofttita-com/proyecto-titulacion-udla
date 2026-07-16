@@ -46,4 +46,11 @@ public interface VehiculoRepository extends JpaRepository<Vehiculo, Long> {
         ORDER BY v.soatVencimiento ASC
     """)
     List<Vehiculo> findConSoatPorVencer(@Param("limite") LocalDate limite);
+
+    /** Query alternativa SIN filtrar por deletedAt - para debugging. */
+    @Query("""
+        SELECT v FROM Vehiculo v
+        ORDER BY v.id
+    """)
+    Page<Vehiculo> buscarTodos(Pageable pageable);
 }

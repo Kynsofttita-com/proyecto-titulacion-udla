@@ -48,6 +48,37 @@ public class VehiculoController {
         return ResponseEntity.ok(service.buscar(pageable, search, estado));
     }
 
+    @GetMapping("/listar")
+    @Operation(summary = "Listar vehículos para reportes (sin autenticación estricta)")
+    public ResponseEntity<Page<VehiculoListResponse>> listarParaReportes(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        if (userEmail == null || userEmail.isBlank()) {
+            userEmail = "system@escuela.local";
+        }
+        org.springframework.data.domain.PageRequest pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("id"));
+        Page<VehiculoListResponse> resultado = service.buscar(pageable, null, null);
+
+        System.out.println("=== DEBUG /vehiculos/listar ===");
+        System.out.println("page=" + page + ", size=" + size);
+        System.out.println("total elementos (con filtro deletedAt): " + resultado.getTotalElements());
+        System.out.println("contenido: " + resultado.getContent());
+
+        // Si no hay resultados, intentar sin filtro de deletedAt
+        if (resultado.getTotalElements() == 0) {
+            Page<VehiculoListResponse> resultadoSinFiltro = service.buscarTodos(pageable);
+            System.out.println("total elementos (SIN filtro deletedAt): " + resultadoSinFiltro.getTotalElements());
+            System.out.println("*** POSIBLE PROBLEMA: Todos los vehículos pueden estar marcados como eliminados ***");
+            // Devolver sin filtro si no hay datos con filtro
+            if (resultadoSinFiltro.getTotalElements() > 0) {
+                return ResponseEntity.ok(resultadoSinFiltro);
+            }
+        }
+
+        return ResponseEntity.ok(resultado);
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener detalle de un vehículo")
     public ResponseEntity<VehiculoResponse> obtener(

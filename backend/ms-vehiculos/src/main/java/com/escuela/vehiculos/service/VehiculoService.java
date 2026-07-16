@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 public interface VehiculoService {
     Page<VehiculoListResponse> findAll(Pageable pageable);
     Page<VehiculoListResponse> buscar(Pageable pageable, String search, String estado);
+    Page<VehiculoListResponse> buscarTodos(Pageable pageable);
     VehiculoResponse findById(Long id);
     VehiculoResponse create(CreateVehiculoRequest request);
     VehiculoResponse update(Long id, UpdateVehiculoRequest request);

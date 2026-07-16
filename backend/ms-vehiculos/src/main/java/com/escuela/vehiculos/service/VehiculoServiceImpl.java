@@ -53,6 +53,12 @@ public class VehiculoServiceImpl implements VehiculoService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<VehiculoListResponse> buscarTodos(Pageable pageable) {
+        return repository.buscarTodos(pageable).map(getMapper()::toListResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public VehiculoResponse findById(Long id) {
         Vehiculo vehiculo = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new VehiculoNotFoundException(id));

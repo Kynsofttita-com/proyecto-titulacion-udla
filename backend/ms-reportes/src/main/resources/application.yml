@@ -170,6 +170,6 @@ app:
     instructores:
       url: ${MS_INSTRUCTORES_URL:http://ms-instructores:8083}
     vehiculos:
-      url: ${MS_VEHICULOS_URL:http://ms-vehiculos:8085}
+      url: ${MS_VEHICULOS_URL:http://ms-vehiculos:8084}
     cobros:
       url: ${MS_COBROS_URL:http://ms-cobros:8086}
