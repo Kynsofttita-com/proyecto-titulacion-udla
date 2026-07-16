@@ -23,6 +23,21 @@ public class NotificacionService {
     private final NotificacionRepository repository;
     private final NotificacionMapper mapper;
 
+    public NotificacionResponse crearNotificacion(Long usuarioId, String titulo, String mensaje, String tipo, String prioridad) {
+        Notificacion notificacion = new Notificacion();
+        notificacion.setUsuarioId(usuarioId);
+        notificacion.setTitulo(titulo);
+        notificacion.setMensaje(mensaje);
+        notificacion.setTipo(tipo);
+        notificacion.setPrioridad(prioridad);
+        notificacion.setLeida(false);
+        notificacion.setFechaCreacion(LocalDateTime.now());
+
+        Notificacion saved = repository.save(notificacion);
+        log.info("Notificación creada: id={}, usuarioId={}, tipo={}", saved.getId(), usuarioId, tipo);
+        return mapper.toResponse(saved);
+    }
+
     @Transactional(readOnly = true)
     public NotificacionResponse obtenerPorId(Long id) {
         Notificacion notificacion = repository.findById(id)

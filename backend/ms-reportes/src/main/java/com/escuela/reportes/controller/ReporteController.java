@@ -4,13 +4,19 @@ import com.escuela.reportes.dto.CreateReporteOperativoRequest;
 import com.escuela.reportes.dto.DashboardKPIResponse;
 import com.escuela.reportes.dto.ReporteFinancieroResponse;
 import com.escuela.reportes.dto.ReporteOperativoResponse;
+import com.escuela.reportes.service.ReporteExportService;
 import com.escuela.reportes.service.ReporteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/reportes")
@@ -18,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class ReporteController {
 
     private final ReporteService service;
+    private final ReporteExportService exportService;
 
     @PostMapping("/estudiantes-activos")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
@@ -113,5 +120,56 @@ public class ReporteController {
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<DashboardKPIResponse> obtenerDashboardKPIs() {
         return ResponseEntity.ok(service.generarDashboardKPIs());
+    }
+
+    @PostMapping("/exportar/pdf")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<byte[]> exportarAPDF(
+        @RequestParam String titulo,
+        @RequestBody List<Map<String, Object>> datos
+    ) {
+        byte[] pdf = exportService.exportarAPDF(titulo, datos);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+            .filename(titulo.replace(" ", "_") + ".pdf")
+            .build());
+        headers.set("Content-Type", "application/pdf");
+        return ResponseEntity.ok()
+            .headers(headers)
+            .body(pdf);
+    }
+
+    @PostMapping("/exportar/excel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<byte[]> exportarAExcel(
+        @RequestParam String titulo,
+        @RequestBody Map<String, Object> datos
+    ) {
+        byte[] excel = exportService.exportarAExcel(titulo, datos);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+            .filename(titulo.replace(" ", "_") + ".xlsx")
+            .build());
+        headers.set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        return ResponseEntity.ok()
+            .headers(headers)
+            .body(excel);
+    }
+
+    @PostMapping("/exportar/csv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<byte[]> exportarACSV(
+        @RequestParam String titulo,
+        @RequestBody Map<String, Object> datos
+    ) {
+        byte[] csv = exportService.exportarACSV(titulo, datos);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+            .filename(titulo.replace(" ", "_") + ".csv")
+            .build());
+        headers.set("Content-Type", "text/csv");
+        return ResponseEntity.ok()
+            .headers(headers)
+            .body(csv);
     }
 }
