@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @FeignClient(name = "ms-vehiculos", url = "${app.services.vehiculos.url:http://ms-vehiculos:8084}")
 public interface VehiculosClient {
 
-    @GetMapping("/vehiculos")
+    @GetMapping("/vehiculos/listar")
     JsonNode listarVehiculos(
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "100") int size
