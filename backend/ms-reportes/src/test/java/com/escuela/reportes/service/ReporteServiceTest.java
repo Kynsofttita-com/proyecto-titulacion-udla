@@ -113,15 +113,19 @@ class ReporteServiceTest {
         veh.put("marca", "Toyota");
         vehiculos.add(veh);
 
-        JsonNode jsonNode = new ObjectMapper().valueToTree(vehiculos);
-        when(vehiculosClient.listarAlertasSoat(30)).thenReturn(jsonNode);
+        Map<String, Object> pageData = new HashMap<>();
+        pageData.put("content", vehiculos);
+        pageData.put("totalElements", 1L);
+
+        JsonNode jsonNode = new ObjectMapper().valueToTree(pageData);
+        when(vehiculosClient.listarVehiculos(0, 100)).thenReturn(jsonNode);
 
         ReporteOperativoResponse response = service.generarReporteVehiculosSoat(request);
 
         assertNotNull(response);
         assertEquals("vehiculos_soat", response.tipoReporte());
         assertEquals(1, response.totalRegistros().intValue());
-        verify(vehiculosClient).listarAlertasSoat(30);
+        verify(vehiculosClient).listarVehiculos(0, 100);
     }
 
     @Test
