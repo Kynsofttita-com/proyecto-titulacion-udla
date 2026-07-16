@@ -1,17 +1,17 @@
 <template>
   <div class="flex gap-2">
     <button
-      @click="exportar('EXCEL')"
-      :disabled="cargando || !tienesDatos"
-      class="px-3 py-2 bg-success-600 text-white rounded-lg hover:bg-success-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
+      disabled
+      title="Exportación en desarrollo"
+      class="px-3 py-2 bg-success-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
     >
       <i class="pi pi-file-excel" />
       Excel
     </button>
     <button
-      @click="exportar('CSV')"
-      :disabled="cargando || !tienesDatos"
-      class="px-3 py-2 bg-info-600 text-white rounded-lg hover:bg-info-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
+      disabled
+      title="Exportación en desarrollo"
+      class="px-3 py-2 bg-info-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
     >
       <i class="pi pi-file" />
       CSV

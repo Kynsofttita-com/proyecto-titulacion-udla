@@ -184,8 +184,8 @@ services:
   # MS-Vehículos
   ms-vehiculos:
     build:
-      context: ./backend/ms-vehiculos
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: ms-vehiculos/Dockerfile
     container_name: proyecto-ms-vehiculos
     environment:
       SPRING_APPLICATION_NAME: ms-vehiculos
