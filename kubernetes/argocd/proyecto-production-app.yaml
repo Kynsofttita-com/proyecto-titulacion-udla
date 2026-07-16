@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: proyecto-production
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: default
+
+  # Fuente: repositorio Git con Kustomize
+  source:
+    repoURL: https://github.com/Kynsofttita-com/proyecto-titulacion-udla.git
+    targetRevision: main
+    path: kubernetes/kustomize/overlays/production
+
+  # Destino: cluster de producción
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: proyecto-production
+
+  # Politica de sincronización más conservadora
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=background
+
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Manual sync para producción (más seguro)
+  # automated: NOT enabled
+
+  # Ignorar diferencias esperadas
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/replicas
+    - /metadata/generation
+
+  # Información de la aplicación
+  info:
+  - name: Environment
+    value: Production
+  - name: Documentation
+    value: https://github.com/Kynsofttita-com/proyecto-titulacion-udla
+  - name: Support
+    value: "#devops en Slack"

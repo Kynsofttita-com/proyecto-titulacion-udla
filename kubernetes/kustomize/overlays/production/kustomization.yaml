@@ -1,0 +1,82 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Heredar de base
+bases:
+  - ../../base
+
+# Namespace para producción
+namespace: proyecto-production
+
+# Replicas para producción (3 por servicio)
+replicas:
+  - name: ms-auth
+    count: 3
+  - name: ms-estudiantes
+    count: 3
+  - name: ms-instructores
+    count: 2
+  - name: ms-vehiculos
+    count: 2
+  - name: ms-asignaciones
+    count: 2
+  - name: ms-cobros
+    count: 3
+  - name: ms-reportes
+    count: 2
+  - name: ms-notificaciones
+    count: 2
+
+# Etiquetas específicas de producción
+commonLabels:
+  environment: production
+  tier: critical
+
+commonAnnotations:
+  sla: "99.9"
+  backup: "enabled"
+  monitoring: "critical"
+
+# Patches para producción (recursos aumentados)
+patchesStrategicMerge:
+  - replica-patch.yaml
+  - resource-patch-prod.yaml
+  - hpa-patch.yaml
+
+# ConfigMap de producción
+configMapGenerator:
+  - name: app-config
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - SPRING_PROFILES_ACTIVE=prod
+
+# Secretos de producción (referencias externas)
+secretGenerator:
+  - name: db-credentials
+    envs:
+      - db-prod.env
+
+# Imágenes con tag de versión específica
+images:
+  - name: ms-auth
+    newTag: v1.0.0
+  - name: ms-estudiantes
+    newTag: v1.0.0
+  - name: ms-instructores
+    newTag: v1.0.0
+  - name: ms-vehiculos
+    newTag: v1.0.0
+  - name: ms-asignaciones
+    newTag: v1.0.0
+  - name: ms-cobros
+    newTag: v1.0.0
+  - name: ms-reportes
+    newTag: v1.0.0
+  - name: ms-notificaciones
+    newTag: v1.0.0
+
+# Network policies
+resources:
+  - network-policy.yaml
+  - pod-disruption-budget.yaml
