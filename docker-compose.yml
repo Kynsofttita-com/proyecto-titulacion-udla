@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Base de Datos
   postgresql:
@@ -13,7 +11,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/infrastructure/database/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -57,10 +54,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 180s
     networks:
       - proyecto-network
     depends_on:
       - postgresql
+      - rabbitmq
 
   # API Gateway
   api-gateway:
@@ -73,10 +72,12 @@ services:
       SERVER_PORT: 8080
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/proyecto_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
     ports:
       - "8080:8080"
     healthcheck:
@@ -84,6 +85,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 180s
     networks:
       - proyecto-network
     depends_on:
@@ -105,10 +107,12 @@ services:
       SERVER_PORT: 8081
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/proyecto_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
     ports:
       - "8081:8081"
     healthcheck:
@@ -122,6 +126,10 @@ services:
     depends_on:
       eureka:
         condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   # MS-Estudiantes
   ms-estudiantes:
@@ -134,10 +142,12 @@ services:
       SERVER_PORT: 8082
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/proyecto_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
     ports:
       - "8082:8082"
     healthcheck:
@@ -151,6 +161,10 @@ services:
     depends_on:
       eureka:
         condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   # MS-Instructores
   ms-instructores:
@@ -163,10 +177,12 @@ services:
       SERVER_PORT: 8083
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/proyecto_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
     ports:
       - "8083:8083"
     healthcheck:
@@ -180,6 +196,10 @@ services:
     depends_on:
       eureka:
         condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   # MS-Vehículos
   ms-vehiculos:
@@ -192,10 +212,12 @@ services:
       SERVER_PORT: 8084
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/proyecto_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
     ports:
       - "8084:8084"
     healthcheck:
@@ -209,6 +231,10 @@ services:
     depends_on:
       eureka:
         condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   # MS-Asignaciones
   ms-asignaciones:
@@ -221,10 +247,15 @@ services:
       SERVER_PORT: 8085
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/proyecto_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
+      FEIGN_MS_ESTUDIANTES_URL: http://ms-estudiantes:8082
+      FEIGN_MS_INSTRUCTORES_URL: http://ms-instructores:8083
+      FEIGN_MS_VEHICULOS_URL: http://ms-vehiculos:8084
     ports:
       - "8085:8085"
     healthcheck:
@@ -238,6 +269,10 @@ services:
     depends_on:
       eureka:
         condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   # MS-Cobros
   ms-cobros:
@@ -250,10 +285,14 @@ services:
       SERVER_PORT: 8086
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/proyecto_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
+      FEIGN_MS_ESTUDIANTES_URL: http://ms-estudiantes:8082
+      FEIGN_MS_AUTH_URL: http://ms-auth:8081
     ports:
       - "8086:8086"
     healthcheck:
@@ -267,6 +306,10 @@ services:
     depends_on:
       eureka:
         condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   # MS-Reportes
   ms-reportes:
@@ -279,10 +322,12 @@ services:
       SERVER_PORT: 8087
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/proyecto_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
     ports:
       - "8087:8087"
     healthcheck:
@@ -296,6 +341,10 @@ services:
     depends_on:
       eureka:
         condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   # MS-Notificaciones
   ms-notificaciones:
@@ -308,10 +357,12 @@ services:
       SERVER_PORT: 8088
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/proyecto_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
     ports:
       - "8088:8088"
     healthcheck:
@@ -325,6 +376,10 @@ services:
     depends_on:
       eureka:
         condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   # Frontend (Vue.js)
   frontend:
@@ -335,24 +390,25 @@ services:
     environment:
       VITE_API_URL: http://localhost:8080
     ports:
-      - "3000:3000"
+      - "3000:80"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost/"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 60s
     networks:
       - proyecto-network
     depends_on:
       api-gateway:
         condition: service_healthy
 
-  # Base de datos - Admin (Adminer para ver BD)
+  # Adminer - Admin BD
   adminer:
     image: adminer:latest
     container_name: proyecto-adminer
     ports:
-      - "8088:8080"
+      - "8089:8080"
     environment:
       ADMINER_DEFAULT_SERVER: postgresql
     networks:

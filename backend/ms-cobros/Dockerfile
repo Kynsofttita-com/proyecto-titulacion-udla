@@ -1,16 +1,16 @@
-
+# Multi-stage Dockerfile para MS-Cobros
 FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /workspace
 
 COPY . /workspace
 
-RUN mvn -B -pl ms-vehiculos -am clean package -DskipTests \
-    && cp ms-vehiculos/target/*.jar /workspace/app.jar
+RUN mvn -B -pl ms-cobros -am clean package -DskipTests \
+    && cp ms-cobros/target/*.jar /workspace/app.jar
 
 FROM eclipse-temurin:21-jre-alpine
 
-ARG SERVICE_PORT=8084
+ARG SERVICE_PORT=8086
 
 RUN apk add --no-cache curl tzdata && \
     cp /usr/share/zoneinfo/America/Guayaquil /etc/localtime && \
