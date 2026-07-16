@@ -40,8 +40,8 @@ services:
   # Service Discovery
   eureka:
     build:
-      context: ./backend/
-      dockerfile: eureka-server/Dockerfile
+      context: ./backend/eureka-server
+      dockerfile: Dockerfile
     container_name: proyecto-eureka
     environment:
       SPRING_APPLICATION_NAME: eureka-server
@@ -64,8 +64,8 @@ services:
   # API Gateway
   api-gateway:
     build:
-      context: ./backend/
-      dockerfile: api-gateway/Dockerfile
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
     container_name: proyecto-gateway
     environment:
       SPRING_APPLICATION_NAME: api-gateway
@@ -99,8 +99,8 @@ services:
   # MS-Auth
   ms-auth:
     build:
-      context: ./backend/
-      dockerfile: ms-auth/Dockerfile
+      context: ./backend/ms-auth
+      dockerfile: Dockerfile
     container_name: proyecto-ms-auth
     environment:
       SPRING_APPLICATION_NAME: ms-auth
@@ -134,8 +134,8 @@ services:
   # MS-Estudiantes
   ms-estudiantes:
     build:
-      context: ./backend/
-      dockerfile: ms-estudiantes/Dockerfile
+      context: ./backend/ms-estudiantes
+      dockerfile: Dockerfile
     container_name: proyecto-ms-estudiantes
     environment:
       SPRING_APPLICATION_NAME: ms-estudiantes
@@ -169,8 +169,8 @@ services:
   # MS-Instructores
   ms-instructores:
     build:
-      context: ./backend/
-      dockerfile: ms-instructores/Dockerfile
+      context: ./backend/ms-instructores
+      dockerfile: Dockerfile
     container_name: proyecto-ms-instructores
     environment:
       SPRING_APPLICATION_NAME: ms-instructores
@@ -204,8 +204,8 @@ services:
   # MS-Vehículos
   ms-vehiculos:
     build:
-      context: ./backend/
-      dockerfile: ms-vehiculos/Dockerfile
+      context: ./backend/ms-vehiculos
+      dockerfile: Dockerfile
     container_name: proyecto-ms-vehiculos
     environment:
       SPRING_APPLICATION_NAME: ms-vehiculos
@@ -239,8 +239,8 @@ services:
   # MS-Asignaciones
   ms-asignaciones:
     build:
-      context: ./backend/
-      dockerfile: ms-asignaciones/Dockerfile
+      context: ./backend/ms-asignaciones
+      dockerfile: Dockerfile
     container_name: proyecto-ms-asignaciones
     environment:
       SPRING_APPLICATION_NAME: ms-asignaciones
@@ -277,8 +277,8 @@ services:
   # MS-Cobros
   ms-cobros:
     build:
-      context: ./backend/
-      dockerfile: ms-cobros/Dockerfile
+      context: ./backend/ms-cobros
+      dockerfile: Dockerfile
     container_name: proyecto-ms-cobros
     environment:
       SPRING_APPLICATION_NAME: ms-cobros
@@ -314,8 +314,8 @@ services:
   # MS-Reportes
   ms-reportes:
     build:
-      context: ./backend/
-      dockerfile: ms-reportes/Dockerfile
+      context: ./backend/ms-reportes
+      dockerfile: Dockerfile
     container_name: proyecto-ms-reportes
     environment:
       SPRING_APPLICATION_NAME: ms-reportes
@@ -349,8 +349,8 @@ services:
   # MS-Notificaciones
   ms-notificaciones:
     build:
-      context: ./backend/
-      dockerfile: ms-notificaciones/Dockerfile
+      context: ./backend/ms-notificaciones
+      dockerfile: Dockerfile
     container_name: proyecto-ms-notificaciones
     environment:
       SPRING_APPLICATION_NAME: ms-notificaciones

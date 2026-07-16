@@ -30,8 +30,19 @@
         <i class="pi pi-spin pi-spinner text-brand-600 text-2xl" />
       </div>
 
+      <div v-else-if="error" class="py-8 px-4 bg-red-50 rounded-lg border border-red-200">
+        <div class="flex items-center gap-3">
+          <i class="pi pi-exclamation-circle text-red-600 text-2xl" />
+          <div>
+            <p class="font-semibold text-red-900">Error al generar el reporte</p>
+            <p class="text-red-700 text-sm">{{ error }}</p>
+            <p class="text-red-600 text-xs mt-2">Asegúrate de que hay vehículos registrados en el sistema</p>
+          </div>
+        </div>
+      </div>
+
       <div v-else-if="datos.length === 0" class="py-12">
-        <EmptyState icon="pi pi-inbox" title="Sin datos" description="Genera el reporte" />
+        <EmptyState icon="pi pi-car" title="Sin datos disponibles" description="No hay vehículos registrados en el sistema" />
       </div>
 
       <table v-else class="w-full text-sm">
@@ -70,6 +81,7 @@ import reportesService from '@/services/reportes'
 
 const datos = ref<any[]>([])
 const cargando = ref(false)
+const error = ref<string>('')
 
 function formatearFecha(fecha: string): string {
   if (!fecha) return '--'
@@ -78,18 +90,31 @@ function formatearFecha(fecha: string): string {
 
 async function cargar() {
   cargando.value = true
+  error.value = ''
   try {
     const response = await reportesService.generarReporteVehiculosSoat({
       tipoReporte: 'VEHICULOS_SOAT'
     })
-    datos.value = response.datos.vehiculos || response.datos.data || []
-  } catch (error) {
-    console.error('Error:', error)
-    datos.value = [
-      { id: 1, placa: 'ABC-1234', marca: 'Toyota', modelo: 'Corolla', fechaVencimientoSoat: '2026-08-15', soatVigente: true },
-      { id: 2, placa: 'DEF-5678', marca: 'Honda', modelo: 'Civic', fechaVencimientoSoat: '2026-06-20', soatVigente: false },
-      { id: 3, placa: 'GHI-9012', marca: 'Nissan', modelo: 'Sentra', fechaVencimientoSoat: '2026-09-10', soatVigente: true }
-    ]
+
+    // Extraer datos del reporte
+    const vehiculos = response.datos?.vehiculos || []
+    console.log('Vehículos recibidos:', vehiculos)
+
+    // Mapear a formato esperado si es necesario
+    datos.value = vehiculos.map((v: any) => ({
+      id: v.id,
+      placa: v.placa,
+      marca: v.marca,
+      modelo: v.modelo,
+      fechaVencimientoSoat: v.fecha_soat || v.fechaSoat || v.fecha_vencimiento_soat,
+      soatVigente: v.soat_vigente !== false && v.soatVigente !== false,
+      estado: v.estado,
+      diasParaVencer: v.dias_para_vencer || v.diasParaVencer
+    }))
+  } catch (err: any) {
+    console.error('Error generando reporte:', err)
+    error.value = err.response?.data?.message || err.message || 'Error al generar el reporte. Intenta de nuevo.'
+    datos.value = []
   } finally {
     cargando.value = false
   }

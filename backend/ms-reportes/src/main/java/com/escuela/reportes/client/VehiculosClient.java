@@ -13,9 +13,4 @@ public interface VehiculosClient {
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "100") int size
     );
-
-    @GetMapping("/vehiculos/alertas-soat")
-    JsonNode listarAlertasSoat(
-        @RequestParam(defaultValue = "30") int dias
-    );
 }
