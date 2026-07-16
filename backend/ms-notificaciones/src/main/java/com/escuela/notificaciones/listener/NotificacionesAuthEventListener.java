@@ -8,6 +8,7 @@ import com.escuela.common.events.listener.AbstractEventListener;
 import com.escuela.notificaciones.config.NotificacionesProperties;
 import com.escuela.notificaciones.config.RabbitConfig;
 import com.escuela.notificaciones.service.EmailService;
+import com.escuela.notificaciones.service.NotificacionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
@@ -44,6 +45,7 @@ public class NotificacionesAuthEventListener {
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withZone(ZoneId.systemDefault());
 
     private final EmailService emailService;
+    private final NotificacionService notificacionService;
     private final NotificacionesProperties properties;
 
     /** Helpers internos por tipo de evento que reusan la idempotencia comun. */
@@ -53,8 +55,10 @@ public class NotificacionesAuthEventListener {
 
     public NotificacionesAuthEventListener(IdempotencyStore idempotencyStore,
                                            EmailService emailService,
+                                           NotificacionService notificacionService,
                                            NotificacionesProperties properties) {
         this.emailService = emailService;
+        this.notificacionService = notificacionService;
         this.properties = properties;
         this.usuarioCreadoHandler = new UsuarioCreadoHandler(idempotencyStore);
         this.passwordResetHandler = new PasswordResetSolicitadoHandler(idempotencyStore);
@@ -96,7 +100,16 @@ public class NotificacionesAuthEventListener {
         protected void handle(UsuarioCreadoEvent event) {
             log.info("UsuarioCreadoEvent procesado: usuarioId={}, email={}, source={}, eventId={}",
                     event.getUsuarioId(), event.getEmail(), event.getSource(), event.getEventId());
-            // TODO Sprint 5+: enviar email de bienvenida + crear preferencias_notificacion
+
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("nombre", event.getNombre());
+
+            emailService.enviar(
+                    event.getEmail(),
+                    "¡Bienvenido a Escuela de Conducción!",
+                    "USUARIO_CREADO",
+                    "emails/usuario-creado",
+                    vars);
         }
     }
 
@@ -126,6 +139,14 @@ public class NotificacionesAuthEventListener {
                     "RECUPERAR_PASSWORD",
                     "emails/password-reset",
                     vars);
+
+            notificacionService.crearNotificacion(
+                    event.getUsuarioId(),
+                    "Recuperación de contraseña solicitada",
+                    String.format("Se ha solicitado recuperación de contraseña. El link vence en %d minutos.",
+                            event.getExpiraEnMinutos()),
+                    "PASSWORD_RESET",
+                    "ALTA");
         }
     }
 
@@ -156,6 +177,14 @@ public class NotificacionesAuthEventListener {
                     "CUENTA_BLOQUEADA",
                     "emails/usuario-bloqueado",
                     vars);
+
+            notificacionService.crearNotificacion(
+                    event.getUsuarioId(),
+                    "Cuenta bloqueada temporalmente",
+                    String.format("Su cuenta ha sido bloqueada después de %d intentos fallidos. Desbloqueada %s.",
+                            event.getIntentosFallidos(), lockUntilTexto),
+                    "ACCOUNT_LOCKED",
+                    "CRITICA");
         }
     }
 }
