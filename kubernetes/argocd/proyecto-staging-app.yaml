@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: proyecto-staging
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: default
+
+  # Fuente: repositorio Git con Kustomize
+  source:
+    repoURL: https://github.com/Kynsofttita-com/proyecto-titulacion-udla.git
+    targetRevision: develop
+    path: kubernetes/kustomize/overlays/staging
+
+  # Destino: cluster local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: proyecto-staging
+
+  # Politica de sincronización
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allow:
+        empty: false
+
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - RespectIgnoreDifferences=true
+
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Salud de la aplicación
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/replicas
+    - /spec/template/spec/containers/0/image
+
+  # Notificaciones
+  info:
+  - name: Documentation
+    value: https://github.com/Kynsofttita-com/proyecto-titulacion-udla
+  - name: CI/CD
+    value: https://github.com/Kynsofttita-com/proyecto-titulacion-udla/actions

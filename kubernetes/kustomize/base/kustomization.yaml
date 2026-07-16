@@ -1,0 +1,66 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: proyecto-base
+  namespace: default
+
+# Recursos base (deployments, services, configmaps)
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - configmap.yaml
+  - secret.yaml
+
+# Patches comunes
+patchesStrategicMerge:
+  - patch-resources.yaml
+
+# Variables de sustitución
+vars:
+  - name: NAMESPACE
+    objref:
+      kind: Namespace
+      name: proyecto
+    fieldref:
+      fieldpath: metadata.name
+
+# Imágenes
+images:
+  - name: ms-auth
+    newName: proyecto-titulacion/ms-auth
+    newTag: latest
+  - name: ms-estudiantes
+    newName: proyecto-titulacion/ms-estudiantes
+    newTag: latest
+  - name: ms-instructores
+    newName: proyecto-titulacion/ms-instructores
+    newTag: latest
+  - name: ms-vehiculos
+    newName: proyecto-titulacion/ms-vehiculos
+    newTag: latest
+  - name: ms-asignaciones
+    newName: proyecto-titulacion/ms-asignaciones
+    newTag: latest
+  - name: ms-cobros
+    newName: proyecto-titulacion/ms-cobros
+    newTag: latest
+  - name: ms-reportes
+    newName: proyecto-titulacion/ms-reportes
+    newTag: latest
+  - name: ms-notificaciones
+    newName: proyecto-titulacion/ms-notificaciones
+    newTag: latest
+
+# Nombre del prefijo
+namePrefix: proyecto-
+
+# Etiquetas comunes
+commonLabels:
+  app: proyecto-titulacion
+  managed-by: argocd
+
+commonAnnotations:
+  deploy-date: "2026-07-16"
+  version: "1.0.0"
