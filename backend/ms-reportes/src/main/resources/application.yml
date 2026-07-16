@@ -159,3 +159,17 @@ resilience4j:
       default:
         max-attempts: 3
         wait-duration: 1s
+
+# -----------------------------------------------------------------------------
+# URLs de microservicios para Feign Clients
+# -----------------------------------------------------------------------------
+app:
+  services:
+    estudiantes:
+      url: ${MS_ESTUDIANTES_URL:http://ms-estudiantes:8082}
+    instructores:
+      url: ${MS_INSTRUCTORES_URL:http://ms-instructores:8083}
+    vehiculos:
+      url: ${MS_VEHICULOS_URL:http://ms-vehiculos:8085}
+    cobros:
+      url: ${MS_COBROS_URL:http://ms-cobros:8086}
