@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo de Negocio - Escuela de Conducción</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .diagram-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow-x: auto;
+        }
+        .section-title {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 400px;
+        }
+        .legend {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .legend strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏎️ Modelo de Negocio</h1>
+            <p>Sistema de Control Administrativo y Financiero para Escuelas de Conducción</p>
+        </div>
+
+        <!-- DIAGRAMA 1: ENTIDADES Y RELACIONES -->
+        <div class="diagram-section">
+            <h2 class="section-title">1. Diagrama de Entidades y Relaciones</h2>
+            <div class="mermaid">
+erDiagram
+    ESTUDIANTES ||--o{ ASIGNACIONES : "toma"
+    ESTUDIANTES ||--o{ FACTURAS : "tiene"
+    ESTUDIANTES ||--o{ PAGOS : "realiza"
+    INSTRUCTORES ||--o{ ASIGNACIONES : "imparte"
+    VEHICULOS ||--o{ ASIGNACIONES : "se asigna"
+    VEHICULOS ||--o{ MANTENIMIENTOS : "requiere"
+    VEHICULOS ||--o{ ALERTAS_SOAT : "tiene"
+    FACTURAS ||--o{ PAGOS : "genera"
+    INSTRUCTORES ||--o{ CERTIFICACIONES : "posee"
+
+    ESTUDIANTES {
+        bigint id PK
+        string cedula UK
+        string nombre
+        string apellido
+        string email
+        string telefono
+        string estado
+        date fecha_matricula
+    }
+
+    INSTRUCTORES {
+        bigint id PK
+        string cedula UK
+        string nombre
+        string apellido
+        string email
+        string licencia_numero UK
+        string estado
+    }
+
+    VEHICULOS {
+        bigint id PK
+        string placa UK
+        string marca
+        string modelo
+        date fecha_soat
+        date fecha_inspeccion_tecnica
+        string estado
+    }
+
+    ASIGNACIONES {
+        bigint id PK
+        bigint estudiante_id FK
+        bigint instructor_id FK
+        bigint vehiculo_id FK
+        datetime fecha_hora
+        integer duracion_minutos
+        string estado
+    }
+
+    FACTURAS {
+        bigint id PK
+        bigint estudiante_id FK
+        decimal monto_original
+        decimal monto_pagado
+        string estado
+        date fecha_emision
+    }
+
+    PAGOS {
+        bigint id PK
+        bigint factura_id FK
+        decimal monto
+        string metodo
+        date fecha_pago
+    }
+
+    MANTENIMIENTOS {
+        bigint id PK
+        bigint vehiculo_id FK
+        string tipo
+        date fecha
+        decimal costo
+    }
+
+    CERTIFICACIONES {
+        bigint id PK
+        bigint instructor_id FK
+        string tipo
+        date fecha_vencimiento
+    }
+
+    ALERTAS_SOAT {
+        bigint id PK
+        bigint vehiculo_id FK
+        integer dias_para_vencer
+        string estado
+    }
+            </div>
+            <div class="legend">
+                <strong>Leyenda:</strong> Las líneas conectan entidades relacionadas. PK = Clave Primaria, FK = Clave Foránea, UK = Única
+            </div>
+        </div>
+
+        <!-- DIAGRAMA 2: FLUJO DEL PROCESO PRINCIPAL -->
+        <div class="diagram-section">
+            <h2 class="section-title">2. Flujo de Negocio Principal</h2>
+            <div class="mermaid">
+graph TD
+    A["👤 Estudiante se registra"] -->|"Validar cédula"| B["✅ Usuario creado en Auth"]
+    B -->|"Crear perfil"| C["📝 Estudiante Activo"]
+    C -->|"Solicitar clase"| D["📅 Crear Asignación"]
+    D -->|"Validar disponibilidad"| E{Validación OK?}
+    E -->|"No"| F["❌ Conflicto"]
+    F -->|"Notificar"| G["📧 Email al estudiante"]
+    E -->|"Sí"| H["✅ Clase Programada"]
+    H -->|"Ejecutar clase"| I["🏎️ Clase realizada"]
+    I -->|"Confirmar asistencia"| J["✔️ Clase completada"]
+    J -->|"Generar factura"| K["💰 Factura pendiente"]
+    K -->|"Pagar"| L["💳 Registrar pago"]
+    L -->|"¿Saldo pagado?"| M{Deuda completada?}
+    M -->|"No"| N["📌 Factura parcial"]
+    M -->|"Sí"| O["✅ Estudiante al día"]
+    N -->|"Más pagos"| L
+    O -->|"Más clases"| D
+    O -->|"Completó ciclo"| P["🎓 Estudiante Egresa"]
+            </div>
+            <div class="legend">
+                <strong>Flujo:</strong> Desde registro hasta egreso. Incluye validaciones, notificaciones y gestión de cobros
+            </div>
+        </div>
+
+        <!-- DIAGRAMA 3: ARQUITECTURA DE MICROSERVICIOS -->
+        <div class="diagram-section">
+            <h2 class="section-title">3. Arquitectura de Microservicios</h2>
+            <div class="mermaid">
+graph TB
+    subgraph Frontend["🎨 Frontend (Vue.js 3)"]
+        UI["SPA Responsiva"]
+    end
+
+    subgraph API["🔗 API Gateway (Spring Cloud)"]
+        Gateway["Gateway<br/>Routing & Auth"]
+    end
+
+    subgraph Servicios["📦 Microservicios (Java 21)"]
+        Auth["Auth<br/>JWT & Roles"]
+        Estudiantes["Estudiantes<br/>Perfil & Progreso"]
+        Instructores["Instructores<br/>Disponibilidad"]
+        Vehiculos["Vehículos<br/>Flota & SOAT"]
+        Asignaciones["Asignaciones<br/>Scheduling"]
+        Cobros["Cobros<br/>Pagos & Facturas"]
+        Reportes["Reportes<br/>Analítica"]
+        Notificaciones["Notificaciones<br/>Email"]
+    end
+
+    subgraph BD["🗄️ Base de Datos"]
+        PG["PostgreSQL<br/>9 Schemas"]
+    end
+
+    subgraph Mensajeria["📨 Mensajería"]
+        RabbitMQ["RabbitMQ<br/>Async Events"]
+    end
+
+    subgraph Discovery["🔍 Discovery"]
+        Eureka["Eureka<br/>Service Registry"]
+    end
+
+    UI -->|HTTPS| Gateway
+    Gateway -->|Rutas| Auth
+    Gateway -->|Rutas| Estudiantes
+    Gateway -->|Rutas| Instructores
+    Gateway -->|Rutas| Vehiculos
+    Gateway -->|Rutas| Asignaciones
+    Gateway -->|Rutas| Cobros
+    Gateway -->|Rutas| Reportes
+    Gateway -->|Rutas| Notificaciones
+
+    Auth -->|Lee/Escribe| PG
+    Estudiantes -->|Lee/Escribe| PG
+    Instructores -->|Lee/Escribe| PG
+    Vehiculos -->|Lee/Escribe| PG
+    Asignaciones -->|Lee/Escribe| PG
+    Cobros -->|Lee/Escribe| PG
+    Reportes -->|Lee| PG
+    Notificaciones -->|Lee/Escribe| PG
+
+    Auth -->|Publica| RabbitMQ
+    Estudiantes -->|Publica| RabbitMQ
+    Cobros -->|Publica| RabbitMQ
+    Notificaciones -->|Consume| RabbitMQ
+
+    Auth -.->|Registra| Eureka
+    Estudiantes -.->|Registra| Eureka
+    Instructores -.->|Registra| Eureka
+    Vehiculos -.->|Registra| Eureka
+    Asignaciones -.->|Registra| Eureka
+    Cobros -.->|Registra| Eureka
+    Reportes -.->|Registra| Eureka
+    Notificaciones -.->|Registra| Eureka
+            </div>
+            <div class="legend">
+                <strong>Componentes:</strong> Líneas sólidas = Sincrónico (REST), Líneas punteadas = Asincrónico (Service Discovery)
+            </div>
+        </div>
+
+        <!-- DIAGRAMA 4: FLUJO DE DATOS DE ASIGNACIÓN -->
+        <div class="diagram-section">
+            <h2 class="section-title">4. Detalle: Creación de Asignación (Clase)</h2>
+            <div class="mermaid">
+sequenceDiagram
+    actor Frontend
+    participant API as API Gateway
+    participant Asignaciones
+    participant Estudiantes
+    participant Instructores
+    participant Vehiculos
+    participant RabbitMQ
+    participant Notificaciones
+
+    Frontend->>+API: POST /asignaciones
+    API->>+Asignaciones: Crear asignación
+
+    Asignaciones->>+Estudiantes: Validar estudiante
+    Estudiantes-->>-Asignaciones: ✅ Existe y activo
+
+    Asignaciones->>+Instructores: Verificar disponibilidad
+    Instructores-->>-Asignaciones: ✅ Disponible
+
+    Asignaciones->>+Vehiculos: Verificar vehículo
+    Vehiculos-->>-Asignaciones: ✅ Disponible y SOAT válido
+
+    Asignaciones->>Asignaciones: Crear registro
+    Asignaciones->>RabbitMQ: Publicar 'asignacion.creada'
+    Asignaciones-->>-API: 201 Asignación
+
+    API-->>-Frontend: ✅ Éxito
+
+    RabbitMQ->>+Notificaciones: Consumir evento
+    Notificaciones->>Notificaciones: Generar email
+    Notificaciones->>Notificaciones: Enviar a estudiante
+    Notificaciones-->>-RabbitMQ: ✅ Procesado
+            </div>
+            <div class="legend">
+                <strong>Secuencia:</strong> Cómo fluyen los datos cuando se crea una asignación (clase)
+            </div>
+        </div>
+
+        <!-- DIAGRAMA 5: FLUJO FINANCIERO -->
+        <div class="diagram-section">
+            <h2 class="section-title">5. Flujo Financiero: Facturas y Pagos</h2>
+            <div class="mermaid">
+graph LR
+    A["📅 Clase Completada<br/>100 clases"] -->|"Auto-genera"| B["📄 Factura<br/>$2,000 USD<br/>PENDIENTE"]
+    B -->|"Pago #1"| C["💳 Pago<br/>$800 USD"]
+    B -->|"Estado"| D["📌 Factura<br/>PARCIALMENTE PAGADA<br/>Saldo: $1,200"]
+    C -->|"Registra"| D
+    D -->|"Pago #2"| E["💳 Pago<br/>$600 USD"]
+    D -->|"Estado"| F["📌 Factura<br/>PARCIALMENTE PAGADA<br/>Saldo: $600"]
+    E -->|"Registra"| F
+    F -->|"Pago #3"| G["💳 Pago<br/>$600 USD"]
+    F -->|"Estado"| H["✅ Factura<br/>PAGADA<br/>Saldo: $0"]
+    G -->|"Registra"| H
+
+    style A fill:#e1f5ff
+    style B fill:#fff3e0
+    style D fill:#fff3e0
+    style F fill:#fff3e0
+    style H fill:#c8e6c9
+            </div>
+            <div class="legend">
+                <strong>Pagos:</strong> Las facturas pueden ser pagadas en múltiples transacciones hasta cancelación completa
+            </div>
+        </div>
+
+        <!-- DIAGRAMA 6: MATRIZ DE DATOS POR MICROSERVICIO -->
+        <div class="diagram-section">
+            <h2 class="section-title">6. Datos Manejados por Cada Microservicio</h2>
+            <div class="mermaid">
+graph TB
+    subgraph Auth["🔐 MS-Auth"]
+        A1["✓ Usuarios"]
+        A2["✓ Roles & Permisos"]
+        A3["✓ Tokens JWT"]
+        A4["✓ Refresh Tokens"]
+    end
+
+    subgraph Est["👥 MS-Estudiantes"]
+        E1["✓ Perfil estudiante"]
+        E2["✓ Documentos"]
+        E3["✓ Progreso académico"]
+        E4["✓ Historial de clases"]
+    end
+
+    subgraph Inst["👨‍🏫 MS-Instructores"]
+        I1["✓ Perfil instructor"]
+        I2["✓ Certificaciones"]
+        I3["✓ Disponibilidad horaria"]
+        I4["✓ Horas trabajadas"]
+    end
+
+    subgraph Veh["🚗 MS-Vehículos"]
+        V1["✓ Registro vehículos"]
+        V2["✓ Estado SOAT"]
+        V3["✓ Mantenimientos"]
+        V4["✓ Combustible & Kilometraje"]
+    end
+
+    subgraph Asig["📅 MS-Asignaciones"]
+        As1["✓ Clases programadas"]
+        As2["✓ Confirmaciones"]
+        As3["✓ Reprogramaciones"]
+        As4["✓ Asistencia"]
+    end
+
+    subgraph Cob["💰 MS-Cobros"]
+        C1["✓ Facturas"]
+        C2["✓ Pagos"]
+        C3["✓ Saldos"]
+        C4["✓ Reconciliaciones"]
+    end
+
+    subgraph Rep["📊 MS-Reportes"]
+        R1["✓ Operativos"]
+        R2["✓ Financieros"]
+        R3["✓ KPIs"]
+        R4["✓ Exportaciones"]
+    end
+
+    subgraph Not["📧 MS-Notificaciones"]
+        N1["✓ Plantillas email"]
+        N2["✓ Envíos"]
+        N3["✓ Preferencias"]
+        N4["✓ Historial"]
+    end
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        mermaid.contentLoaded();
+    </script>
+</body>
+</html>
