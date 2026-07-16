@@ -152,20 +152,32 @@ public class ReporteService {
 
         try {
             Map<String, Object> datos = new HashMap<>();
-            JsonNode response = vehiculosClient.listarAlertasSoat(30);
+            JsonNode response = vehiculosClient.listarVehiculos(0, 100);
 
             List<Map<String, Object>> vehiculosList = new ArrayList<>();
             long totalVehiculos = 0;
 
-            if (response != null && response.isArray()) {
-                response.forEach(node ->
-                    vehiculosList.add(new ObjectMapper().convertValue(node, Map.class))
-                );
-                totalVehiculos = vehiculosList.size();
+            if (response != null) {
+                // Spring devuelve la respuesta PageImpl como JSON con estructura: { content: [...], totalElements: N, ... }
+                if (response.has("content")) {
+                    response.get("content").forEach(node -> {
+                        Map<String, Object> veh = new ObjectMapper().convertValue(node, Map.class);
+                        vehiculosList.add(veh);
+                    });
+                    totalVehiculos = response.get("totalElements").asLong(0);
+                } else if (response.isArray()) {
+                    // Si es un array directo
+                    response.forEach(node -> {
+                        Map<String, Object> veh = new ObjectMapper().convertValue(node, Map.class);
+                        vehiculosList.add(veh);
+                    });
+                    totalVehiculos = vehiculosList.size();
+                }
             }
 
+            log.info("Total vehículos obtenidos: {}", totalVehiculos);
+
             datos.put("totalVehiculos", totalVehiculos);
-            datos.put("diasAlerta", 30);
             datos.put("vehiculos", vehiculosList);
 
             long duracion = System.currentTimeMillis() - inicio;
