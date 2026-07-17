@@ -99,34 +99,46 @@ jobs:
       - name: Check coverage threshold (80%)
         working-directory: backend
         run: |
-          # Search for JaCoCo reports - they can be in jacoco/ or jacoco-aggregate/ subdirectories
+          # Search for JaCoCo reports - prefer top-level module aggregates
           echo "Searching for JaCoCo reports..."
-          JACOCO_REPORT=$(find . -name "index.html" -path "*/target/site/*" -path "*jacoco*" 2>/dev/null | grep -v '.m2' | sort | head -1)
+          # Look for module-level jacoco-aggregate reports (not package-level)
+          JACOCO_REPORT=$(find . -path "*/target/site/jacoco-aggregate/index.html" 2>/dev/null | grep -v '.m2' | grep -v '/[a-z]*/' | head -1)
 
           if [ -z "$JACOCO_REPORT" ]; then
-            echo "⚠️  No JaCoCo reports found in typical locations"
-            echo "Available target directories:"
-            find . -maxdepth 3 -name "target" -type d 2>/dev/null | head -10
-            echo ""
-            echo "Listing site directories:"
-            find . -maxdepth 3 -path "*/target/site" -type d 2>/dev/null | head -10
+            # Fallback: Find any aggregated report
+            JACOCO_REPORT=$(find . -path "*/target/site/jacoco-aggregate/index.html" 2>/dev/null | grep -v '.m2' | head -1)
+          fi
+
+          if [ -z "$JACOCO_REPORT" ]; then
+            # Last resort: find jacoco report at any level
+            JACOCO_REPORT=$(find . -path "*/target/site/jacoco/index.html" 2>/dev/null | grep -v '.m2' | head -1)
+          fi
+
+          if [ -z "$JACOCO_REPORT" ]; then
+            echo "⚠️  No JaCoCo reports found"
+            find . -maxdepth 4 -path "*/target/site/*" -type d 2>/dev/null | head -10
             exit 1
           fi
 
           echo "✅ Using report: $JACOCO_REPORT"
-          COVERAGE=$(grep -oP 'Total.*?<td class="ctr2">\K[0-9]+' "$JACOCO_REPORT" | head -1 || echo "0")
+          # Extract coverage percentage (Total row, second number column)
+          COVERAGE=$(grep -oP 'Total.*?<td class="ctr2">\K[0-9]+' "$JACOCO_REPORT" | head -1)
+
+          if [ -z "$COVERAGE" ] || [ "$COVERAGE" = "0" ]; then
+            # Try alternative extraction if first pattern fails
+            COVERAGE=$(grep -oP '<td class="ctr2">[0-9]+%?</td>' "$JACOCO_REPORT" | tail -1 | grep -oP '[0-9]+' | tail -1)
+          fi
 
           if [ -z "$COVERAGE" ]; then
-            echo "⚠️  Could not extract coverage from report, trying alternative pattern..."
-            COVERAGE=$(grep -oP 'class="ctr2">\K[0-9]+%' "$JACOCO_REPORT" | tail -1 | sed 's/%//')
+            COVERAGE="0"
           fi
 
           echo "Code Coverage: $COVERAGE%"
           if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-            echo "❌ Coverage below 80% threshold"
+            echo "❌ Coverage below 80% threshold: $COVERAGE%"
             exit 1
           fi
-          echo "✅ Coverage meets threshold"
+          echo "✅ Coverage meets threshold: $COVERAGE%"
 
   # =========================================================================
   # STAGE 2: CODE QUALITY (SonarQube)
