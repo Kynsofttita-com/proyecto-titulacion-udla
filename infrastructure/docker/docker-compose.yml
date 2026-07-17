@@ -40,10 +40,11 @@ services:
   # Service Discovery
   eureka:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: eureka-server
+        JAR_NAME: eureka-server
         SERVICE_PORT: 8761
     container_name: proyecto-eureka
     environment:
@@ -67,10 +68,11 @@ services:
   # API Gateway
   api-gateway:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: api-gateway
+        JAR_NAME: api-gateway
         SERVICE_PORT: 8080
     container_name: proyecto-gateway
     environment:
@@ -105,10 +107,11 @@ services:
   # MS-Auth
   ms-auth:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: ms-auth
+        JAR_NAME: ms-auth
         SERVICE_PORT: 8081
     container_name: proyecto-ms-auth
     environment:
@@ -143,10 +146,11 @@ services:
   # MS-Estudiantes
   ms-estudiantes:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: ms-estudiantes
+        JAR_NAME: ms-estudiantes
         SERVICE_PORT: 8082
     container_name: proyecto-ms-estudiantes
     environment:
@@ -181,10 +185,11 @@ services:
   # MS-Instructores
   ms-instructores:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: ms-instructores
+        JAR_NAME: ms-instructores
         SERVICE_PORT: 8083
     container_name: proyecto-ms-instructores
     environment:
@@ -219,10 +224,11 @@ services:
   # MS-Vehículos
   ms-vehiculos:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: ms-vehiculos
+        JAR_NAME: ms-vehiculos
         SERVICE_PORT: 8084
     container_name: proyecto-ms-vehiculos
     environment:
@@ -257,10 +263,11 @@ services:
   # MS-Asignaciones
   ms-asignaciones:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: ms-asignaciones
+        JAR_NAME: ms-asignaciones
         SERVICE_PORT: 8085
     container_name: proyecto-ms-asignaciones
     environment:
@@ -298,10 +305,11 @@ services:
   # MS-Cobros
   ms-cobros:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: ms-cobros
+        JAR_NAME: ms-cobros
         SERVICE_PORT: 8086
     container_name: proyecto-ms-cobros
     environment:
@@ -338,10 +346,11 @@ services:
   # MS-Reportes
   ms-reportes:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: ms-reportes
+        JAR_NAME: ms-reportes
         SERVICE_PORT: 8087
     container_name: proyecto-ms-reportes
     environment:
@@ -376,10 +385,11 @@ services:
   # MS-Notificaciones
   ms-notificaciones:
     build:
-      context: ../../backend
-      dockerfile: Dockerfile.spring
+      context: .
+      dockerfile: ./Dockerfile.spring
       args:
         SERVICE_MODULE: ms-notificaciones
+        JAR_NAME: ms-notificaciones
         SERVICE_PORT: 8088
     container_name: proyecto-ms-notificaciones
     environment:

@@ -39,12 +39,12 @@ public class CertificacionService {
         Instructor instructor = instructorService.buscarOFallar(instructorId);
         Certificacion c = Certificacion.builder()
                 .instructor(instructor)
-                .tipo(request.tipo())
-                .fechaObtencion(request.fechaObtencion())
-                .vigenciaHasta(request.vigenciaHasta())
-                .entidadEmisora(request.entidadEmisora())
-                .archivoUrl(request.archivoUrl())
-                .observaciones(request.observaciones())
+                .tipo(request.getTipo())
+                .fechaObtencion(request.getFechaObtencion())
+                .vigenciaHasta(request.getVigenciaHasta())
+                .entidadEmisora(request.getEntidadEmisora())
+                .archivoUrl(request.getArchivoUrl())
+                .observaciones(request.getObservaciones())
                 .build();
         c = repository.save(c);
         log.info("Certificacion agregada id={} instructorId={} tipo={}",
@@ -55,12 +55,12 @@ public class CertificacionService {
     public CertificacionResponse actualizar(Long instructorId, Long certId, CertificacionRequest request) {
         Certificacion c = repository.findByIdAndInstructorIdAndDeletedAtIsNull(certId, instructorId)
                 .orElseThrow(() -> new RecursoNotFoundException("Certificacion", certId));
-        c.setTipo(request.tipo());
-        c.setFechaObtencion(request.fechaObtencion());
-        c.setVigenciaHasta(request.vigenciaHasta());
-        c.setEntidadEmisora(request.entidadEmisora());
-        c.setArchivoUrl(request.archivoUrl());
-        c.setObservaciones(request.observaciones());
+        c.setTipo(request.getTipo());
+        c.setFechaObtencion(request.getFechaObtencion());
+        c.setVigenciaHasta(request.getVigenciaHasta());
+        c.setEntidadEmisora(request.getEntidadEmisora());
+        c.setArchivoUrl(request.getArchivoUrl());
+        c.setObservaciones(request.getObservaciones());
         repository.save(c);
         log.info("Certificacion actualizada id={}", certId);
         return toResponse(c);

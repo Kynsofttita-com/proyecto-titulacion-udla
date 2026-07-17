@@ -1,112 +1,46 @@
-# =============================================================================
-# Dockerfile compartido para microservicios Spring Boot 3 + Java 21
-# =============================================================================
-# Patrón multi-stage parametrizado:
-# - Stage 1 (build): compila el módulo indicado con sus dependencias internas
-# - Stage 2 (runtime): imagen ligera con JRE 21 alpine, usuario no-root, healthcheck
-#
-# Build context esperado: backend/ (raíz del POM padre)
-# Argumentos:
-#   - MODULE: nombre del módulo Maven a construir (ms-auth, api-gateway, etc.)
-#   - SERVICE_PORT: puerto donde el servicio escucha (8081, 8080, etc.)
-#
-# Ejemplo de uso desde docker compose:
-#   build:
-#     context: ../../backend
-#     dockerfile: ../infrastructure/docker/Dockerfile.spring
-#     args:
-#       MODULE: ms-auth
-#       SERVICE_PORT: "8081"
-# =============================================================================
+# Multi-stage Dockerfile genérico para Spring Boot microservicios
+# Los JARs se compilan localmente (mvn clean package -DskipTests)
+# Uso: docker build --build-arg SERVICE_MODULE=ms-auth --build-arg SERVICE_PORT=8081 -f Dockerfile.spring .
 
-# ============== STAGE 1: BUILD ==============
-FROM maven:3.9-eclipse-temurin-21 AS build
+ARG SERVICE_MODULE=eureka-server
+ARG SERVICE_PORT=8761
+ARG JAR_NAME=eureka-server
 
-ARG MODULE
-ARG MAVEN_OPTS="-Dmaven.repo.local=/root/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-
-WORKDIR /workspace
-
-# Capa 1: Copiar todos los pom.xml para resolver dependencias (cacheable)
-# Si los POMs no cambian, el download de dependencias se cachea entre builds.
-COPY pom.xml ./
-COPY shared/common-events/pom.xml shared/common-events/
-COPY shared/common-exceptions/pom.xml shared/common-exceptions/
-COPY shared/common-security/pom.xml shared/common-security/
-COPY shared/common-jpa/pom.xml shared/common-jpa/
-COPY shared/common-validation/pom.xml shared/common-validation/
-COPY eureka-server/pom.xml eureka-server/
-COPY api-gateway/pom.xml api-gateway/
-COPY ms-auth/pom.xml ms-auth/
-COPY ms-estudiantes/pom.xml ms-estudiantes/
-COPY ms-instructores/pom.xml ms-instructores/
-COPY ms-vehiculos/pom.xml ms-vehiculos/
-COPY ms-asignaciones/pom.xml ms-asignaciones/
-COPY ms-cobros/pom.xml ms-cobros/
-COPY ms-reportes/pom.xml ms-reportes/
-COPY ms-notificaciones/pom.xml ms-notificaciones/
-
-# Capa 2: Descargar dependencias del módulo y sus shared libs (también cacheable)
-RUN --mount=type=cache,target=/root/.m2/repository \
-    mvn -B -pl ${MODULE} -am dependency:go-offline -DskipTests || true
-
-# Capa 3: Copiar código fuente
-COPY shared/common-events/src shared/common-events/src
-COPY shared/common-exceptions/src shared/common-exceptions/src
-COPY shared/common-security/src shared/common-security/src
-COPY shared/common-jpa/src shared/common-jpa/src
-COPY shared/common-validation/src shared/common-validation/src
-COPY ${MODULE}/src ${MODULE}/src
-
-# Capa 4: Build del módulo (incluye sus dependencias internas con -am)
-# -Dmaven.test.skip=true salta compilación y ejecución de tests (-DskipTests
-# solo salta la ejecución).
-RUN --mount=type=cache,target=/root/.m2/repository \
-    mvn -B -pl ${MODULE} -am clean package -Dmaven.test.skip=true \
-    && cp ${MODULE}/target/*.jar /workspace/app.jar
-
-
-# ============== STAGE 2: RUNTIME ==============
+# Stage: Runtime (JARs pre-compilados)
 FROM eclipse-temurin:21-jre-alpine
 
-ARG SERVICE_PORT=8080
+ARG SERVICE_MODULE
+ARG SERVICE_PORT
+ARG JAR_NAME
 
-# Instalar utilidades necesarias para healthcheck
+# Instalar dependencias
 RUN apk add --no-cache curl tzdata && \
     cp /usr/share/zoneinfo/America/Guayaquil /etc/localtime && \
     echo "America/Guayaquil" > /etc/timezone
 
-# Crear usuario no-root (mejor práctica de seguridad)
+# Crear usuario spring (non-root)
 RUN addgroup -S spring && \
     adduser -S -G spring -u 1000 spring
 
+# Preparar directorio de aplicación
 WORKDIR /app
-
-# Carpeta de storage para archivos subidos por el usuario (documentos de
-# estudiantes, etc.). Se crea con permisos del usuario spring para que
-# servicios que escriban en filesystem no fallen con AccessDeniedException.
 RUN mkdir -p /app/storage && chown -R spring:spring /app
 
-# Copiar el JAR construido en el stage anterior
-COPY --from=build --chown=spring:spring /workspace/app.jar /app/app.jar
+# Copiar JAR específico desde jars-dist/
+COPY --chown=spring:spring jars-dist/ /tmp/jars/
+RUN cp /tmp/jars/${JAR_NAME}.jar /app/app.jar && rm -rf /tmp/jars
 
-# Convertir ARG en ENV para que persista en runtime (necesario para healthcheck).
-# JVM tuning para contenedores (Spring Boot 3 ya respeta cgroups por defecto).
+# Variables de entorno
 ENV SERVICE_PORT=${SERVICE_PORT} \
     JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -Duser.timezone=America/Guayaquil"
 
+# Cambiar a usuario spring
 USER spring:spring
-
 EXPOSE ${SERVICE_PORT}
 
-# Healthcheck contra Spring Boot Actuator.
-# start-period MUY generoso (180s) y retries=10 porque en runners gratuitos de
-# GitHub Actions (2 cores / 7 GB) Spring + JPA + Eureka tarda 200s+ en arrancar.
-# Total ventana antes de marcar unhealthy = start_period + interval * retries =
-# 180 + 30*10 = 480s = 8 min. En maquinas potentes esto es overkill pero no
-# danino: el healthcheck igual reporta UP en cuanto el endpoint responde.
-# Nota: usamos $SERVICE_PORT (env var) que SI persiste en runtime, a diferencia del ARG.
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=10 \
     CMD curl -fsS "http://localhost:${SERVICE_PORT}/actuator/health" | grep -q '"status":"UP"' || exit 1
 
+# Ejecutar aplicación
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

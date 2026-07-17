@@ -1,24 +1,17 @@
 # Multi-stage Dockerfile genérico para Spring Boot microservicios
+# Los JARs se compilan localmente (mvn clean package -DskipTests)
 # Uso: docker build --build-arg SERVICE_MODULE=ms-auth --build-arg SERVICE_PORT=8081 -f Dockerfile.spring .
 
 ARG SERVICE_MODULE=eureka-server
 ARG SERVICE_PORT=8761
+ARG JAR_NAME=eureka-server
 
-# Stage 1: Build
-FROM maven:3.9-eclipse-temurin-21 AS build
-
-ARG SERVICE_MODULE
-
-WORKDIR /workspace
-COPY . /workspace
-
-RUN mvn -B -pl ${SERVICE_MODULE} -am clean package -DskipTests \
-    && cp ${SERVICE_MODULE}/target/*.jar /workspace/app.jar
-
-# Stage 2: Runtime
+# Stage: Runtime (JARs pre-compilados)
 FROM eclipse-temurin:21-jre-alpine
 
+ARG SERVICE_MODULE
 ARG SERVICE_PORT
+ARG JAR_NAME
 
 # Instalar dependencias
 RUN apk add --no-cache curl tzdata && \
@@ -33,8 +26,9 @@ RUN addgroup -S spring && \
 WORKDIR /app
 RUN mkdir -p /app/storage && chown -R spring:spring /app
 
-# Copiar JAR desde build stage
-COPY --from=build --chown=spring:spring /workspace/app.jar /app/app.jar
+# Copiar JAR específico desde jars-dist/
+COPY --chown=spring:spring jars-dist/ /tmp/jars/
+RUN cp /tmp/jars/${JAR_NAME}.jar /app/app.jar && rm -rf /tmp/jars
 
 # Variables de entorno
 ENV SERVICE_PORT=${SERVICE_PORT} \
