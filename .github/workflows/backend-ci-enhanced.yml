@@ -202,7 +202,7 @@ jobs:
             if (fs.existsSync(reportPath)) {
               const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
               const vulnerabilities = report.reportSchema?.reportInfo?.statistics?.critical || 0;
-              const message = `📊 **Dependency Check Results**\n- Critical: ${vulnerabilities}`;
+              const message = `Dependency Check Results\n- Critical: ${vulnerabilities}`;
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
@@ -318,9 +318,9 @@ jobs:
     steps:
       - name: Check Quality Gates
         run: |
-          echo "═══════════════════════════════════════════════════"
+          echo ""
           echo " QUALITY GATE SUMMARY"
-          echo "═══════════════════════════════════════════════════"
+          echo ""
           echo ""
           echo " CRITICAL - Tests & Coverage: ${{ needs.build-and-test.result }}"
           echo "  SECONDARY - SonarQube: ${{ needs.sonarqube-analysis.result }}"
@@ -328,7 +328,7 @@ jobs:
           echo "  SECONDARY - Security Scan: ${{ needs.security-scan.result }}"
           echo "  SECONDARY - Docker Build: ${{ needs.docker-build.result }}"
           echo ""
-          echo "═══════════════════════════════════════════════════"
+          echo ""
 
           # Determine pipeline status based on critical gate only
           if [ "${{ needs.build-and-test.result }}" != "success" ]; then
