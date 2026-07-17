@@ -192,8 +192,8 @@ proyecto-titulacion/
 ### Requisitos previos
 - **Docker Desktop** + Docker Compose
 - **Git**
-- **Java 21 JDK** — solo para el primer build (compilar los JARs del backend)
-- **Maven 3.8+** — solo para el primer build
+- **Java 21 JDK** (opcional) — solo si querés desarrollar backend fuera de Docker con IDE
+- **Maven 3.8+** (opcional) — solo si querés desarrollar backend fuera de Docker
 - **Node.js 18+** (opcional) — solo si querés desarrollar frontend con hot reload
 
 ---
@@ -202,28 +202,24 @@ proyecto-titulacion/
 
 Este flujo levanta los **15 contenedores** (backend + frontend + infra) en Docker. Es lo que necesitás para usar la app.
 
+**Requisitos**: solo **Docker Desktop** + **Git**. Nada más (Maven y Java se ejecutan dentro de los containers durante el build multi-stage).
+
 ```bash
 # 1. Clonar el repo
 git clone https://github.com/Kynsofttita-com/proyecto-titulacion-udla.git
 cd proyecto-titulacion-udla
 
-# 2. Compilar los JARs del backend (solo la primera vez o al cambiar codigo Java)
-#    Los JARs NO estan en git (exceden el limite de 100MB de GitHub).
-#    Este script los compila SECUENCIALMENTE para evitar bytecode corrupto
-#    por race condition entre MapStruct y Lombok.
-./scripts/build-backend.sh
-# Duracion: ~2-3 minutos
-
-# 3. Levantar el stack completo (15 contenedores Docker)
+# 2. Levantar el stack completo (15 contenedores Docker)
 cd infrastructure/docker
 docker-compose up -d --build
-# Duracion: ~1-2 minutos
+# Duracion: ~3-5 minutos la primera vez (compila Maven adentro de cada MS)
+#          ~1-2 minutos las siguientes veces (usa cache)
 
-# 4. Esperar a que todos los healthchecks pasen y verificar
+# 3. Verificar que todos los healthchecks pasen
 docker-compose ps
-# Todos los servicios deben aparecer "healthy" (excepto adminer y jenkins que solo "Up")
+# Los 13 servicios de negocio deben aparecer "healthy" (adminer y jenkins solo "Up")
 
-# 5. Verificar que Eureka registro los 9 servicios (Gateway + 8 MS)
+# 4. (Opcional) Verificar que Eureka registro los 9 servicios (Gateway + 8 MS)
 curl -s http://localhost:8761/eureka/apps -H "Accept: application/json" \
   | python -c "import sys,json; d=json.load(sys.stdin); print(f'Apps registradas: {len(d[\"applications\"][\"application\"])}')"
 # Debe imprimir: Apps registradas: 9
@@ -237,13 +233,8 @@ Password: Admin123!
 ```
 
 > 💡 El frontend Vue.js corre dentro de Docker (nginx en puerto 3000). **No necesitás** correr `npm install` ni `npm run dev` — está todo incluido en `docker-compose up`.
-
-**¡Listo!** Abrí **http://localhost:5173** en el navegador y entrá con:
-
-```
-Email:    admin@escuela.local
-Password: Admin123!
-```
+>
+> 💡 El backend se compila dentro de cada Dockerfile (multi-stage build con Maven). **No necesitás** compilar los JARs localmente.
 
 ---
 
@@ -256,18 +247,22 @@ Si querés debuggear código del backend desde IntelliJ/Eclipse en lugar de usar
 docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
 
 # 2. Compilar todos los módulos backend (necesario por shared libs)
-cd backend
-mvn clean install -DskipTests
+#    IMPORTANTE: usar el script secuencial para evitar bytecode corrupto
+#    por race condition entre MapStruct y Lombok en builds paralelos.
+./scripts/build-backend.sh
+# Alternativa manual: cd backend && mvn install -DskipTests (uno por uno, NO en paralelo)
 
 # 3. Arrancar Eureka primero, luego Gateway, luego cada MS (cada uno en su terminal)
-cd eureka-server && mvn spring-boot:run
+cd backend/eureka-server && mvn spring-boot:run
 # (otra terminal)
-cd api-gateway && mvn spring-boot:run
+cd backend/api-gateway && mvn spring-boot:run
 # (etc., 1 terminal por MS — 10 terminales en total)
 
 # 4. Frontend (en otra terminal más)
 cd frontend && npm install && npm run dev
 ```
+
+> ⚠️ Si `mvn install` produce errores raros de `ClassNotFoundException` al ejecutar los MS, es un bug conocido de MapStruct + Lombok en builds paralelos. Ver [`MS_INSTRUCTORES_CLASSLOADER_ISSUE.md`](./MS_INSTRUCTORES_CLASSLOADER_ISSUE.md). Solución: usar `./scripts/build-backend.sh` (compilación secuencial).
 
 ---
 
