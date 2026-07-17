@@ -38,18 +38,22 @@
         <thead class="border-b border-ink-200 bg-ink-50">
           <tr>
             <th class="px-4 py-3 text-left font-semibold">Estudiante</th>
-            <th class="px-4 py-3 text-left font-semibold">Instructor</th>
-            <th class="px-4 py-3 text-left font-semibold">Fecha</th>
-            <th class="px-4 py-3 text-left font-semibold">Asistencia</th>
+            <th class="px-4 py-3 text-left font-semibold">Estado</th>
+            <th class="px-4 py-3 text-right font-semibold">Clases Programadas</th>
+            <th class="px-4 py-3 text-right font-semibold">Clases Asistidas</th>
+            <th class="px-4 py-3 text-right font-semibold">% Asistencia</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-ink-200">
-          <tr v-for="reg in datos" :key="reg.id" class="hover:bg-ink-50">
+          <tr v-for="reg in datos" :key="reg.estudianteId" class="hover:bg-ink-50">
             <td class="px-4 py-3">{{ reg.estudianteNombre }}</td>
-            <td class="px-4 py-3">{{ reg.instructorNombre }}</td>
-            <td class="px-4 py-3 text-sm">{{ formatearFecha(reg.fecha) }}</td>
             <td class="px-4 py-3">
-              <StatusBadge :status="reg.asistio ? 'PRESENTE' : 'AUSENTE'" />
+              <StatusBadge :status="reg.estado" />
+            </td>
+            <td class="px-4 py-3 text-right font-mono">{{ reg.clasesProgramadas }}</td>
+            <td class="px-4 py-3 text-right font-mono">{{ reg.clasesAsistidas }}</td>
+            <td class="px-4 py-3 text-right font-mono font-bold" :class="reg.porcentaje >= 80 ? 'text-success-700' : reg.porcentaje >= 60 ? 'text-warning-700' : 'text-danger-700'">
+              {{ reg.porcentaje.toFixed(1) }}%
             </td>
           </tr>
         </tbody>
@@ -82,14 +86,25 @@ async function cargar() {
     const response = await reportesService.generarReporteAsistencia({
       tipoReporte: 'ASISTENCIA'
     })
-    datos.value = response.datos.asistencias || response.datos.data || []
+    // Backend devuelve resumen agregado por estudiante:
+    // { estudianteId, estado, porcentaje_asistencia, clases_programadas, clases_asistidas, nombre, apellido }
+    const asistencias = response.datos.asistencias || response.datos.data || []
+    datos.value = asistencias.map((a: any) => {
+      const nombre = a.nombre || ''
+      const apellido = a.apellido || ''
+      const nombreCompleto = (nombre + ' ' + apellido).trim() || `Estudiante #${a.estudianteId}`
+      return {
+        estudianteId: a.estudianteId,
+        estudianteNombre: nombreCompleto,
+        estado: a.estado || '-',
+        clasesProgramadas: a.clases_programadas ?? a.clasesProgramadas ?? 0,
+        clasesAsistidas: a.clases_asistidas ?? a.clasesAsistidas ?? 0,
+        porcentaje: a.porcentaje_asistencia ?? a.porcentajeAsistencia ?? 0
+      }
+    })
   } catch (error) {
     console.error('Error:', error)
-    datos.value = [
-      { id: 1, estudianteNombre: 'Juan Pérez', instructorNombre: 'Pedro Flores', fecha: '2026-07-09', asistio: true },
-      { id: 2, estudianteNombre: 'María López', instructorNombre: 'Ana García', fecha: '2026-07-09', asistio: true },
-      { id: 3, estudianteNombre: 'Carlos Sánchez', instructorNombre: 'Luis Martínez', fecha: '2026-07-09', asistio: false }
-    ]
+    datos.value = []
   } finally {
     cargando.value = false
   }
