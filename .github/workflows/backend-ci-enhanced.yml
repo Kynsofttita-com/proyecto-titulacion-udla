@@ -178,7 +178,7 @@ jobs:
         with:
           path: 'backend'
           project: 'Proyecto-Titulacion-Backend'
-          format: 'All'
+          format: 'ALL'
 
       - name: Upload Dependency-Check reports
         uses: actions/upload-artifact@v4
