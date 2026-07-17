@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-auth
+  labels:
+    app: ms-auth
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: http
+  selector:
+    app: ms-auth
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-estudiantes
+  labels:
+    app: ms-estudiantes
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8082
+    targetPort: 8082
+    protocol: TCP
+    name: http
+  selector:
+    app: ms-estudiantes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-instructores
+  labels:
+    app: ms-instructores
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8083
+    targetPort: 8083
+    protocol: TCP
+    name: http
+  selector:
+    app: ms-instructores
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-vehiculos
+  labels:
+    app: ms-vehiculos
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8084
+    targetPort: 8084
+    protocol: TCP
+    name: http
+  selector:
+    app: ms-vehiculos
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-asignaciones
+  labels:
+    app: ms-asignaciones
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8085
+    targetPort: 8085
+    protocol: TCP
+    name: http
+  selector:
+    app: ms-asignaciones
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-cobros
+  labels:
+    app: ms-cobros
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8086
+    targetPort: 8086
+    protocol: TCP
+    name: http
+  selector:
+    app: ms-cobros
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-reportes
+  labels:
+    app: ms-reportes
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8087
+    targetPort: 8087
+    protocol: TCP
+    name: http
+  selector:
+    app: ms-reportes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-notificaciones
+  labels:
+    app: ms-notificaciones
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8088
+    targetPort: 8088
+    protocol: TCP
+    name: http
+  selector:
+    app: ms-notificaciones

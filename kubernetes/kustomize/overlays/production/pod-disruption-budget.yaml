@@ -1,0 +1,87 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-auth-pdb
+  namespace: proyecto-production
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ms-auth
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-cobros-pdb
+  namespace: proyecto-production
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ms-cobros
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-estudiantes-pdb
+  namespace: proyecto-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ms-estudiantes
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-instructores-pdb
+  namespace: proyecto-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ms-instructores
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-vehiculos-pdb
+  namespace: proyecto-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ms-vehiculos
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-asignaciones-pdb
+  namespace: proyecto-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ms-asignaciones
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-reportes-pdb
+  namespace: proyecto-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ms-reportes
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-notificaciones-pdb
+  namespace: proyecto-production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ms-notificaciones
