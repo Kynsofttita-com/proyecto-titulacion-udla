@@ -99,7 +99,7 @@ jobs:
       - name: Check coverage threshold (80%)
         working-directory: backend
         run: |
-          COVERAGE=$(find . -path '*jacoco/index.html' | head -1 | xargs grep -oP 'Total.*?\K[0-9.]+' || echo "0")
+          COVERAGE=$(find . -path '*jacoco/index.html' | head -1 | xargs grep -oP 'Total.*?<td class="ctr2">\K[0-9]+' | head -1 || echo "0")
           echo "Code Coverage: $COVERAGE%"
           if (( $(echo "$COVERAGE < 80" | bc -l) )); then
             echo "❌ Coverage below 80% threshold"
