@@ -499,40 +499,6 @@
           </template>
         </FormCard>
 
-        <!-- =============== INFO FUTURO =============== -->
-        <FormCard
-          v-if="activa === 'futuro'"
-          title="Próximas configuraciones"
-          description="Funcionalidades planificadas para sprints posteriores."
-          icon="pi pi-sparkles"
-        >
-          <div class="space-y-3">
-            <FuturoItem
-              icon="pi-envelope"
-              titulo="Plantillas de email"
-              descripcion="Editor visual para personalizar los textos de los correos automáticos (bienvenida, recuperación de contraseña, recordatorios de clase). Hoy las plantillas están hardcoded en el backend."
-              sprint="Sprint 9"
-            />
-            <FuturoItem
-              icon="pi-list"
-              titulo="Catálogos editables"
-              descripcion="CRUD visual para tipos de curso, categorías de licencia y conceptos de facturación. Hoy se gestionan via API directa."
-              sprint="Sprint 9"
-            />
-            <FuturoItem
-              icon="pi-image"
-              titulo="Subir logo institucional"
-              descripcion="Upload de imagen para el logo que aparece en facturas y reportes PDF. Hoy se usa un placeholder."
-              sprint="Sprint 11"
-            />
-            <FuturoItem
-              icon="pi-cloud-upload"
-              titulo="Backups automáticos"
-              descripcion="Configurar respaldos diarios de la base de datos con notificación de éxito/fallo."
-              sprint="Sprint 12"
-            />
-          </div>
-        </FormCard>
       </div>
     </div>
   </div>
@@ -574,26 +540,7 @@ const Field = defineComponent({
   }
 })
 
-const FuturoItem = defineComponent({
-  props: ['icon', 'titulo', 'descripcion', 'sprint'],
-  setup(props) {
-    return () =>
-      h('div', { class: 'flex items-start gap-3 p-3 rounded-lg border border-ink-200 bg-ink-50/30' }, [
-        h('div', { class: 'w-9 h-9 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center flex-shrink-0' }, [
-          h('i', { class: `pi ${props.icon} text-sm` })
-        ]),
-        h('div', { class: 'flex-1' }, [
-          h('div', { class: 'flex items-center gap-2 flex-wrap' }, [
-            h('p', { class: 'text-sm font-semibold text-ink-900' }, props.titulo),
-            h('span', { class: 'inline-flex items-center px-2 py-0.5 rounded-full bg-warning-50 text-warning-700 text-[10px] font-medium border border-warning-500/20' }, props.sprint)
-          ]),
-          h('p', { class: 'text-xs text-ink-600 mt-1 leading-relaxed' }, props.descripcion)
-        ])
-      ])
-  }
-})
-
-const activa = ref<'escuela' | 'horarios' | 'marca' | 'alertas' | 'catalogos' | 'seguridad' | 'futuro'>('escuela')
+const activa = ref<'escuela' | 'horarios' | 'marca' | 'alertas' | 'catalogos' | 'seguridad'>('escuela')
 const guardando = ref(false)
 
 const secciones = [
@@ -602,8 +549,7 @@ const secciones = [
   { key: 'marca',     label: 'Identidad visual',    icon: 'pi-palette',  hint: 'Colores corporativos' },
   { key: 'alertas',   label: 'Alertas',             icon: 'pi-bell',     hint: 'Umbrales del sistema' },
   { key: 'catalogos', label: 'Catálogos',           icon: 'pi-book',     hint: 'Conceptos y tipos de curso' },
-  { key: 'seguridad', label: 'Seguridad',           icon: 'pi-shield',   hint: 'Bloqueos y contraseñas' },
-  { key: 'futuro',    label: 'Próximamente',        icon: 'pi-sparkles', hint: 'Funcionalidades futuras' }
+  { key: 'seguridad', label: 'Seguridad',           icon: 'pi-shield',   hint: 'Bloqueos y contraseñas' }
 ]
 
 const config = reactive<any>({
