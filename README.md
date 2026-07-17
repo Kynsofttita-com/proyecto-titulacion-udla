@@ -200,15 +200,21 @@ proyecto-titulacion/
 
 ### Levantar el sistema completo (recomendado) ⭐
 
-Este flujo levanta los 14 contenedores del backend + el frontend Vue en modo dev. Es lo que necesitás para usar la app.
+Este flujo levanta los 15 contenedores del backend + frontend + infraestructura. Es lo que necesitás para usar la app.
 
 ```bash
 # 1. Clonar el repo
 git clone https://github.com/Kynsofttita-com/proyecto-titulacion-udla.git
 cd proyecto-titulacion-udla
 
-# 2. Levantar el stack completo del backend (14 contenedores Docker)
-docker compose -f infrastructure/docker/docker-compose.yml up -d
+# 2. Compilar los JARs del backend (solo la primera vez o al cambiar codigo Java)
+#    Los JARs NO estan en git (100MB+ limit). Este script los compila secuencialmente
+#    para evitar bytecode corrupto por race condition MapStruct + Lombok.
+./scripts/build-backend.sh
+# Duracion: ~2-3 minutos
+
+# 3. Levantar el stack completo del backend (15 contenedores Docker)
+docker compose -f infrastructure/docker/docker-compose.yml up -d --build
 
 # 3. Esperar a que todos los healthchecks pasen (~50-60s la primera vez, ~30s las siguientes)
 docker compose -f infrastructure/docker/docker-compose.yml ps
