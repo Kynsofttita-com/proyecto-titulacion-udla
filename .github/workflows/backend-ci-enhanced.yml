@@ -159,7 +159,7 @@ jobs:
 
       - name: SonarQube Scan - Skipped (No Token)
         if: ${{ secrets.SONAR_TOKEN == '' }}
-        run: echo "⚠️ SonarQube skipped: SONAR_TOKEN secret not configured. Configure it to enable SonarQube analysis."
+        run: echo "SonarQube skipped - SONAR_TOKEN secret not configured"
 
       - name: Check SonarQube Quality Gate
         run: |
