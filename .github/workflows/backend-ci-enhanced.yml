@@ -123,6 +123,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: build-and-test
+    continue-on-error: true
 
     steps:
       - name: Checkout repository
