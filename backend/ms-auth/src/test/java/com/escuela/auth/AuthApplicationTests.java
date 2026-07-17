@@ -6,9 +6,9 @@ import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Smoke test: verifica que el contexto de Spring carga correctamente.
- * Si este test pasa, la configuración base del microservicio es válida.
+ * Usa MOCK webEnvironment para cargar SecurityConfig sin iniciar un servidor HTTP real.
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
 class AuthApplicationTests {
 

@@ -7,7 +7,7 @@ import org.springframework.test.context.ActiveProfiles;
 /**
  * Smoke test: verifica que el contexto de Spring carga correctamente.
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
 class AsignacionesApplicationTests {
 
