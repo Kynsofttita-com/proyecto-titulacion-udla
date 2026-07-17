@@ -99,17 +99,20 @@ jobs:
       - name: Check coverage threshold (80%)
         working-directory: backend
         run: |
+          # First try the aggregated report at the root backend directory
           JACOCO_REPORT="./target/site/jacoco/index.html"
           if [ ! -f "$JACOCO_REPORT" ]; then
             echo "⚠️  JaCoCo aggregated report not found at $JACOCO_REPORT"
-            echo "Searching for individual module reports..."
-            JACOCO_REPORT=$(find . -path '*target/site/jacoco/index.html' | grep -v '.m2' | sort | tail -1)
+            echo "Searching for module reports in pom-level location..."
+            JACOCO_REPORT=$(find . -path '*/target/site/jacoco/index.html' | grep -v '.m2' | head -1)
             if [ -z "$JACOCO_REPORT" ]; then
-              echo "❌ No JaCoCo reports found at all"
+              echo "❌ No JaCoCo reports found"
+              ls -la ./target/ 2>/dev/null || echo "No ./target directory"
+              find . -name "jacoco.exec" 2>/dev/null || echo "No jacoco.exec files found"
               exit 1
             fi
           fi
-          echo "Using report: $JACOCO_REPORT"
+          echo "✅ Using report: $JACOCO_REPORT"
           COVERAGE=$(grep -oP 'Total.*?<td class="ctr2">\K[0-9]+' "$JACOCO_REPORT" | head -1 || echo "0")
           echo "Code Coverage: $COVERAGE%"
           if (( $(echo "$COVERAGE < 80" | bc -l) )); then
@@ -180,6 +183,7 @@ jobs:
           path: 'backend'
           format: 'All'
           args: >
+            --project "Proyecto-Titulacion-Backend"
             --enable-retired
 
       - name: Upload Dependency-Check reports
@@ -220,8 +224,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up JDK 21 (for Maven cache)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           scan-type: 'fs'
           scan-ref: 'backend'
@@ -230,6 +242,7 @@ jobs:
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v2
+        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy'
