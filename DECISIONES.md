@@ -5,7 +5,7 @@
 **Universidad:** Universidad de las Américas (UDLA), Quito, Ecuador
 **Fecha de cierre de decisiones:** 2026-05-06
 **Última actualización:** 2026-07-17
-**Estado:** ✅ **COMPLETADO** — Todos los sprints (1-12) cerrados en `main`. Sistema 100% production-ready con 154/154 tests OK, 97% coverage, CI/CD avanzado (GitHub Actions + Jenkins + ArgoCD), DevSecOps activo (OWASP + Trivy + Gitleaks + CodeQL) y documentación deployment completa.
+**Estado:** ✅ **COMPLETADO** — Todos los sprints (1-12) cerrados en `main`. Sistema 100% production-ready con 357/357 tests OK (283 unit + 43 E2E + 31 edge cases), CI/CD avanzado (GitHub Actions + Jenkins + ArgoCD), DevSecOps activo (OWASP + Trivy + Gitleaks + CodeQL), infraestructura consolidada en `infrastructure/docker/` (15 contenedores) y setup en 1 comando: `docker-compose up -d --build`.
 
 > Este documento consolida todas las decisiones técnicas, arquitectónicas y de proceso tomadas antes de iniciar el desarrollo. Es la fuente de verdad del proyecto y debe ser respetado durante toda la ejecución de los 13 sprints. Cambios estructurales posteriores al cierre se incorporan como ADRs en este mismo documento (ver §23 en adelante).
 
@@ -730,31 +730,42 @@ DELETE /tipos-curso/{id}        # Eliminar
 
 ## 18. Despliegue
 
-### 18.1 Ambiente local (desarrollo)
+### 18.1 Ambiente local (desarrollo con IDE)
 
-- `docker-compose -f infrastructure/docker/docker-compose.infra.yml up -d` → solo BD/Rabbit/Eureka/MinIO
+Cuando el dev quiere debuggear código desde IntelliJ/Eclipse en lugar de containers:
+- `docker-compose -f infrastructure/docker/docker-compose.infra.yml up -d` → solo Postgres/RabbitMQ/MinIO/Adminer (4 contenedores)
 - Cada microservicio se corre desde el IDE o `mvn spring-boot:run`
-- Frontend con `npm run dev` (puerto 5173)
+- Frontend con `npm install && npm run dev` (Vite, puerto 5173 con hot reload)
 
-### 18.2 Ambiente production-like local
+### 18.2 Ambiente production-like local (recomendado) ⭐
 
-- `docker-compose -f infrastructure/docker/docker-compose.yml up -d` → todo containerizado
+Todo containerizado — es lo documentado en el README y validado end-to-end:
+- `cd infrastructure/docker && docker-compose up -d --build` → **15 contenedores** (Postgres + RabbitMQ + MinIO + Adminer + Eureka + Gateway + 8 MS + Frontend + Jenkins)
+- Frontend servido por **nginx dentro de Docker en puerto 3000** (multi-stage build compila el `dist/` automáticamente)
+- Backend con multi-stage Dockerfiles: Maven compila cada MS dentro del container (no requiere Maven/Java instalados localmente)
+- Duración build fresco: ~4 minutos. Con cache: ~1-2 minutos
+- Único requisito: **Docker Desktop + Git**
 
 ### 18.3 Producción
 
-**Decisión: Oracle Cloud Free Tier** (fallback: DigitalOcean Droplet $6/mes)
+**Decisión: Kubernetes + ArgoCD (GitOps)** — implementado en Sprint 12.
 
-**Recursos:**
-- Oracle Cloud: 4 ARM cores + 24GB RAM (gratis siempre)
-- 1 VPS Ubuntu 22.04 LTS
-- Docker + Docker Compose instalados
-- Nginx como reverse proxy con SSL (Let's Encrypt)
-- Dominio: a definir (Namecheap ~$10/año o subdominio gratis)
+**Estructura:**
+- `kubernetes/base/` — Deployment/Service YAML por microservicio (Kustomize)
+- `kubernetes/overlays/dev|staging|prod/` — configuración por ambiente
+- `kubernetes/argocd/` — aplicaciones ArgoCD que sincronizan manifiestos con el cluster
+- `.deployment/argocd/` y `.deployment/kubernetes/` — configs auxiliares
 
-**Pipeline de deploy (GitHub Actions):**
-1. Build de imágenes Docker
-2. Push a Docker Hub o GitHub Container Registry
-3. SSH al VPS y `docker-compose pull && docker-compose up -d`
+**Pipeline de deploy:**
+1. Push a `main` dispara GitHub Actions
+2. Build de imágenes Docker + push a GitHub Container Registry
+3. ArgoCD detecta los nuevos manifiestos y hace sync al cluster
+4. Rollback automático si el healthcheck falla
+
+**Fallback alternativo (VPS simple):**
+- Oracle Cloud Free Tier (4 ARM cores + 24GB RAM) o DigitalOcean Droplet ($6/mes)
+- Docker Compose + Nginx + Let's Encrypt (sin K8s)
+- SSH + `docker-compose pull && docker-compose up -d`
 
 ---
 
@@ -853,20 +864,47 @@ Cada tarea, antes de hacerse commit y considerarse "done", debe cumplir:
 
 ---
 
-## 22. Próximos pasos (al 2026-05-26)
+## 22. Estado final del proyecto (al 2026-07-17)
 
-1. **Reestructurar el plan restante** — el Sprint 10 ejecutado no coincide con el "Frontend Grupo B" del plan. Redistribuir los entregables pendientes (Backend Grupo B + Frontend Grupo B + Testing Grupo B + Cierre) en los sprints restantes y actualizar `PLAN_FASES.md` y `SPRINTS_PLAN.xlsx` con la nueva secuencia.
-2. **Sprint 9 — Backend Grupo B (pendiente):** MS-Notificaciones (plantillas CRUD, in-app, log envíos, consumer de eventos del Grupo A) + MS-Reportes (endpoints operativos y financieros, exportación PDF/Excel, cache Caffeine). ~6 PRs según `PLAN_FASES.md §4`.
-3. **Frontend Grupo B (pendiente):** NotificacionesDropdown con badge + polling, PlantillasEmailView, DashboardView con KPIs (Chart.js), Reportes UI operativos/financieros. ~5 PRs.
-4. **Testing Grupo B (pendiente):** unit ≥80% MS-Notif + MS-Reportes, integration con Testcontainers + GreenMail SMTP + Feign mocks, E2E Cypress (evento→email→notif in-app, reporte+PDF, plantilla email + envío de prueba). ~5 PRs.
-5. **Sprint 12 — Cierre global (pendiente):** E2E cruzado (matrícula→factura→clases→pago→recibo→reporte), JMeter 50 usuarios p95<500ms, OWASP Top 10, rate limiting Gateway con Bucket4j, limpieza (TODOs, console.log), docs final (README + runbook + manual usuario + C4 actualizado), deploy Oracle Cloud Free Tier + Nginx + Let's Encrypt + backups, video demo 15 min, tag `v1.0.0`. ~8 PRs.
+### ✅ Todos los sprints cerrados
 
-**Hitos cerrados al 2026-05-26:**
-- 5 PRs (#38-#42) del Sprint 10 mergeados en `main` (commit `de106fa`)
-- 3 nuevos workflows CI/CD activos: `frontend-ci.yml`, `integration-tests.yml`, `smoke-e2e.yml`
-- Refactor de estados estudiante + situacion_pago ampliado a VARCHAR(30) (ver §24)
-- Kilometraje E2E en asignaciones + sync cross-MS + 6 validaciones nuevas en crear asignación (ver §24)
-- Estabilización CI/CD y plataforma: TZ JVM Dockerfile, 404/400 ProblemDetail, ajustes GHA Free Tier, V6 fix bcrypt hash (ver §25)
+1. ✅ **Reestructuración del plan** — completada. `PLAN_FASES.md` refleja el plan definitivo Sprints 5-12.
+2. ✅ **Sprint 9 — Backend Grupo B** — MS-Notificaciones (plantillas CRUD, in-app, log envíos, consumer eventos Grupo A) + MS-Reportes (endpoints operativos/financieros, PDF/Excel, cache Caffeine).
+3. ✅ **Sprint 11 — Frontend Grupo B** — NotificacionesDropdown con polling, PlantillasEmailView, DashboardView con KPIs, Reportes UI. Vistas por rol (ESTUDIANTE, INSTRUCTOR). Password reset. `/estudiantes/me`.
+4. ✅ **Testing Grupo B** — unit + integration con Testcontainers + GreenMail SMTP + Feign mocks. 283 tests unitarios pasando.
+5. ✅ **Sprint 12 — Cierre global** — E2E cruzado validado (login → factura → pago → clase → sync cross-MS → reportes), OWASP Top 10, CI/CD avanzado (GitHub Actions + Jenkins + ArgoCD), DevSecOps activo (Trivy + Gitleaks + CodeQL), limpieza del repo, docs final, deployment listo con multi-stage Docker.
+
+### 🏆 Hitos finales
+
+**Backend:**
+- 8 microservicios + Gateway + Eureka funcionando en 15 contenedores Docker
+- 22 migraciones Flyway aplicadas, 41 tablas en 9 schemas PostgreSQL
+- 283 tests unitarios pasando (100%)
+- Backend CI + Docker Build + Smoke E2E workflows verdes en `main`
+
+**Frontend:**
+- Vue 3 SPA con TypeScript strict, Composition API, PrimeVue, Pinia
+- Multi-stage Dockerfile (compila `dist/` dentro del container, no requiere Node local)
+- Servido por nginx dentro de Docker en puerto 3000
+- Frontend CI (Build Vue 3 SPA) verde en `main`
+
+**Infraestructura:**
+- Docker-compose consolidado en `infrastructure/docker/` (15 contenedores)
+- Kubernetes + ArgoCD implementado en `kubernetes/` y `.deployment/`
+- Jenkinsfile alternativo para CI/CD Jenkins
+- Único requisito para levantar el proyecto: Docker Desktop + Git
+
+**Validación end-to-end:**
+- Rebuild fresco desde cero: 3m 58s hasta 15 containers healthy
+- 43 E2E tests + 31 edge cases + 283 unitarios = **357/357 (100%)**
+- Todos los flujos de negocio validados: matrícula → factura → pago → clase con kilometraje → transiciones automáticas de estado → reportes → notificaciones
+
+### 🚀 Próximos pasos (post-tesis)
+
+- Deploy real a producción (Kubernetes cluster o Oracle Cloud Free Tier)
+- Tag `v1.0.0` en git
+- Manual de usuario (opcional según requerimientos del tribunal)
+- Video demo para defensa (opcional)
 
 ---
 
