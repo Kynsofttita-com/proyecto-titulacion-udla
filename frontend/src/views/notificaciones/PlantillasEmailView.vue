@@ -24,10 +24,11 @@
       v-model:visible="mostrarModal"
       :header="plantillaEdicion ? 'Editar Plantilla' : 'Nueva Plantilla'"
       modal
-      class="w-full md:w-3/4 lg:w-2/3"
+      class="w-full md:w-11/12 lg:w-5/6 xl:w-4/5"
       @hide="limpiarFormulario"
     >
       <div class="space-y-4">
+        <!-- Metadata -->
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-ink-900 mb-2">Código</label>
@@ -67,16 +68,35 @@
           />
         </div>
 
+        <!-- Editor visual + Preview lado a lado -->
         <div>
-          <label class="block text-sm font-medium text-ink-900 mb-2">Contenido HTML</label>
-          <Textarea
-            v-model="formulario.contenido"
-            placeholder="Contenido HTML de la plantilla. Variables disponibles: {{nombre}}, {{apellido}}, {{email}}, etc."
-            class="w-full"
-            rows="8"
-          />
-          <p class="text-xs text-ink-500 mt-1">
-            💡 Usa {{variable}} para insertar datos dinámicos
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-sm font-medium text-ink-900">Contenido del email</label>
+            <button
+              type="button"
+              @click="mostrarPreview = !mostrarPreview"
+              class="text-xs text-brand-700 hover:text-brand-800 flex items-center gap-1"
+            >
+              <i :class="mostrarPreview ? 'pi pi-eye-slash' : 'pi pi-eye'" class="text-xs" />
+              {{ mostrarPreview ? 'Ocultar' : 'Mostrar' }} vista previa
+            </button>
+          </div>
+
+          <div class="grid gap-4" :class="mostrarPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'">
+            <HtmlEditor
+              v-model="formulario.contenido"
+              :variables="variablesDisponibles"
+            />
+            <EmailPreview
+              v-if="mostrarPreview"
+              :asunto="formulario.asunto"
+              :cuerpo="formulario.contenido"
+            />
+          </div>
+
+          <p class="text-xs text-ink-500 mt-2 flex items-start gap-1.5">
+            <i class="pi pi-info-circle text-[10px] mt-0.5" />
+            Usa la barra superior para dar formato al texto. Con el botón <span class="font-medium">"Insertar variable"</span> puedes agregar datos dinámicos como el nombre del estudiante, fecha de clase, etc.
           </p>
         </div>
 
@@ -169,6 +189,8 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import HtmlEditor from '@/components/ui/HtmlEditor.vue'
+import EmailPreview from '@/components/ui/EmailPreview.vue'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
@@ -180,7 +202,26 @@ const plantillas = ref<Plantilla[]>([])
 const loading = ref(false)
 const guardando = ref(false)
 const mostrarModal = ref(false)
+const mostrarPreview = ref(true)
 const plantillaEdicion = ref<Plantilla | null>(null)
+
+// Variables disponibles para las plantillas de email (uso comun del sistema)
+const variablesDisponibles = [
+  { key: 'nombre',           descripcion: 'Nombre del estudiante' },
+  { key: 'apellido',         descripcion: 'Apellido del estudiante' },
+  { key: 'nombreCompleto',   descripcion: 'Nombre completo del destinatario' },
+  { key: 'email',            descripcion: 'Correo del destinatario' },
+  { key: 'telefono',         descripcion: 'Telefono del destinatario' },
+  { key: 'cedula',           descripcion: 'Cedula del destinatario' },
+  { key: 'fecha',            descripcion: 'Fecha del evento (clase, factura, etc.)' },
+  { key: 'hora',             descripcion: 'Hora del evento' },
+  { key: 'instructor',       descripcion: 'Nombre del instructor asignado' },
+  { key: 'vehiculo',         descripcion: 'Vehiculo asignado a la clase' },
+  { key: 'monto',            descripcion: 'Monto de la factura o pago' },
+  { key: 'numeroFactura',    descripcion: 'Numero de la factura' },
+  { key: 'categoria',        descripcion: 'Categoria de licencia' },
+  { key: 'escuela',          descripcion: 'Nombre de la escuela' }
+]
 
 const formulario = ref<CreatePlantillaRequest>({
   codigo: '',
