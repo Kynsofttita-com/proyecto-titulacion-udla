@@ -78,6 +78,7 @@
         <minio.version>8.5.14</minio.version>
         <flyway.version>10.20.1</flyway.version>
         <testcontainers.version>1.20.4</testcontainers.version>
+        <mockito.version>5.14.2</mockito.version>
 
         <!-- Plugins -->
         <jacoco.version>0.8.12</jacoco.version>
@@ -284,6 +285,9 @@
                     shared/* (no tienen tests). Los integration tests se separan por
                     naming convention: *Tests.java (unit) vs *IT.java (integration via
                     failsafe). failIfNoTests=false evita errores en modules sin tests.
+
+                    Mockito inline: Requerido en Java 21+ para inline-mock-maker
+                    Usa mockito-inline como dependency para que Maven lo resuelva automáticamente
                 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -291,7 +295,17 @@
                     <version>${surefire.version}</version>
                     <configuration>
                         <failIfNoTests>false</failIfNoTests>
+                        <argLine>-Duser.timezone=America/Guayaquil</argLine>
                     </configuration>
+                    <dependencies>
+                        <!-- Mockito inline para Java 21+ compatibility (self-attaching) -->
+                        <dependency>
+                            <groupId>org.mockito</groupId>
+                            <artifactId>mockito-inline</artifactId>
+                            <version>${mockito.version}</version>
+                            <scope>runtime</scope>
+                        </dependency>
+                    </dependencies>
                 </plugin>
 
                 <!-- Failsafe (tests de integración - naming convention *IT.java) -->
