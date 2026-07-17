@@ -18,7 +18,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/instructores/{instructorId}/certificaciones")
-@Tag(name = "Instructores - Certificaciones", description = "Certificaciones y credenciales del instructor")
+@Tag(name = "Instructores - Certificaciones", description = "Certificaciones del instructor")
 public class CertificacionController {
 
     private static final Set<String> ROLES_LECTURA = Set.of("ADMIN", "STAFF", "INSTRUCTOR");
@@ -42,7 +42,7 @@ public class CertificacionController {
     }
 
     @PostMapping
-    @Operation(summary = "Agregar certificación")
+    @Operation(summary = "Agregar certificacion")
     public ResponseEntity<CertificacionResponse> agregar(
             @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
             @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
@@ -52,33 +52,33 @@ public class CertificacionController {
         AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ESCRITURA);
         CertificacionResponse creada = service.agregar(instructorId, request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}").buildAndExpand(creada.getId()).toUri();
+                .path("/{id}").buildAndExpand(creada.id()).toUri();
         return ResponseEntity.created(location).body(creada);
     }
 
-    @PutMapping("/{certificacionId}")
-    @Operation(summary = "Actualizar certificación")
+    @PutMapping("/{certId}")
+    @Operation(summary = "Actualizar certificacion")
     public ResponseEntity<CertificacionResponse> actualizar(
             @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
             @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
             @PathVariable Long instructorId,
-            @PathVariable Long certificacionId,
+            @PathVariable Long certId,
             @Valid @RequestBody CertificacionRequest request) {
         AuthHeaderGuard.requireAuth(userEmail);
         AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ESCRITURA);
-        return ResponseEntity.ok(service.actualizar(instructorId, certificacionId, request));
+        return ResponseEntity.ok(service.actualizar(instructorId, certId, request));
     }
 
-    @DeleteMapping("/{certificacionId}")
-    @Operation(summary = "Eliminar certificación (soft delete)")
+    @DeleteMapping("/{certId}")
+    @Operation(summary = "Eliminar certificacion (soft delete)")
     public ResponseEntity<Void> eliminar(
             @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
             @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
             @PathVariable Long instructorId,
-            @PathVariable Long certificacionId) {
+            @PathVariable Long certId) {
         AuthHeaderGuard.requireAuth(userEmail);
         AuthHeaderGuard.requireAnyRole(userRoles, ROLES_ESCRITURA);
-        service.eliminar(instructorId, certificacionId);
+        service.eliminar(instructorId, certId);
         return ResponseEntity.noContent().build();
     }
 }
