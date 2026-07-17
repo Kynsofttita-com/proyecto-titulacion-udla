@@ -416,7 +416,29 @@ services:
     depends_on:
       - postgresql
 
+  # Jenkins - CI/CD
+  jenkins:
+    build:
+      context: ./.deployment/jenkins
+      dockerfile: Dockerfile
+    container_name: proyecto-jenkins
+    environment:
+      JAVA_OPTS: -Duser.timezone=America/Guayaquil
+      JENKINS_OPTS: --httpPort=8090
+    ports:
+      - "8090:8090"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - proyecto-network
+    depends_on:
+      - postgresql
+      - rabbitmq
+
 volumes:
+  jenkins_home:
   postgres_data:
 
 networks:
