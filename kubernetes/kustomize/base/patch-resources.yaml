@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-auth
+spec:
+  template:
+    spec:
+      containers:
+      - name: ms-auth
+        env:
+        - name: LOG_LEVEL_ROOT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_LEVEL_ROOT
+        - name: LOG_LEVEL_APP
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_LEVEL_APP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-estudiantes
+spec:
+  template:
+    spec:
+      containers:
+      - name: ms-estudiantes
+        env:
+        - name: LOG_LEVEL_ROOT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_LEVEL_ROOT
+        - name: LOG_LEVEL_APP
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_LEVEL_APP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-instructores
+spec:
+  template:
+    spec:
+      containers:
+      - name: ms-instructores
+        env:
+        - name: LOG_LEVEL_ROOT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_LEVEL_ROOT
+        - name: LOG_LEVEL_APP
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_LEVEL_APP

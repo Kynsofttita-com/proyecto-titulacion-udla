@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  labels:
+    app: proyecto-titulacion
+data:
+  ENVIRONMENT: "staging"
+  LOG_LEVEL: "DEBUG"
+  LOG_LEVEL_ROOT: "INFO"
+  LOG_LEVEL_APP: "DEBUG"
+  LOG_LEVEL_SQL: "WARN"
+  SPRING_PROFILES_ACTIVE: "staging"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "escuela_db"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_VHOST: "/"
