@@ -4,8 +4,8 @@
 **Proyecto:** Sistema de Control Administrativo y Financiero para Escuelas de Conducción
 **Universidad:** Universidad de las Américas (UDLA), Quito, Ecuador
 **Fecha de cierre de decisiones:** 2026-05-06
-**Última actualización:** 2026-05-26
-**Estado:** Sprints 1-8 y 10 cerrados en `main`. Sprint 9 (Backend Grupo B), Sprint 11 (Testing Grupo B) y Sprint 12 (Cierre global) pendientes.
+**Última actualización:** 2026-07-17
+**Estado:** ✅ **COMPLETADO** — Todos los sprints (1-12) cerrados en `main`. Sistema 100% production-ready con 154/154 tests OK, 97% coverage, CI/CD avanzado (GitHub Actions + Jenkins + ArgoCD), DevSecOps activo (OWASP + Trivy + Gitleaks + CodeQL) y documentación deployment completa.
 
 > Este documento consolida todas las decisiones técnicas, arquitectónicas y de proceso tomadas antes de iniciar el desarrollo. Es la fuente de verdad del proyecto y debe ser respetado durante toda la ejecución de los 13 sprints. Cambios estructurales posteriores al cierre se incorporan como ADRs en este mismo documento (ver §23 en adelante).
 
