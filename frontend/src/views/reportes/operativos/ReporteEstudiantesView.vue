@@ -13,6 +13,8 @@
       <template #actions>
         <ReporteExporter
           tipoReporte="ESTUDIANTES_ACTIVOS"
+          titulo="Reporte de Estudiantes Activos"
+          :datos="datos"
           :tienesDatos="datos.length > 0"
         />
         <Button

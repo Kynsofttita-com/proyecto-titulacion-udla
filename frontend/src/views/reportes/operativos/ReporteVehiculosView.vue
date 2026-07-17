@@ -13,6 +13,8 @@
       <template #actions>
         <ReporteExporter
           tipoReporte="VEHICULOS_SOAT"
+          titulo="Reporte de SOAT de Vehiculos"
+          :datos="datos"
           :tienesDatos="datos.length > 0"
         />
         <Button

@@ -13,6 +13,8 @@
       <template #actions>
         <ReporteExporter
           tipoReporte="MOROSIDAD"
+          titulo="Reporte de Morosidad"
+          :datos="datos"
           :tienesDatos="datos.length > 0"
         />
         <Button
