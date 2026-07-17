@@ -215,25 +215,20 @@
     <build>
         <!-- JaCoCo plugin execution (must run on all builds for coverage reports) -->
         <plugins>
-            <!-- JaCoCo (code coverage instrumentation + report generation) -->
+            <!-- JaCoCo (code coverage instrumentation + aggregated report generation) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
                 <executions>
+                    <!-- Prepare agent for code instrumentation (executes before compile) -->
                     <execution>
                         <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
+                    <!-- Generate aggregated coverage report AFTER all tests complete (verify phase) -->
                     <execution>
                         <id>report-aggregate</id>
                         <phase>verify</phase>
