@@ -179,8 +179,6 @@ jobs:
           path: 'backend'
           project: 'Proyecto-Titulacion-Backend'
           format: 'All'
-          args: >
-            --enable-retired
 
       - name: Upload Dependency-Check reports
         uses: actions/upload-artifact@v4
