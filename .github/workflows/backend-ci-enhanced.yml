@@ -101,18 +101,18 @@ jobs:
         run: |
           # Maven already ran coverage verification during 'mvn verify'
           # This step just confirms reports exist (Maven ensures threshold compliance)
-          echo "✅ Build completed - Maven verified code quality gates"
-          echo "✅ All tests passed - coverage validation included"
+          echo " Build completed - Maven verified code quality gates"
+          echo " All tests passed - coverage validation included"
           echo ""
           echo "JaCoCo Reports Status:"
           REPORT_COUNT=$(find . -path "*/target/site/jacoco-aggregate/index.html" -o -path "*/target/site/jacoco/index.html" 2>/dev/null | wc -l)
           if [ $REPORT_COUNT -gt 0 ]; then
-            echo "✅ Found $REPORT_COUNT JaCoCo report files"
-            echo "✅ Coverage threshold verified by Maven build"
-            echo "✅ Quality gates: PASSED"
+            echo " Found $REPORT_COUNT JaCoCo report files"
+            echo " Coverage threshold verified by Maven build"
+            echo " Quality gates: PASSED"
           else
-            echo "⚠️  No JaCoCo reports found, but Maven build succeeded"
-            echo "⚠️  This may indicate reports not being generated (configuration issue, not code issue)"
+            echo "  No JaCoCo reports found, but Maven build succeeded"
+            echo "  This may indicate reports not being generated (configuration issue, not code issue)"
           fi
 
   # =========================================================================
@@ -163,7 +163,7 @@ jobs:
 
       - name: Check SonarQube Quality Gate
         run: |
-          echo "✅ Quality gate check (configurar en SonarQube dashboard)"
+          echo " Quality gate check (configurar en SonarQube dashboard)"
 
   # =========================================================================
   # STAGE 3: DEPENDENCY CHECK (OWASP)
@@ -319,34 +319,34 @@ jobs:
       - name: Check Quality Gates
         run: |
           echo "═══════════════════════════════════════════════════"
-          echo "✅ QUALITY GATE SUMMARY"
+          echo " QUALITY GATE SUMMARY"
           echo "═══════════════════════════════════════════════════"
           echo ""
-          echo "✅ CRITICAL - Tests & Coverage: ${{ needs.build-and-test.result }}"
-          echo "ℹ️  SECONDARY - SonarQube: ${{ needs.sonarqube-analysis.result }}"
-          echo "ℹ️  SECONDARY - Dependency Check: ${{ needs.dependency-check.result }}"
-          echo "ℹ️  SECONDARY - Security Scan: ${{ needs.security-scan.result }}"
-          echo "ℹ️  SECONDARY - Docker Build: ${{ needs.docker-build.result }}"
+          echo " CRITICAL - Tests & Coverage: ${{ needs.build-and-test.result }}"
+          echo "  SECONDARY - SonarQube: ${{ needs.sonarqube-analysis.result }}"
+          echo "  SECONDARY - Dependency Check: ${{ needs.dependency-check.result }}"
+          echo "  SECONDARY - Security Scan: ${{ needs.security-scan.result }}"
+          echo "  SECONDARY - Docker Build: ${{ needs.docker-build.result }}"
           echo ""
           echo "═══════════════════════════════════════════════════"
 
           # Determine pipeline status based on critical gate only
           if [ "${{ needs.build-and-test.result }}" != "success" ]; then
-            echo "❌ CRITICAL PIPELINE FAILED - Build/Tests failed"
+            echo " CRITICAL PIPELINE FAILED - Build/Tests failed"
             echo "Pipeline Status: FAILED"
             exit 1
           fi
 
-          echo "✅ CRITICAL GATES PASSED - Pipeline operacional"
+          echo " CRITICAL GATES PASSED - Pipeline operacional"
           echo ""
-          echo "ℹ️  Secondary jobs status (advisory only):"
-          [ "${{ needs.sonarqube-analysis.result }}" = "success" ] && echo "  ✅ SonarQube: OK" || echo "  ⚠️  SonarQube: ${{ needs.sonarqube-analysis.result }}"
-          [ "${{ needs.dependency-check.result }}" = "success" ] && echo "  ✅ Deps: OK" || echo "  ⚠️  Deps: ${{ needs.dependency-check.result }}"
-          [ "${{ needs.security-scan.result }}" = "success" ] && echo "  ✅ Security: OK" || echo "  ⚠️  Security: ${{ needs.security-scan.result }}"
-          [ "${{ needs.docker-build.result }}" = "success" ] && echo "  ✅ Docker Build: OK" || echo "  ⚠️  Docker Build: ${{ needs.docker-build.result }}"
+          echo "  Secondary jobs status (advisory only):"
+          [ "${{ needs.sonarqube-analysis.result }}" = "success" ] && echo "   SonarQube: OK" || echo "    SonarQube: ${{ needs.sonarqube-analysis.result }}"
+          [ "${{ needs.dependency-check.result }}" = "success" ] && echo "   Deps: OK" || echo "    Deps: ${{ needs.dependency-check.result }}"
+          [ "${{ needs.security-scan.result }}" = "success" ] && echo "   Security: OK" || echo "    Security: ${{ needs.security-scan.result }}"
+          [ "${{ needs.docker-build.result }}" = "success" ] && echo "   Docker Build: OK" || echo "    Docker Build: ${{ needs.docker-build.result }}"
           echo ""
-          echo "✅ PIPELINE STATUS: SUCCESS"
-          echo "✅ READY FOR DEPLOYMENT"
+          echo " PIPELINE STATUS: SUCCESS"
+          echo " READY FOR DEPLOYMENT"
           exit 0
 
       - name: Comment PR with results
@@ -354,7 +354,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const status = '${{ needs.build-and-test.result }}' === 'success' ? '✅' : '❌';
+            const status = '${{ needs.build-and-test.result }}' === 'success' ? '' : '';
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
