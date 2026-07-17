@@ -426,7 +426,7 @@ const guardar = async () => {
 
   isLoading.value = true
   try {
-    const payload = {
+    const payload: any = {
       nombre: form.nombre.trim(),
       apellido: form.apellido.trim(),
       cedula: form.cedula.trim(),
@@ -454,6 +454,16 @@ const guardar = async () => {
         life: 3000
       })
     } else {
+      // Al crear, incluir contactos de emergencia acumulados localmente
+      // (el backend acepta contactosEmergencia en CreateEstudianteRequest)
+      if (contactosEmergencia.value.length > 0) {
+        payload.contactosEmergencia = contactosEmergencia.value.map(c => ({
+          nombre: c.nombre,
+          telefono: c.telefono,
+          parentesco: c.parentesco || undefined,
+          esPrincipal: c.esPrincipal || false
+        }))
+      }
       await estudiantesService.crearEstudiante(payload)
       toast.add({
         severity: 'success',
@@ -521,15 +531,46 @@ const guardarContactoEmergencia = async () => {
     return
   }
 
+  const datosContacto = {
+    nombre: formContactoEmergencia.nombre.trim(),
+    telefono: formContactoEmergencia.telefono.trim(),
+    parentesco: formContactoEmergencia.parentesco?.trim() || undefined,
+    esPrincipal: formContactoEmergencia.esPrincipal
+  }
+
+  // Modo CREAR: buffer local (se envia al matricular estudiante)
+  if (!isEditing.value) {
+    if (editandoContacto.id === 'nuevo') {
+      // ID temporal negativo para distinguir de los del backend
+      const tempId = -Date.now()
+      contactosEmergencia.value.push({ id: tempId, ...datosContacto })
+      toast.add({
+        severity: 'success',
+        summary: 'Agregado',
+        detail: 'Contacto de emergencia agregado (se guardará al matricular)',
+        life: 3000
+      })
+    } else {
+      const idx = contactosEmergencia.value.findIndex(c => c.id === editandoContacto.id)
+      if (idx !== -1) {
+        contactosEmergencia.value[idx] = { id: editandoContacto.id, ...datosContacto }
+      }
+      toast.add({
+        severity: 'success',
+        summary: 'Actualizado',
+        detail: 'Contacto de emergencia actualizado',
+        life: 3000
+      })
+    }
+    cancelarContactoEmergencia()
+    return
+  }
+
+  // Modo EDITAR: llamada API real
   guardandoContacto.value = true
   try {
     if (editandoContacto.id === 'nuevo') {
-      await estudiantesService.crearContactoEmergencia(estudianteId.value as number, {
-        nombre: formContactoEmergencia.nombre.trim(),
-        telefono: formContactoEmergencia.telefono.trim(),
-        parentesco: formContactoEmergencia.parentesco?.trim() || undefined,
-        esPrincipal: formContactoEmergencia.esPrincipal
-      })
+      await estudiantesService.crearContactoEmergencia(estudianteId.value as number, datosContacto)
       toast.add({
         severity: 'success',
         summary: 'Agregado',
@@ -537,12 +578,7 @@ const guardarContactoEmergencia = async () => {
         life: 3000
       })
     } else {
-      await estudiantesService.actualizarContactoEmergencia(estudianteId.value as number, editandoContacto.id, {
-        nombre: formContactoEmergencia.nombre.trim(),
-        telefono: formContactoEmergencia.telefono.trim(),
-        parentesco: formContactoEmergencia.parentesco?.trim() || undefined,
-        esPrincipal: formContactoEmergencia.esPrincipal
-      })
+      await estudiantesService.actualizarContactoEmergencia(estudianteId.value as number, editandoContacto.id, datosContacto)
       toast.add({
         severity: 'success',
         summary: 'Actualizado',
@@ -565,6 +601,19 @@ const guardarContactoEmergencia = async () => {
 }
 
 const eliminarContacto = async (contactoId: number) => {
+  // Modo CREAR: quitar del array local
+  if (!isEditing.value) {
+    contactosEmergencia.value = contactosEmergencia.value.filter(c => c.id !== contactoId)
+    toast.add({
+      severity: 'success',
+      summary: 'Eliminado',
+      detail: 'Contacto de emergencia eliminado',
+      life: 3000
+    })
+    return
+  }
+
+  // Modo EDITAR: llamada API real
   try {
     await estudiantesService.eliminarContactoEmergencia(estudianteId.value as number, contactoId)
     toast.add({
