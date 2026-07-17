@@ -441,7 +441,7 @@ services:
   # Jenkins - CI/CD
   jenkins:
     build:
-      context: ../../.deployment/jenkins
+      context: ../jenkins
       dockerfile: Dockerfile
     container_name: proyecto-jenkins
     environment:
