@@ -190,17 +190,17 @@ proyecto-titulacion/
 ## 🚀 Inicio Rápido
 
 ### Requisitos previos
-- Java 21 JDK
-- Maven 3.8+
-- Node.js 18+ (recomendado 20 LTS)
-- Docker Desktop + Docker Compose
-- Git
+- **Docker Desktop** + Docker Compose
+- **Git**
+- **Java 21 JDK** — solo para el primer build (compilar los JARs del backend)
+- **Maven 3.8+** — solo para el primer build
+- **Node.js 18+** (opcional) — solo si querés desarrollar frontend con hot reload
 
 ---
 
 ### Levantar el sistema completo (recomendado) ⭐
 
-Este flujo levanta los 15 contenedores del backend + frontend + infraestructura. Es lo que necesitás para usar la app.
+Este flujo levanta los **15 contenedores** (backend + frontend + infra) en Docker. Es lo que necesitás para usar la app.
 
 ```bash
 # 1. Clonar el repo
@@ -208,35 +208,35 @@ git clone https://github.com/Kynsofttita-com/proyecto-titulacion-udla.git
 cd proyecto-titulacion-udla
 
 # 2. Compilar los JARs del backend (solo la primera vez o al cambiar codigo Java)
-#    Los JARs NO estan en git (100MB+ limit). Este script los compila secuencialmente
-#    para evitar bytecode corrupto por race condition MapStruct + Lombok.
+#    Los JARs NO estan en git (exceden el limite de 100MB de GitHub).
+#    Este script los compila SECUENCIALMENTE para evitar bytecode corrupto
+#    por race condition entre MapStruct y Lombok.
 ./scripts/build-backend.sh
 # Duracion: ~2-3 minutos
 
-# 3. Levantar el stack completo del backend (15 contenedores Docker)
-docker compose -f infrastructure/docker/docker-compose.yml up -d --build
+# 3. Levantar el stack completo (15 contenedores Docker)
+cd infrastructure/docker
+docker-compose up -d --build
+# Duracion: ~1-2 minutos
 
-# 3. Esperar a que todos los healthchecks pasen (~50-60s la primera vez, ~30s las siguientes)
-docker compose -f infrastructure/docker/docker-compose.yml ps
-# (todos deben aparecer "healthy")
+# 4. Esperar a que todos los healthchecks pasen y verificar
+docker-compose ps
+# Todos los servicios deben aparecer "healthy" (excepto adminer y jenkins que solo "Up")
 
-# 4. Verificar que Eureka registró los 9 servicios (Gateway + 8 MS)
+# 5. Verificar que Eureka registro los 9 servicios (Gateway + 8 MS)
 curl -s http://localhost:8761/eureka/apps -H "Accept: application/json" \
   | python -c "import sys,json; d=json.load(sys.stdin); print(f'Apps registradas: {len(d[\"applications\"][\"application\"])}')"
 # Debe imprimir: Apps registradas: 9
-
-# 5. Instalar deps del frontend (solo la primera vez)
-cd frontend
-npm install
-
-# 6. Configurar variables de entorno del frontend (solo la primera vez)
-cp .env.example .env
-# (el default apunta a http://localhost:8080, no requiere edición para local)
-
-# 7. Levantar el frontend Vue (dev server con hot reload)
-npm run dev
-# Debe imprimir: VITE v5.x.x ready in XXXms - Local: http://localhost:5173/
 ```
+
+**¡Listo!** Abrí **http://localhost:3000** en el navegador y entrá con:
+
+```
+Email:    admin@escuela.local
+Password: Admin123!
+```
+
+> 💡 El frontend Vue.js corre dentro de Docker (nginx en puerto 3000). **No necesitás** correr `npm install` ni `npm run dev` — está todo incluido en `docker-compose up`.
 
 **¡Listo!** Abrí **http://localhost:5173** en el navegador y entrá con:
 
