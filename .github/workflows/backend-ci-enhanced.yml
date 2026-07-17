@@ -145,23 +145,23 @@ jobs:
         run: mvn -B -ntp clean verify -DskipTests
 
       - name: SonarQube Scan
-        if: ${{ env.SONAR_TOKEN }}
         working-directory: backend
         env:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'http://localhost:9000' }}
           SONAR_LOGIN: ${{ secrets.SONAR_TOKEN }}
+        continue-on-error: true
         run: |
+          if [ -z "$SONAR_LOGIN" ]; then
+            echo "SonarQube token not configured, skipping scan"
+            exit 0
+          fi
           mvn -B -ntp sonar:sonar \
             -Dsonar.projectKey=proyecto-titulacion-backend \
-            -Dsonar.projectName="Proyecto Titulación - Backend" \
+            -Dsonar.projectName="Proyecto Titulacion - Backend" \
             -Dsonar.sources=src/main \
             -Dsonar.tests=src/test \
             -Dsonar.host.url=$SONAR_HOST_URL \
             -Dsonar.login=$SONAR_LOGIN
-
-      - name: SonarQube Scan - Skipped (No Token)
-        if: ${{ !env.SONAR_TOKEN }}
-        run: echo "SonarQube skipped - SONAR_TOKEN secret not configured"
 
       - name: Check SonarQube Quality Gate
         run: |
