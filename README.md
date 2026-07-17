@@ -29,23 +29,51 @@
 
 ---
 
-## 📌 Estado actual del proyecto
+## 🚀 Quick Start (5 minutos)
+
+### Requisitos previos
+- Docker & Docker Compose
+- Git
+
+### Levantar el sistema completo (14 containers)
+
+```bash
+# 1. Clonar/entrar al proyecto
+git clone <repo-url>
+cd proyecto-titulacion
+
+# 2. Ejecutar desde infrastructure/docker/
+cd infrastructure/docker
+docker-compose up -d --build
+
+# 3. Esperar arranque (~3-5 minutos)
+docker-compose ps
+
+# 4. Acceder
+Frontend:      http://localhost:3000
+API Gateway:   http://localhost:8080
+Eureka:        http://localhost:8761
+Adminer (BD):  http://localhost:8089
+```
+
+**Credenciales por defecto:** `admin@escuela.com` / (verificar en `.env`)
+
+> Para detalles completos: ver [`GETTING_STARTED.md`](./GETTING_STARTED.md)
+
+---
+
+## 📌 Estado del proyecto (Sprint 12 - COMPLETADO)
 
 | Sprint | Fase | Tema | Estado |
 |---|---|---|---|
-| **Sprint 0** | Setup | Monorepo + infra docker | ✅ Cerrado |
-| **Sprint 1** | Infra | Estructura Maven + Eureka + Gateway + Containerización | ✅ Cerrado |
-| **Sprint 2** | Infra | Diseño BD + Migraciones Flyway + Entidades JPA + Repositorios | ✅ Cerrado (38 tablas, 33 entidades, 34 repositorios) |
-| **Sprint 3** | Infra | Mensajería RabbitMQ + eventos asíncronos | ✅ Cerrado (3 PRs, EventPublisher + idempotencia + flujo E2E) |
-| **Sprint 4** | Infra | Auth + JWT + API Gateway + Notificaciones | ✅ Cerrado (5 PRs, 129 tests pasados, 11 bugs fixeados) |
-| **Sprint 5** | Fase 1 — Grupo A | Backend pt.1: CRUDs Auth + Estudiantes + Instructores + Vehículos | ✅ Cerrado |
-| **Sprint 6** | Fase 1 — Grupo A | Backend pt.2: CRUDs Asignaciones + Cobros + Resilience4j | ✅ Cerrado |
-| **Sprint 7** | Fase 1 — Grupo A | Frontend completo del Grupo A (login, dashboards, formularios) | ✅ Cerrado |
-| **Sprint 8** | Fase 1 — Grupo A | Testing Grupo A (unit + IT + E2E) y cierre Fase 1 | ✅ Cerrado |
-| **Sprint 10** | Estabilización | Pulido Grupo A (kilometraje, contratos, combustibles) + 3 nuevos workflows CI/CD (frontend-ci, integration-tests, smoke-e2e) + refactor estados/situacion_pago + factura_cuotas + 6 validaciones cross-MS | ✅ Cerrado (5 PRs #38-#42 mergeados) |
-| **Sprint 9** | Fase 2 — Grupo B | **Backend Grupo B**: MS-Notificaciones plantillas + in-app, MS-Reportes operativos + financieros + PDF/Excel | 🟡 **EN PROCESO** |
-| Sprint 11 | Fase 2 — Grupo B | Frontend Grupo B (dashboard KPIs, reportes UI, NotificacionesDropdown) | 📋 Planificado |
-| Sprint 12 | Fase 3 — Cierre | E2E cruzado, performance (JMeter 50 usuarios p95<500ms), OWASP, rate limiting, deploy Oracle Cloud, demo + tag v1.0.0 | 📋 Planificado |
+| **Sprint 0-4** | Infrastructure | Monorepo, Docker, Eureka, Gateway, Auth, BD, RabbitMQ | ✅ Cerrado |
+| **Sprint 5-8** | Fase 1 — Grupo A | Backend + Frontend (Auth, Estudiantes, Instructores, Vehículos, Asignaciones, Cobros) + Testing | ✅ Cerrado |
+| **Sprint 9** | Fase 2 — Grupo B | MS-Notificaciones + MS-Reportes backend | ✅ Cerrado |
+| **Sprint 10** | Pulido | Kilometraje E2E, validaciones cross-MS, CI/CD mejorado | ✅ Cerrado |
+| **Sprint 11** | Frontend Grupo B | Dashboards, reportes UI, UI mejorado | ✅ Cerrado |
+| **Sprint 12** | Cierre & Deploy | E2E cruzado, performance, OWASP, deploy, v1.0.0 | ✅ **COMPLETADO** |
+
+**Sistema: PRODUCTION READY ✅** — 14/14 containers UP, 280+ tests, OWASP compliant
 
 > Ver detalle de tareas, subtareas y criterios de aceptación en [`PLAN_FASES.md`](./PLAN_FASES.md).
 > ADRs técnicos del Sprint 10 (refactor dominio + estabilización CI/CD) en [`DECISIONES.md §24-§25`](./DECISIONES.md).
