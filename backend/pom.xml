@@ -215,6 +215,7 @@
     <build>
         <!-- JaCoCo plugin execution (must run on all builds for coverage reports) -->
         <plugins>
+            <!-- JaCoCo (code coverage instrumentation + report generation) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -241,6 +242,27 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Surefire (executes unit tests during test phase) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
+                <configuration>
+                    <failIfNoTests>false</failIfNoTests>
+                    <argLine>-Duser.timezone=America/Guayaquil</argLine>
+                </configuration>
+            </plugin>
+
+            <!-- Failsafe (executes integration tests during verify phase) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${surefire.version}</version>
+                <configuration>
+                    <failIfNoTests>false</failIfNoTests>
+                </configuration>
             </plugin>
         </plugins>
 
@@ -275,38 +297,6 @@
                             <arg>-Amapstruct.unmappedTargetPolicy=ERROR</arg>
                             <arg>-parameters</arg>
                         </compilerArgs>
-                    </configuration>
-                </plugin>
-
-                <!-- Surefire (tests unitarios) -->
-                <!--
-                    Nota: NO usamos <excludedGroups> a nivel padre porque requiere que
-                    junit-jupiter-engine esté en classpath, lo cual no ocurre en modules
-                    shared/* (no tienen tests). Los integration tests se separan por
-                    naming convention: *Tests.java (unit) vs *IT.java (integration via
-                    failsafe). failIfNoTests=false evita errores en modules sin tests.
-
-                    Java 21: Mockito 5.14.2+ auto-detects si puede self-attach.
-                    El warning "self-attaching" es informativo, no es bloqueante.
-                    Se recomienda mantener así en lugar de usar javaagent explícito.
-                -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${surefire.version}</version>
-                    <configuration>
-                        <failIfNoTests>false</failIfNoTests>
-                        <argLine>-Duser.timezone=America/Guayaquil</argLine>
-                    </configuration>
-                </plugin>
-
-                <!-- Failsafe (tests de integración - naming convention *IT.java) -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>${surefire.version}</version>
-                    <configuration>
-                        <failIfNoTests>false</failIfNoTests>
                     </configuration>
                 </plugin>
 
