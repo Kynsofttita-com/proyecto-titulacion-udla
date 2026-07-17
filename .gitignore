@@ -5,7 +5,7 @@
 
 # -------- Claude Code --------
 # Solo overrides locales, mantener settings.json y agents/ en el repo
-.claude/settings.local.json
+.claude/
 
 # -------- IDEs y Editores --------
 .idea/
