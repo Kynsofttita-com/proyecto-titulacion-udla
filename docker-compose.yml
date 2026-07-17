@@ -40,8 +40,11 @@ services:
   # Service Discovery
   eureka:
     build:
-      context: ./backend/eureka-server
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: eureka-server
+        SERVICE_PORT: 8761
     container_name: proyecto-eureka
     environment:
       SPRING_APPLICATION_NAME: eureka-server
@@ -64,8 +67,11 @@ services:
   # API Gateway
   api-gateway:
     build:
-      context: ./backend/api-gateway
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: api-gateway
+        SERVICE_PORT: 8080
     container_name: proyecto-gateway
     environment:
       SPRING_APPLICATION_NAME: api-gateway
@@ -99,8 +105,11 @@ services:
   # MS-Auth
   ms-auth:
     build:
-      context: ./backend/ms-auth
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: ms-auth
+        SERVICE_PORT: 8081
     container_name: proyecto-ms-auth
     environment:
       SPRING_APPLICATION_NAME: ms-auth
@@ -134,8 +143,11 @@ services:
   # MS-Estudiantes
   ms-estudiantes:
     build:
-      context: ./backend/ms-estudiantes
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: ms-estudiantes
+        SERVICE_PORT: 8082
     container_name: proyecto-ms-estudiantes
     environment:
       SPRING_APPLICATION_NAME: ms-estudiantes
@@ -169,8 +181,11 @@ services:
   # MS-Instructores
   ms-instructores:
     build:
-      context: ./backend/ms-instructores
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: ms-instructores
+        SERVICE_PORT: 8083
     container_name: proyecto-ms-instructores
     environment:
       SPRING_APPLICATION_NAME: ms-instructores
@@ -205,7 +220,10 @@ services:
   ms-vehiculos:
     build:
       context: ./backend
-      dockerfile: ms-vehiculos/Dockerfile
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: ms-vehiculos
+        SERVICE_PORT: 8084
     container_name: proyecto-ms-vehiculos
     environment:
       SPRING_APPLICATION_NAME: ms-vehiculos
@@ -239,8 +257,11 @@ services:
   # MS-Asignaciones
   ms-asignaciones:
     build:
-      context: ./backend/ms-asignaciones
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: ms-asignaciones
+        SERVICE_PORT: 8085
     container_name: proyecto-ms-asignaciones
     environment:
       SPRING_APPLICATION_NAME: ms-asignaciones
@@ -277,8 +298,11 @@ services:
   # MS-Cobros
   ms-cobros:
     build:
-      context: ./backend/ms-cobros
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: ms-cobros
+        SERVICE_PORT: 8086
     container_name: proyecto-ms-cobros
     environment:
       SPRING_APPLICATION_NAME: ms-cobros
@@ -314,8 +338,11 @@ services:
   # MS-Reportes
   ms-reportes:
     build:
-      context: ./backend/ms-reportes
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: ms-reportes
+        SERVICE_PORT: 8087
     container_name: proyecto-ms-reportes
     environment:
       SPRING_APPLICATION_NAME: ms-reportes
@@ -349,8 +376,11 @@ services:
   # MS-Notificaciones
   ms-notificaciones:
     build:
-      context: ./backend/ms-notificaciones
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_MODULE: ms-notificaciones
+        SERVICE_PORT: 8088
     container_name: proyecto-ms-notificaciones
     environment:
       SPRING_APPLICATION_NAME: ms-notificaciones
@@ -416,29 +446,7 @@ services:
     depends_on:
       - postgresql
 
-  # Jenkins - CI/CD
-  jenkins:
-    build:
-      context: ./.deployment/jenkins
-      dockerfile: Dockerfile
-    container_name: proyecto-jenkins
-    environment:
-      JAVA_OPTS: -Duser.timezone=America/Guayaquil
-      JENKINS_OPTS: --httpPort=8090
-    ports:
-      - "8090:8090"
-      - "50000:50000"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - proyecto-network
-    depends_on:
-      - postgresql
-      - rabbitmq
-
 volumes:
-  jenkins_home:
   postgres_data:
 
 networks:

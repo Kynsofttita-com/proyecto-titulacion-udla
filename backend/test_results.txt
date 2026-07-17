@@ -1,0 +1,317 @@
+01:04:04.847 [main] WARN com.escuela.common.security.jwt.JwtTokenProvider -- Firma JWT invalida: JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.
+01:04:04.896 [main] WARN com.escuela.common.security.jwt.JwtTokenProvider -- Error parseando JWT: Expected iss claim to be: otro-issuer, but was: escuela-conduccion.
+01:04:04.913 [main] WARN com.escuela.common.security.jwt.JwtTokenProvider -- Firma JWT invalida: JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.
+01:04:04.944 [main] WARN com.escuela.common.security.jwt.JwtTokenProvider -- Firma JWT invalida: JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.
+01:04:10.500 [main] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 8.0.1.Final
+01:04:19.136 [main] WARN com.escuela.common.security.jwt.JwtTokenProvider -- Firma JWT invalida: JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.
+01:04:19.139 [main] INFO com.escuela.gateway.filter.JwtAuthenticationGlobalFilter -- JWT invalido en path /estudiantes/1 (correlationId=2fdbc8c0-2b5b-466d-b880-4dfd8bb050da): JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.
+01:04:19.229 [main] WARN com.escuela.common.security.jwt.JwtTokenProvider -- JWT malformado: Malformed protected header JSON: Unable to deserialize: Unexpected character ('?' (code 65533 / 0xfffd)): expected a valid value (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1]
+01:04:19.229 [main] INFO com.escuela.gateway.filter.JwtAuthenticationGlobalFilter -- JWT invalido en path /estudiantes/1 (correlationId=99b88a39-8509-44d1-bf1a-2e19b08fc2ee): Malformed protected header JSON: Unable to deserialize: Unexpected character ('?' (code 65533 / 0xfffd)): expected a valid value (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1]
+01:04:19.257 [main] WARN com.escuela.gateway.filter.JwtAuthenticationGlobalFilter -- Token tipo REFRESH usado donde se esperaba ACCESS (path=/estudiantes/1, correlationId=2ff5488d-6ba1-45e3-a26e-9874530c81a2)
+01:04:26.895 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.escuela.auth.AuthApplicationTests]: AuthApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+01:04:27.083 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.escuela.auth.AuthApplication for test class com.escuela.auth.AuthApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.0)
+
+2026-07-17T01:04:28.061-05:00  INFO 16140 --- [ms-auth] [           main] com.escuela.auth.AuthApplicationTests    : Starting AuthApplicationTests using Java 21.0.9 with PID 16140 (started by hmate in C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto titulacion\backend\ms-auth)
+2026-07-17T01:04:28.063-05:00 DEBUG 16140 --- [ms-auth] [           main] com.escuela.auth.AuthApplicationTests    : Running with Spring Boot v3.4.0, Spring v6.2.0
+2026-07-17T01:04:28.063-05:00  INFO 16140 --- [ms-auth] [           main] com.escuela.auth.AuthApplicationTests    : The following 1 profile is active: "test"
+2026-07-17T01:04:32.951-05:00  WARN 16140 --- [ms-auth] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-07-17T01:04:37.347-05:00  WARN 16140 --- [ms-auth] [           main] .s.s.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: 6d6f1587-e652-4b01-8794-50f8907f33bf
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-07-17T01:04:40.511-05:00  INFO 16140 --- [ms-auth] [           main] com.escuela.auth.AuthApplicationTests    : Started AuthApplicationTests in 12.904 seconds (process running for 14.557)
+2026-07-17T01:04:42.528-05:00  WARN 16140 --- [ms-auth] [           main] com.escuela.auth.service.AuthService     : Intento de uso de refresh token revocado/expirado: jti=cd0a95b2-ab29-4087-994e-0ef1eaf3c232, usuario=42. Revocando todos los tokens del usuario.
+2026-07-17T01:04:42.642-05:00  WARN 16140 --- [ms-auth] [           main] c.e.c.security.jwt.JwtTokenProvider      : JWT malformado: Malformed protected header JSON: Unable to deserialize: Unexpected character ('?' (code 65533 / 0xfffd)): expected a valid value (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1]
+2026-07-17T01:04:42.713-05:00  WARN 16140 --- [ms-auth] [           main] com.escuela.auth.service.AuthService     : Cuenta bloqueada por 3 intentos fallidos: test@escuela.com
+2026-07-17T01:04:42.724-05:00  INFO 16140 --- [ms-auth] [           main] com.escuela.auth.service.AuthService     : Password reseteado para usuario test@escuela.com
+2026-07-17T01:04:42.728-05:00  WARN 16140 --- [ms-auth] [           main] c.e.c.security.jwt.JwtTokenProvider      : JWT malformado: Malformed protected header JSON: Unable to deserialize: Unexpected character ('?' (code 65533 / 0xfffd)): expected a valid value (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1]
+2026-07-17T01:04:42.728-05:00 DEBUG 16140 --- [ms-auth] [           main] com.escuela.auth.service.AuthService     : Logout con token invalido (ignorado): Malformed protected header JSON: Unable to deserialize: Unexpected character ('?' (code 65533 / 0xfffd)): expected a valid value (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1]
+2026-07-17T01:04:42.728-05:00  INFO 16140 --- [ms-auth] [           main] com.escuela.auth.service.AuthService     : Forgot-password con email inexistente (no se publica evento): nope@x.com
+2026-07-17T01:04:42.742-05:00  INFO 16140 --- [ms-auth] [           main] com.escuela.auth.service.AuthService     : Login rechazado: cuenta bloqueada test@escuela.com hasta 2026-07-17T01:14:42.728416300
+2026-07-17T01:04:42.999-05:00  INFO 16140 --- [ms-auth] [           main] c.e.a.service.CategoriaLicenciaService   : CategoriaLicencia soft-deleted id=1
+2026-07-17T01:04:43.011-05:00  INFO 16140 --- [ms-auth] [           main] c.e.a.service.CategoriaLicenciaService   : CategoriaLicencia creada id=7 codigo=D
+2026-07-17T01:04:43.179-05:00  INFO 16140 --- [ms-auth] [           main] c.e.auth.service.ConfiguracionService    : Configuracion actualizada id=1
+2026-07-17T01:04:43.276-05:00  INFO 16140 --- [ms-auth] [           main] c.escuela.auth.service.UsuarioService    : Usuario id=1 roles actualizados a [STAFF]
+2026-07-17T01:04:43.276-05:00  INFO 16140 --- [ms-auth] [           main] c.escuela.auth.service.UsuarioService    : Usuario soft-deleted id=1
+2026-07-17T01:04:43.276-05:00  INFO 16140 --- [ms-auth] [           main] c.escuela.auth.service.UsuarioService    : Usuario creado id=99 email=nuevo@escuela.local roles=[ADMIN, STAFF]
+2026-07-17T01:04:43.298-05:00  INFO 16140 --- [ms-auth] [           main] c.escuela.auth.service.UsuarioService    : Usuario id=1 desbloqueado por admin
+2026-07-17T01:04:43.310-05:00  INFO 16140 --- [ms-auth] [           main] c.escuela.auth.service.UsuarioService    : Usuario actualizado id=1
+01:04:50.924 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.escuela.estudiantes.EstudiantesApplication for test class com.escuela.estudiantes.controller.EstudianteControllerTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.0)
+
+2026-07-17T01:04:51.734-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.c.EstudianteControllerTest         : Starting EstudianteControllerTest using Java 21.0.9 with PID 26588 (started by hmate in C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto titulacion\backend\ms-estudiantes)
+2026-07-17T01:04:51.736-05:00 DEBUG 26588 --- [ms-estudiantes] [           main] c.e.e.c.EstudianteControllerTest         : Running with Spring Boot v3.4.0, Spring v6.2.0
+2026-07-17T01:04:51.737-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.c.EstudianteControllerTest         : No active profile set, falling back to 1 default profile: "default"
+2026-07-17T01:04:55.444-05:00  INFO 26588 --- [ms-estudiantes] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-07-17T01:04:55.444-05:00  INFO 26588 --- [ms-estudiantes] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-07-17T01:04:55.444-05:00  INFO 26588 --- [ms-estudiantes] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-07-17T01:04:55.507-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.c.EstudianteControllerTest         : Started EstudianteControllerTest in 4.304 seconds (process running for 5.906)
+2026-07-17T01:04:56.473-05:00  WARN 26588 --- [ms-estudiantes] [           main] ration$PageModule$WarningLoggingModifier : Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+2026-07-17T01:04:56.511-05:00  INFO 26588 --- [ms-estudiantes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.escuela.estudiantes.EstudiantesApplicationTests]: EstudiantesApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-07-17T01:04:56.522-05:00  INFO 26588 --- [ms-estudiantes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.escuela.estudiantes.EstudiantesApplication for test class com.escuela.estudiantes.EstudiantesApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.0)
+
+2026-07-17T01:04:56.631-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.EstudiantesApplicationTests        : Starting EstudiantesApplicationTests using Java 21.0.9 with PID 26588 (started by hmate in C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto titulacion\backend\ms-estudiantes)
+2026-07-17T01:04:56.632-05:00 DEBUG 26588 --- [ms-estudiantes] [           main] c.e.e.EstudiantesApplicationTests        : Running with Spring Boot v3.4.0, Spring v6.2.0
+2026-07-17T01:04:56.632-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.EstudiantesApplicationTests        : The following 1 profile is active: "test"
+2026-07-17T01:05:00.181-05:00  WARN 26588 --- [ms-estudiantes] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-07-17T01:05:02.382-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.service.FileStorageService         : FileStorageService inicializado. baseDir=C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto titulacion\backend\ms-estudiantes\storage\documentos
+2026-07-17T01:05:05.137-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.EstudiantesApplicationTests        : Started EstudiantesApplicationTests in 8.593 seconds (process running for 15.541)
+2026-07-17T01:05:05.587-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.service.DocumentoService           : Documento subido id=50 estudianteId=1 tipo=CEDULA
+2026-07-17T01:05:05.592-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.service.DocumentoService           : Documento soft-deleted id=10 estudianteId=1
+2026-07-17T01:05:05.844-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.c.events.publisher.EventPublisher    : Evento publicado: exchange=estudiantes.exchange, routingKey=estudiantes.actualizado, eventId=6086e73c-6ac6-4fd8-b8cb-3d4d3c4f8f17, source=ms-estudiantes
+2026-07-17T01:05:05.844-05:00  WARN 26588 --- [ms-estudiantes] [           main] c.e.e.service.EstudianteEventDispatcher  : RabbitTemplate no disponible (perfil test o RabbitMQ caido); skip evento routingKey=estudiantes.creado payload=EstudianteCreadoEvent(estudianteId=1, cedula=1710034065, email=null, nombreCompleto=null, estado=null)
+2026-07-17T01:05:05.857-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.c.events.publisher.EventPublisher    : Evento publicado: exchange=estudiantes.exchange, routingKey=estudiantes.matriculado, eventId=3d770b70-9020-4417-a080-37d3de68b78f, source=ms-estudiantes
+2026-07-17T01:05:05.860-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.c.events.publisher.EventPublisher    : Evento publicado: exchange=estudiantes.exchange, routingKey=estudiantes.eliminado, eventId=08f677fe-e819-4c66-a6bf-a64ac441a4be, source=ms-estudiantes
+2026-07-17T01:05:05.860-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.c.events.publisher.EventPublisher    : Evento publicado: exchange=estudiantes.exchange, routingKey=estudiantes.creado, eventId=6ab7c42c-40da-45b3-830c-f8791fbac14f, source=ms-estudiantes
+2026-07-17T01:05:06.126-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.service.EstudianteServiceImpl      : Estudiante soft-deleted id=1
+2026-07-17T01:05:06.153-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.service.EstudianteServiceImpl      : Estudiante actualizado id=1
+2026-07-17T01:05:06.158-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.service.EstudianteServiceImpl      : Estudiante actualizado id=1
+2026-07-17T01:05:06.162-05:00  INFO 26588 --- [ms-estudiantes] [           main] c.e.e.service.EstudianteServiceImpl      : Estudiante creado id=1 cedula=1710034065
+2026-07-17T01:05:06.163-05:00  WARN 26588 --- [ms-estudiantes] [           main] c.e.e.service.EstudianteServiceImpl      : AuthClient no disponible (perfil test o ms-auth caido); estudiante id=1 sin cuenta de Usuario auto-creada
+01:05:13.043 [main] INFO com.escuela.vehiculos.service.VehiculoServiceImpl -- Vehículo soft-deleted id=1
+01:05:13.058 [main] INFO com.escuela.vehiculos.service.VehiculoServiceImpl -- Vehículo creado id=1 placa=ABC-1234
+01:05:13.183 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.escuela.vehiculos.VehiculosApplicationTests]: VehiculosApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+01:05:13.346 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.escuela.vehiculos.VehiculosApplication for test class com.escuela.vehiculos.VehiculosApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.0)
+
+2026-07-17T01:05:14.069-05:00  INFO 1828 --- [ms-vehiculos] [           main] c.e.vehiculos.VehiculosApplicationTests  : Starting VehiculosApplicationTests using Java 21.0.9 with PID 1828 (started by hmate in C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto titulacion\backend\ms-vehiculos)
+2026-07-17T01:05:14.069-05:00 DEBUG 1828 --- [ms-vehiculos] [           main] c.e.vehiculos.VehiculosApplicationTests  : Running with Spring Boot v3.4.0, Spring v6.2.0
+2026-07-17T01:05:14.069-05:00  INFO 1828 --- [ms-vehiculos] [           main] c.e.vehiculos.VehiculosApplicationTests  : The following 1 profile is active: "test"
+2026-07-17T01:05:18.405-05:00  WARN 1828 --- [ms-vehiculos] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-07-17T01:05:25.700-05:00  INFO 1828 --- [ms-vehiculos] [           main] c.e.vehiculos.VehiculosApplicationTests  : Started VehiculosApplicationTests in 12.025 seconds (process running for 15.079)
+01:05:30.927 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.escuela.asignaciones.AsignacionesApplicationTests]: AsignacionesApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+01:05:31.083 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.escuela.asignaciones.AsignacionesApplication for test class com.escuela.asignaciones.AsignacionesApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.0)
+
+2026-07-17T01:05:31.901-05:00  INFO 12680 --- [ms-asignaciones] [           main] c.e.a.AsignacionesApplicationTests       : Starting AsignacionesApplicationTests using Java 21.0.9 with PID 12680 (started by hmate in C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto titulacion\backend\ms-asignaciones)
+2026-07-17T01:05:31.903-05:00 DEBUG 12680 --- [ms-asignaciones] [           main] c.e.a.AsignacionesApplicationTests       : Running with Spring Boot v3.4.0, Spring v6.2.0
+2026-07-17T01:05:31.904-05:00  INFO 12680 --- [ms-asignaciones] [           main] c.e.a.AsignacionesApplicationTests       : The following 1 profile is active: "test"
+2026-07-17T01:05:36.586-05:00  WARN 12680 --- [ms-asignaciones] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-07-17T01:05:42.558-05:00  INFO 12680 --- [ms-asignaciones] [           main] c.e.a.AsignacionesApplicationTests       : Started AsignacionesApplicationTests in 11.075 seconds (process running for 12.5)
+2026-07-17T01:05:44.246-05:00  INFO 12680 --- [ms-asignaciones] [           main] c.e.a.service.AsignacionServiceImpl      : Asignación reprogramada id=1
+2026-07-17T01:05:44.324-05:00  INFO 12680 --- [ms-asignaciones] [           main] c.e.a.service.AsignacionServiceImpl      : Asignación soft-deleted id=1
+2026-07-17T01:05:44.375-05:00  INFO 12680 --- [ms-asignaciones] [           main] c.e.a.service.AsignacionServiceImpl      : Asignación creada id=1
+01:05:50.528 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.escuela.cobros.CobrosApplicationTests]: CobrosApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+01:05:50.720 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.escuela.cobros.CobrosApplication for test class com.escuela.cobros.CobrosApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.0)
+
+2026-07-17T01:05:51.463-05:00  INFO 19328 --- [ms-cobros] [           main] c.escuela.cobros.CobrosApplicationTests  : Starting CobrosApplicationTests using Java 21.0.9 with PID 19328 (started by hmate in C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto titulacion\backend\ms-cobros)
+2026-07-17T01:05:51.463-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.escuela.cobros.CobrosApplicationTests  : Running with Spring Boot v3.4.0, Spring v6.2.0
+2026-07-17T01:05:51.463-05:00  INFO 19328 --- [ms-cobros] [           main] c.escuela.cobros.CobrosApplicationTests  : The following 1 profile is active: "test"
+2026-07-17T01:05:55.980-05:00  WARN 19328 --- [ms-cobros] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-07-17T01:06:03.214-05:00  INFO 19328 --- [ms-cobros] [           main] c.escuela.cobros.CobrosApplicationTests  : Started CobrosApplicationTests in 12.156 seconds (process running for 13.719)
+2026-07-17T01:06:04.330-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.EstadoCuentaServiceImpl    : Obteniendo estado de cuenta para estudiante: 1
+2026-07-17T01:06:04.383-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.EstadoCuentaServiceImpl    : Obteniendo estado de cuenta para estudiante: 999
+2026-07-17T01:06:04.383-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.EstadoCuentaServiceImpl    : Estudiante 999 sin facturas
+2026-07-17T01:06:04.393-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.EstadoCuentaServiceImpl    : Obteniendo estado de cuenta para estudiante: 1
+2026-07-17T01:06:04.398-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.EstadoCuentaServiceImpl    : Obteniendo estado de cuenta para estudiante: 1
+2026-07-17T01:06:04.398-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.EstadoCuentaServiceImpl    : Obteniendo estado de cuenta para estudiante: 1
+2026-07-17T01:06:04.591-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Buscando todas las facturas con paginación: Page request [number: 0, size 50, sort: UNSORTED]
+2026-07-17T01:06:04.613-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Buscando factura con ID: 1
+2026-07-17T01:06:04.630-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Soft-deletando factura con ID: 1
+2026-07-17T01:06:04.641-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Factura soft-deletada con ID: 1
+2026-07-17T01:06:04.661-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Creando factura para estudiante: 999 (tipoPago=CONTADO, cuotas=1)
+2026-07-17T01:06:04.663-05:00  WARN 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : No se pudo obtener estudiante 999 via Feign
+
+java.lang.RuntimeException: Student not found
+	at com.escuela.cobros.service.FacturaServiceImpl.validarEstudianteExisteYActivo(FacturaServiceImpl.java:230) ~[classes/:na]
+	at com.escuela.cobros.service.FacturaServiceImpl.create(FacturaServiceImpl.java:88) ~[classes/:na]
+	at com.escuela.cobros.service.FacturaServiceImplTest.lambda$testCreate_EstudianteNoEncontrado$1(FacturaServiceImplTest.java:166) ~[test-classes/:na]
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:53) ~[junit-jupiter-api-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35) ~[junit-jupiter-api-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3128) ~[junit-jupiter-api-5.11.3.jar:5.11.3]
+	at com.escuela.cobros.service.FacturaServiceImplTest.testCreate_EstudianteNoEncontrado(FacturaServiceImplTest.java:166) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767) ~[junit-platform-commons-1.11.3.jar:1.11.3]
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.java:217) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68) ~[junit-jupiter-engine-5.11.3.jar:5.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54) ~[junit-platform-engine-1.11.3.jar:1.11.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198) ~[junit-platform-launcher-1.11.3.jar:1.11.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169) ~[junit-platform-launcher-1.11.3.jar:1.11.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93) ~[junit-platform-launcher-1.11.3.jar:1.11.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58) ~[junit-platform-launcher-1.11.3.jar:1.11.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141) ~[junit-platform-launcher-1.11.3.jar:1.11.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57) ~[junit-platform-launcher-1.11.3.jar:1.11.3]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103) ~[junit-platform-launcher-1.11.3.jar:1.11.3]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85) ~[junit-platform-launcher-1.11.3.jar:1.11.3]
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47) ~[junit-platform-launcher-1.11.3.jar:1.11.3]
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56) ~[surefire-junit-platform-3.5.2.jar:3.5.2]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184) ~[surefire-junit-platform-3.5.2.jar:3.5.2]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148) ~[surefire-junit-platform-3.5.2.jar:3.5.2]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122) ~[surefire-junit-platform-3.5.2.jar:3.5.2]
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385) ~[surefire-booter-3.5.2.jar:3.5.2]
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.5.2.jar:3.5.2]
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.5.2.jar:3.5.2]
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.5.2.jar:3.5.2]
+
+2026-07-17T01:06:04.691-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Buscando facturas del estudiante: 1 con paginación: Page request [number: 0, size 50, sort: UNSORTED]
+2026-07-17T01:06:04.696-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Buscando factura con ID: 999
+2026-07-17T01:06:04.696-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Actualizando factura con ID: 1
+2026-07-17T01:06:04.696-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Factura actualizada con ID: 1
+2026-07-17T01:06:04.714-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Creando factura para estudiante: 1 (tipoPago=CONTADO, cuotas=1)
+2026-07-17T01:06:04.714-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Factura creada con ID: 1 y número: FAC-0001
+2026-07-17T01:06:04.734-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Creando factura para estudiante: 1 (tipoPago=CONTADO, cuotas=1)
+2026-07-17T01:06:04.735-05:00  WARN 19328 --- [ms-cobros] [           main] c.e.cobros.service.FacturaServiceImpl    : Estudiante 1 en estado INACTIVO no puede facturar
+2026-07-17T01:06:05.008-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Buscando todos los pagos con paginación: Page request [number: 0, size 50, sort: UNSORTED]
+2026-07-17T01:06:05.027-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Buscando pagos de la factura: 1 con paginación: Page request [number: 0, size 50, sort: UNSORTED]
+2026-07-17T01:06:05.034-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Registrando pago para factura: 1
+2026-07-17T01:06:05.036-05:00  WARN 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Monto de pago 2000 excede saldo disponible 1000 para factura 1
+2026-07-17T01:06:05.044-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Registrando pago para factura: 999
+2026-07-17T01:06:05.050-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Registrando pago para factura: 1
+2026-07-17T01:06:05.051-05:00  WARN 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Factura 1 está anulada, no se puede registrar pago
+2026-07-17T01:06:05.056-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Buscando pago con ID: 1
+2026-07-17T01:06:05.062-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Buscando pagos del estudiante: 1 con paginación: Page request [number: 0, size 50, sort: UNSORTED]
+2026-07-17T01:06:05.080-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Buscando pago con ID: 999
+2026-07-17T01:06:05.088-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Registrando pago para factura: 1
+2026-07-17T01:06:05.089-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Pago guardado con ID: 1
+2026-07-17T01:06:05.090-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Factura 1 parcialmente pagada
+2026-07-17T01:06:05.092-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.cobros.service.PagoServiceImpl       : Pago registrado con ID: 1 para factura: 1
+2026-07-17T01:06:05.316-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Buscando reconciliación para fecha: 2026-07-17
+2026-07-17T01:06:05.330-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Eliminando reconciliación con ID: 1
+2026-07-17T01:06:05.331-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Reconciliación eliminada con ID: 1
+2026-07-17T01:06:05.335-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Buscando todas las reconciliaciones con paginación: Page request [number: 0, size 50, sort: UNSORTED]
+2026-07-17T01:06:05.341-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Eliminando reconciliación con ID: 999
+2026-07-17T01:06:05.348-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Buscando reconciliación con ID: 1
+2026-07-17T01:06:05.351-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Actualizando reconciliación con ID: 999
+2026-07-17T01:06:05.362-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Buscando reconciliación para fecha: 2026-07-17
+2026-07-17T01:06:05.367-05:00 DEBUG 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Buscando reconciliación con ID: 999
+2026-07-17T01:06:05.374-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Actualizando reconciliación con ID: 1
+2026-07-17T01:06:05.374-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Reconciliación actualizada con ID: 1
+2026-07-17T01:06:05.380-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Creando reconciliación para fecha: 2026-07-17
+2026-07-17T01:06:05.381-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Reconciliación creada con ID: 1
+2026-07-17T01:06:05.381-05:00  INFO 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Creando reconciliación para fecha: 2026-07-17
+2026-07-17T01:06:05.381-05:00  WARN 19328 --- [ms-cobros] [           main] c.e.c.service.ReconciliacionServiceImpl  : Ya existe reconciliación para la fecha: 2026-07-17
+01:06:12.633 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.escuela.notificaciones.NotificacionesApplicationTests]: NotificacionesApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+01:06:12.908 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.escuela.notificaciones.NotificacionesApplication for test class com.escuela.notificaciones.NotificacionesApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.0)
+
+2026-07-17T01:06:13.974-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.n.NotificacionesApplicationTests     : Starting NotificacionesApplicationTests using Java 21.0.9 with PID 11512 (started by hmate in C:\Users\hmate\OneDrive\Desktop\UDLA\Proyecto titulacion\backend\ms-notificaciones)
+2026-07-17T01:06:13.975-05:00 DEBUG 11512 --- [ms-notificaciones] [           main] c.e.n.NotificacionesApplicationTests     : Running with Spring Boot v3.4.0, Spring v6.2.0
+2026-07-17T01:06:13.975-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.n.NotificacionesApplicationTests     : The following 1 profile is active: "test"
+2026-07-17T01:06:19.957-05:00  WARN 11512 --- [ms-notificaciones] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-07-17T01:06:29.781-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.n.NotificacionesApplicationTests     : Started NotificacionesApplicationTests in 16.336 seconds (process running for 18.351)
+2026-07-17T01:06:32.221-05:00  WARN 11512 --- [ms-notificaciones] [           main] c.e.notificaciones.service.EmailService  : JavaMailSender no disponible (probablemente test); persistido como PENDIENTE
+2026-07-17T01:06:33.052-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.notificaciones.service.EmailService  : Email enviado a a@b.com (asunto=Asunto)
+2026-07-17T01:06:33.166-05:00 ERROR 11512 --- [ms-notificaciones] [           main] c.e.notificaciones.service.EmailService  : Fallo enviando email a a@b.com: SMTP down
+2026-07-17T01:06:33.186-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.notificaciones.service.EmailService  : mail-enabled=false: NO se envia email a a@b.com (asunto=Asunto); persistido como PENDIENTE
+2026-07-17T01:06:33.203-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.notificaciones.service.EmailService  : mail-enabled=false: NO se envia email a a@b.com (asunto=Asunto); persistido como PENDIENTE
+2026-07-17T01:06:33.581-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.n.service.NotificacionService        : Notificación eliminada (soft): id=1
+2026-07-17T01:06:33.587-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.n.service.NotificacionService        : Notificación marcada como leída: id=1
+2026-07-17T01:06:33.830-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.n.s.PreferenciaNotificacionService   : Preferencia de notificación actualizada: usuarioId=100
+2026-07-17T01:06:33.866-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.n.s.PreferenciaNotificacionService   : Preferencia de notificación creada/actualizada: usuarioId=100
+2026-07-17T01:06:33.877-05:00  INFO 11512 --- [ms-notificaciones] [           main] c.e.n.s.PreferenciaNotificacionService   : Preferencia de notificación creada/actualizada: usuarioId=200
