@@ -193,7 +193,7 @@ proyecto-titulacion/
 - **Docker Desktop** + Docker Compose
 - **Git**
 - **Java 21 JDK** (opcional) — solo si querés desarrollar backend fuera de Docker con IDE
-- **Maven 3.8+** (opcional) — solo si querés desarrollar backend fuera de Docker
+- **Maven 3.8+** (opcional) — NO necesario si usas `./mvnw` (Maven Wrapper incluido en `backend/`)
 - **Node.js 18+** (opcional) — solo si querés desarrollar frontend con hot reload
 
 ---
@@ -250,17 +250,20 @@ docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
 #    IMPORTANTE: usar el script secuencial para evitar bytecode corrupto
 #    por race condition entre MapStruct y Lombok en builds paralelos.
 ./scripts/build-backend.sh
-# Alternativa manual: cd backend && mvn install -DskipTests (uno por uno, NO en paralelo)
+# Alternativa con Maven Wrapper (no requiere Maven instalado):
+#   cd backend && ./mvnw install -DskipTests (uno por uno, NO en paralelo)
 
 # 3. Arrancar Eureka primero, luego Gateway, luego cada MS (cada uno en su terminal)
-cd backend/eureka-server && mvn spring-boot:run
+cd backend/eureka-server && ./mvnw spring-boot:run   # o mvn spring-boot:run
 # (otra terminal)
-cd backend/api-gateway && mvn spring-boot:run
+cd backend/api-gateway && ./mvnw spring-boot:run
 # (etc., 1 terminal por MS — 10 terminales en total)
 
 # 4. Frontend (en otra terminal más)
 cd frontend && npm install && npm run dev
 ```
+
+> 💡 **Maven Wrapper** incluido en `backend/mvnw` (Linux/Mac) y `backend/mvnw.cmd` (Windows). No requiere Maven instalado localmente — descarga automáticamente la versión correcta (3.9.11).
 
 > ⚠️ Si `mvn install` produce errores raros de `ClassNotFoundException` al ejecutar los MS, es un bug conocido de MapStruct + Lombok en builds paralelos. Solución: usar `./scripts/build-backend.sh` (compilación secuencial módulo por módulo).
 

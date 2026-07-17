@@ -4,7 +4,7 @@
 # =============================================================================
 
 # -------- Claude Code --------
-# Solo overrides locales, mantener settings.json y agents/ en el repo
+# Configuracion personal de Claude Code (agents, skills, settings) - no compartir
 .claude/
 
 # -------- IDEs y Editores --------
@@ -51,10 +51,11 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
-# Sí incluir Maven Wrapper en el repo:
-# !mvnw
-# !mvnw.cmd
-# !.mvn/wrapper/maven-wrapper.properties
+# Maven Wrapper - SI se commitea (permite compilar sin instalar Maven local)
+# ./mvnw funciona en Linux/Mac, mvnw.cmd en Windows
+!**/mvnw
+!**/mvnw.cmd
+!**/.mvn/wrapper/maven-wrapper.properties
 
 # -------- Node / Vue (Frontend) --------
 node_modules/
