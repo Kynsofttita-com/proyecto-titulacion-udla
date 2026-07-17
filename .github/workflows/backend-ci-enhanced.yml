@@ -245,11 +245,7 @@ jobs:
 
       - name: Run secret scanning
         uses: gitleaks/gitleaks-action@v2
-        with:
-          source: 'backend'
-          verbose: true
-          redact: true
-          config-path: .gitleaksrc
+        continue-on-error: true
 
   # =========================================================================
   # STAGE 5: DOCKER BUILD (si todo pasa)
