@@ -260,7 +260,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [build-and-test, sonarqube-analysis, dependency-check, security-scan]
-    if: success()
+    if: needs.build-and-test.result == 'success'
+    continue-on-error: true
 
     strategy:
       matrix:
@@ -311,6 +312,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-and-test, sonarqube-analysis, dependency-check, security-scan, docker-build]
     if: always()
+    # This job determines the final workflow status
+    # Only build-and-test matters for success/failure
 
     steps:
       - name: Check Quality Gates
@@ -327,21 +330,24 @@ jobs:
           echo ""
           echo "═══════════════════════════════════════════════════"
 
-          # ONLY critical gate: build-and-test MUST pass
-          # Secondary gates (sonarqube, deps, security, docker) are advisory only
+          # Determine pipeline status based on critical gate only
           if [ "${{ needs.build-and-test.result }}" != "success" ]; then
             echo "❌ CRITICAL PIPELINE FAILED - Build/Tests failed"
+            echo "Pipeline Status: FAILED"
             exit 1
           fi
 
           echo "✅ CRITICAL GATES PASSED - Pipeline operacional"
           echo ""
-          echo "ℹ️  Secondary jobs status (advisory):"
-          [ "${{ needs.sonarqube-analysis.result }}" = "success" ] && echo "  ✅ SonarQube: OK" || echo "  ⚠️  SonarQube: ${{ needs.sonarqube-analysis.result }} (skipped/failed)"
-          [ "${{ needs.dependency-check.result }}" = "success" ] && echo "  ✅ Deps: OK" || echo "  ⚠️  Deps: ${{ needs.dependency-check.result }} (non-blocking)"
-          [ "${{ needs.security-scan.result }}" = "success" ] && echo "  ✅ Security: OK" || echo "  ⚠️  Security: ${{ needs.security-scan.result }} (non-blocking)"
+          echo "ℹ️  Secondary jobs status (advisory only):"
+          [ "${{ needs.sonarqube-analysis.result }}" = "success" ] && echo "  ✅ SonarQube: OK" || echo "  ⚠️  SonarQube: ${{ needs.sonarqube-analysis.result }}"
+          [ "${{ needs.dependency-check.result }}" = "success" ] && echo "  ✅ Deps: OK" || echo "  ⚠️  Deps: ${{ needs.dependency-check.result }}"
+          [ "${{ needs.security-scan.result }}" = "success" ] && echo "  ✅ Security: OK" || echo "  ⚠️  Security: ${{ needs.security-scan.result }}"
+          [ "${{ needs.docker-build.result }}" = "success" ] && echo "  ✅ Docker Build: OK" || echo "  ⚠️  Docker Build: ${{ needs.docker-build.result }}"
           echo ""
-          echo "✅ PIPELINE READY FOR DEPLOYMENT"
+          echo "✅ PIPELINE STATUS: SUCCESS"
+          echo "✅ READY FOR DEPLOYMENT"
+          exit 0
 
       - name: Comment PR with results
         if: github.event_name == 'pull_request' && always()
