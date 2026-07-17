@@ -2,7 +2,7 @@
 
 Esta carpeta contiene los archivos de Docker Compose y el Dockerfile compartido para levantar el entorno del proyecto en local y en CI.
 
-**Última actualización:** 2026-05-26 (estado vigente al cierre del Sprint 9 — Estabilización).
+**Última actualización:** 2026-07-17 (Reorganización de estructura e integración de infraestructura).
 
 ---
 
@@ -10,26 +10,12 @@ Esta carpeta contiene los archivos de Docker Compose y el Dockerfile compartido 
 
 | Archivo | Propósito |
 |---------|-----------|
-| [`docker-compose.yml`](./docker-compose.yml) | **Stack completo** (14 contenedores: infraestructura + Eureka + Gateway + 8 MS + Jenkins). Archivo principal. |
-| [`docker-compose.dev.yml`](./docker-compose.dev.yml) | **Solo infraestructura** (4 contenedores). Para desarrollo local con los MS corriendo desde el IDE. |
+| [`docker-compose.yml`](./docker-compose.yml) | **Stack completo** (14 contenedores: BD + Messaging + Eureka + Gateway + 8 MS + Frontend + Jenkins). Archivo único y principal. |
 | [`../../backend/Dockerfile.spring`](../../backend/Dockerfile.spring) | Dockerfile **multi-stage parametrizado** compartido por todos los servicios Java (Eureka, Gateway, 8 MS). Build cacheable. |
 | [`../postgres/init-schemas.sql`](../postgres/init-schemas.sql) | Script ejecutado al primer arranque de Postgres. Crea los 9 schemas. |
 | [`../jenkins/Dockerfile`](../jenkins/Dockerfile) | Dockerfile para Jenkins CI/CD. |
 
 > El `.env` de esta carpeta **no se commitea** (está en `.gitignore`). Ver `.env.example` en la raíz del proyecto para el template.
-
----
-
-## Servicios — `docker-compose.infra.yml` (4 contenedores)
-
-| Servicio | Puerto host | Acceso |
-|----------|-------------|--------|
-| **PostgreSQL 15** | 5432 | `psql -h localhost -U escuela_user -d escuela_db` |
-| **RabbitMQ 3.12** | 5672 | AMQP |
-| **RabbitMQ Mgmt UI** | 15672 | http://localhost:15672 (guest/guest) |
-| **MinIO API** | 9000 | S3 compatible |
-| **MinIO Console** | 9001 | http://localhost:9001 (minioadmin/minioadmin123) |
-| **Adminer** | 8888 | http://localhost:8888 (solo dev) |
 
 ---
 
@@ -125,10 +111,7 @@ Ver detalle completo en [`docs/database/schema.md §6`](../../docs/database/sche
 ### Desde la raíz del proyecto
 
 ```bash
-# Solo infra (los MS corren desde el IDE)
-docker compose -f infrastructure/docker/docker-compose.dev.yml up -d
-
-# Stack completo containerizado
+# Stack COMPLETO (14 contenedores: BD + MS + Frontend + Jenkins)
 docker compose -f infrastructure/docker/docker-compose.yml up -d
 
 # Stack completo + rebuild de imágenes (tras cambios de código)
@@ -156,10 +139,11 @@ docker compose -f infrastructure/docker/docker-compose.yml down -v
 ### Desde esta carpeta (infrastructure/docker/)
 
 ```bash
-# Equivalentes (si estás en infrastructure/docker/):
+# Si estás en infrastructure/docker/, puedes ejecutar sin -f:
 docker compose up -d
 docker compose up -d --build
 docker compose ps
+docker compose logs -f ms-auth
 docker compose down
 ```
 
