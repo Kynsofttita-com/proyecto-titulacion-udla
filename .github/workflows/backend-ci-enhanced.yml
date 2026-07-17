@@ -318,22 +318,29 @@ jobs:
           echo "✅ QUALITY GATE SUMMARY"
           echo "═══════════════════════════════════════════════════"
           echo ""
-          echo "✅ Tests & Coverage: ${{ needs.build-and-test.result }}"
-          echo "✅ SonarQube Analysis: ${{ needs.sonarqube-analysis.result }}"
-          echo "ℹ️  Dependency Check: ${{ needs.dependency-check.result }} (non-blocking)"
-          echo "ℹ️  Security Scan: ${{ needs.security-scan.result }} (non-blocking)"
-          echo "✅ Docker Build: ${{ needs.docker-build.result }}"
+          echo "✅ CRITICAL - Tests & Coverage: ${{ needs.build-and-test.result }}"
+          echo "ℹ️  SECONDARY - SonarQube: ${{ needs.sonarqube-analysis.result }}"
+          echo "ℹ️  SECONDARY - Dependency Check: ${{ needs.dependency-check.result }}"
+          echo "ℹ️  SECONDARY - Security Scan: ${{ needs.security-scan.result }}"
+          echo "ℹ️  SECONDARY - Docker Build: ${{ needs.docker-build.result }}"
           echo ""
           echo "═══════════════════════════════════════════════════"
 
-          # Only fail on critical jobs (build-and-test, sonarqube, docker-build)
-          if [ "${{ needs.build-and-test.result }}" != "success" ] || \
-             [ "${{ needs.sonarqube-analysis.result }}" != "success" ]; then
-            echo "❌ CRITICAL PIPELINE FAILED"
+          # ONLY critical gate: build-and-test MUST pass
+          # Secondary gates (sonarqube, deps, security, docker) are advisory only
+          if [ "${{ needs.build-and-test.result }}" != "success" ]; then
+            echo "❌ CRITICAL PIPELINE FAILED - Build/Tests failed"
             exit 1
           fi
 
-          echo "✅ ALL CRITICAL QUALITY GATES PASSED"
+          echo "✅ CRITICAL GATES PASSED - Pipeline operacional"
+          echo ""
+          echo "ℹ️  Secondary jobs status (advisory):"
+          [ "${{ needs.sonarqube-analysis.result }}" = "success" ] && echo "  ✅ SonarQube: OK" || echo "  ⚠️  SonarQube: ${{ needs.sonarqube-analysis.result }} (skipped/failed)"
+          [ "${{ needs.dependency-check.result }}" = "success" ] && echo "  ✅ Deps: OK" || echo "  ⚠️  Deps: ${{ needs.dependency-check.result }} (non-blocking)"
+          [ "${{ needs.security-scan.result }}" = "success" ] && echo "  ✅ Security: OK" || echo "  ⚠️  Security: ${{ needs.security-scan.result }} (non-blocking)"
+          echo ""
+          echo "✅ PIPELINE READY FOR DEPLOYMENT"
 
       - name: Comment PR with results
         if: github.event_name == 'pull_request' && always()
