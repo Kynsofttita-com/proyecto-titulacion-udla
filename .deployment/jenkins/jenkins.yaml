@@ -1,0 +1,81 @@
+jenkins:
+  agentProtocols:
+    - "JNLP4-connect"
+    - "Ping"
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: true
+  disableRemoteCliAccess: false
+  mode: NORMAL
+  numExecutors: 2
+  projectNamingStrategy: "com.cloudbees.hudson.plugins.folder.computed.DefaultFolderComputationStrategy"
+  quietPeriod: 5
+  scmCheckoutRetryCount: 0
+  securityRealm:
+    saml:
+      bindingType: "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+      groupsAttributeName: "groups"
+      idpMetadataConfiguration:
+        url: ""
+  updateCenter:
+    sites:
+      - id: "default"
+        url: "https://updates.jenkins.io/update-center.json"
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - scope: GLOBAL
+            id: "github-token"
+            description: "GitHub Personal Access Token"
+            secret: "${GITHUB_TOKEN}"
+            username: ""
+            class: "org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl"
+
+          - scope: GLOBAL
+            id: "docker-registry"
+            description: "Docker Registry Credentials"
+            username: "${DOCKER_USER}"
+            password: "${DOCKER_PASS}"
+            class: "com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl"
+
+          - scope: GLOBAL
+            id: "sonar-token"
+            description: "SonarQube Token"
+            secret: "${SONAR_TOKEN}"
+            username: ""
+            class: "org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl"
+
+unclassified:
+  location:
+    url: "http://localhost:8090/"
+  timestamper:
+    allPipelines: true
+  ansiColorBuildWrapper:
+    colorMapName: "xterm"
+
+tool:
+  maven:
+    installations:
+      - name: "Maven 3.8.1"
+        home: "/opt/maven"
+  git:
+    installations:
+      - name: "Default"
+        home: "git"
+  jdk:
+    installations:
+      - name: "OpenJDK 21"
+        home: "/usr/lib/jvm/java-21-openjdk"
+
+security:
+  apiToken:
+    creationOfLegacyTokenEnabled: false
+  scriptApproval:
+    autoApprove: false
+  scriptApprovalConfiguration:
+    skipApproveOnPatch: false
+
+jobs:
+  - url: https://raw.githubusercontent.com/Kynsofttita-com/proyecto-titulacion-udla/main/Jenkinsfile
