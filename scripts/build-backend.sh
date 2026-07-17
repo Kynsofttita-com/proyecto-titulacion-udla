@@ -5,8 +5,8 @@
 # docker-compose los use.
 #
 # IMPORTANTE: Compilar en paralelo (mvn -T) o desde el root del multi-modulo
-# causa bytecode corrupto por race condition MapStruct + Lombok.
-# Ver MS_INSTRUCTORES_CLASSLOADER_ISSUE.md para el detalle.
+# causa bytecode corrupto por race condition MapStruct + Lombok. Este script
+# compila modulo por modulo para evitar ese problema.
 #
 # Uso:
 #   ./scripts/build-backend.sh

@@ -262,7 +262,7 @@ cd backend/api-gateway && mvn spring-boot:run
 cd frontend && npm install && npm run dev
 ```
 
-> ⚠️ Si `mvn install` produce errores raros de `ClassNotFoundException` al ejecutar los MS, es un bug conocido de MapStruct + Lombok en builds paralelos. Ver [`MS_INSTRUCTORES_CLASSLOADER_ISSUE.md`](./MS_INSTRUCTORES_CLASSLOADER_ISSUE.md). Solución: usar `./scripts/build-backend.sh` (compilación secuencial).
+> ⚠️ Si `mvn install` produce errores raros de `ClassNotFoundException` al ejecutar los MS, es un bug conocido de MapStruct + Lombok en builds paralelos. Solución: usar `./scripts/build-backend.sh` (compilación secuencial módulo por módulo).
 
 ---
 
