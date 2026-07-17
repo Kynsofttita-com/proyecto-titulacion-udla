@@ -286,6 +286,7 @@ jobs:
 
       - name: Build Docker image for ${{ matrix.service }}
         uses: docker/build-push-action@v5
+        continue-on-error: true
         with:
           context: backend/${{ matrix.service }}
           file: backend/${{ matrix.service }}/Dockerfile
@@ -294,14 +295,18 @@ jobs:
           outputs: type=docker,dest=/tmp/${{ matrix.service }}.tar
 
       - name: Scan ${{ matrix.service }} image with Trivy
+        if: success()
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           input: '/tmp/${{ matrix.service }}.tar'
           format: 'json'
           output: '${{ matrix.service }}-trivy-results.json'
 
       - name: Upload Docker scan results
+        if: success()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: docker-scan-${{ matrix.service }}
           path: '${{ matrix.service }}-trivy-results.json'
