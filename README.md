@@ -436,7 +436,6 @@ Ver [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md) para el detalle.
 - 📘 [DECISIONES.md](./DECISIONES.md) — 32 decisiones técnicas + 3 ADRs (refactor dominio, estabilización CI/CD, deployment production)
 - 📗 [PLAN_FASES.md](./PLAN_FASES.md) — Plan vigente Sprints 5-12 (vertical por grupos)
 - 📙 [CLAUDE.md](./CLAUDE.md) — Guía operativa para Claude Code
-- ⚡ [QUICKSTART.md](./QUICKSTART.md) — Guía rápida para clonar y ejecutar desde cero (para Sebas)
 - 📊 [ESTADO_FINAL_SESION.md](./ESTADO_FINAL_SESION.md) — Estado final del sistema (2026-07-17, 100% production-ready)
 
 ### Documentación Técnica
