@@ -37,6 +37,28 @@ services:
     networks:
       - proyecto-network
 
+  # Object Storage (S3-compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: proyecto-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+    ports:
+      - "9000:9000"  # API S3
+      - "9001:9001"  # Web Console
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - proyecto-network
+
   # Service Discovery
   eureka:
     build:
@@ -440,6 +462,7 @@ services:
 volumes:
   jenkins_home:
   postgres_data:
+  minio_data:
 
 networks:
   proyecto-network:
