@@ -286,8 +286,9 @@
                     naming convention: *Tests.java (unit) vs *IT.java (integration via
                     failsafe). failIfNoTests=false evita errores en modules sin tests.
 
-                    Mockito inline: Requerido en Java 21+ para inline-mock-maker
-                    Usa mockito-inline como dependency para que Maven lo resuelva automáticamente
+                    Java 21: Mockito 5.14.2+ auto-detects si puede self-attach.
+                    El warning "self-attaching" es informativo, no es bloqueante.
+                    Se recomienda mantener así en lugar de usar javaagent explícito.
                 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -297,15 +298,6 @@
                         <failIfNoTests>false</failIfNoTests>
                         <argLine>-Duser.timezone=America/Guayaquil</argLine>
                     </configuration>
-                    <dependencies>
-                        <!-- Mockito inline para Java 21+ compatibility (self-attaching) -->
-                        <dependency>
-                            <groupId>org.mockito</groupId>
-                            <artifactId>mockito-inline</artifactId>
-                            <version>${mockito.version}</version>
-                            <scope>runtime</scope>
-                        </dependency>
-                    </dependencies>
                 </plugin>
 
                 <!-- Failsafe (tests de integración - naming convention *IT.java) -->
