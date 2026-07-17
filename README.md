@@ -22,14 +22,12 @@
 
 ---
 
-## 🚀 Guía de Inicio Rápido (1 comando, ~2 minutos)
+## 🚀 Guía de Inicio Rápido
 
 ### Requisitos previos
-Solo necesitas:
 - **Docker Desktop** (con Docker Compose)
 - **Git**
-
-Nada más. Java, Node, Maven, Python — **NO** se necesitan porque todo está dockerizado y los JARs vienen pre-compilados en el repo.
+- **Java 21** (JDK) + **Maven 3.8+** — solo para el primer build
 
 ### Levantar el sistema completo
 
@@ -38,15 +36,23 @@ Nada más. Java, Node, Maven, Python — **NO** se necesitan porque todo está d
 git clone <repo-url>
 cd proyecto-titulacion
 
-# 2. Levantar los 15 contenedores desde cero
+# 2. Compilar los JARs del backend (solo la primera vez o al cambiar código Java)
+#    Este script compila secuencialmente para evitar bytecode corrupto
+./scripts/build-backend.sh
+# Duración: ~2-3 minutos la primera vez
+
+# 3. Levantar los 15 contenedores
 cd infrastructure/docker
 docker-compose up -d --build
+# Duración: ~1-2 minutos
 
-# 3. Esperar ~1-2 minutos hasta que estén healthy
+# 4. Verificar
 docker-compose ps
 ```
 
 **Cuando `docker-compose ps` muestre los 13 servicios con estado `healthy` y `adminer` + `jenkins` con `Up`, el sistema está listo.**
+
+> 💡 **Los JARs se generan localmente y NO están en git** (por límite de 100MB de GitHub). El script `build-backend.sh` los crea en `infrastructure/docker/jars-dist/`. Una vez creados, `docker-compose up -d` reutiliza los mismos JARs sin recompilar.
 
 ### Acceder al sistema
 

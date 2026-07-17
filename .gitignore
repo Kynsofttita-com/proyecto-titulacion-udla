@@ -188,3 +188,7 @@ docs/.vuepress/dist/
 .turbo/
 .nx/
 *.local
+
+# Compiled JARs (pre-built for Docker, must be built locally)
+infrastructure/docker/jars-dist/*.jar
+backend/jars-dist/*.jar
