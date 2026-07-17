@@ -26,12 +26,12 @@ services:
   # ---------------------------------------------------------------------------
   postgres:
     image: postgres:15-alpine
-    container_name: escuela-postgres
+    container_name: proyecto-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-escuela_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: ${POSTGRES_DB:-escuela_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_DB: ${POSTGRES_DB:-proyecto_db}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -39,13 +39,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ../postgres/init-schemas.sql:/docker-entrypoint-initdb.d/01-init-schemas.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-escuela_user} -d ${POSTGRES_DB:-escuela_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-proyecto_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     networks:
-      - escuela-network
+      - proyecto-network
 
   # ---------------------------------------------------------------------------
   # RabbitMQ 3.12 - Broker de mensajes para eventos asíncronos
@@ -53,7 +53,7 @@ services:
   # ---------------------------------------------------------------------------
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
-    container_name: escuela-rabbitmq
+    container_name: proyecto-rabbitmq
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
@@ -71,7 +71,7 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - escuela-network
+      - proyecto-network
 
   # ---------------------------------------------------------------------------
   # MinIO - Object Storage compatible S3
@@ -81,7 +81,7 @@ services:
   # ---------------------------------------------------------------------------
   minio:
     image: minio/minio:latest
-    container_name: escuela-minio
+    container_name: proyecto-minio
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
@@ -99,7 +99,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - escuela-network
+      - proyecto-network
 
   # ---------------------------------------------------------------------------
   # Adminer - UI web para inspeccionar la base de datos (opcional, solo dev)
@@ -119,7 +119,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - escuela-network
+      - proyecto-network
 
 # =============================================================================
 # Volúmenes persistentes
@@ -139,6 +139,6 @@ volumes:
 # Red compartida entre todos los servicios
 # =============================================================================
 networks:
-  escuela-network:
+  proyecto-network:
     driver: bridge
-    name: escuela-network
+    name: proyecto-network

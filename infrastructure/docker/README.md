@@ -10,10 +10,11 @@ Esta carpeta contiene los archivos de Docker Compose y el Dockerfile compartido 
 
 | Archivo | Propósito |
 |---------|-----------|
-| [`docker-compose.infra.yml`](./docker-compose.infra.yml) | **Solo infraestructura** (4 contenedores). Para desarrollo local con los MS corriendo desde el IDE. |
-| [`docker-compose.yml`](./docker-compose.yml) | **Stack completo** (14 contenedores: infra + Eureka + Gateway + 8 MS). Usado por el pipeline `smoke-e2e.yml`. |
-| [`Dockerfile.spring`](./Dockerfile.spring) | Dockerfile **multi-stage parametrizado** compartido por todos los servicios Java (Eureka, Gateway, 8 MS). Build cacheable. |
+| [`docker-compose.yml`](./docker-compose.yml) | **Stack completo** (14 contenedores: infraestructura + Eureka + Gateway + 8 MS + Jenkins). Archivo principal. |
+| [`docker-compose.dev.yml`](./docker-compose.dev.yml) | **Solo infraestructura** (4 contenedores). Para desarrollo local con los MS corriendo desde el IDE. |
+| [`../../backend/Dockerfile.spring`](../../backend/Dockerfile.spring) | Dockerfile **multi-stage parametrizado** compartido por todos los servicios Java (Eureka, Gateway, 8 MS). Build cacheable. |
 | [`../postgres/init-schemas.sql`](../postgres/init-schemas.sql) | Script ejecutado al primer arranque de Postgres. Crea los 9 schemas. |
+| [`../jenkins/Dockerfile`](../jenkins/Dockerfile) | Dockerfile para Jenkins CI/CD. |
 
 > El `.env` de esta carpeta **no se commitea** (está en `.gitignore`). Ver `.env.example` en la raíz del proyecto para el template.
 
@@ -32,14 +33,27 @@ Esta carpeta contiene los archivos de Docker Compose y el Dockerfile compartido 
 
 ---
 
-## Servicios — `docker-compose.yml` (14 contenedores: infra + Eureka + Gateway + 8 MS)
+## Servicios — `docker-compose.yml` (14 contenedores completo)
 
-Incluye todos los anteriores **más**:
+Incluye infraestructura **más** servicios core, microservicios y herramientas:
 
-| Servicio | Puerto host | Health |
-|----------|-------------|--------|
-| **Eureka Server** | 8761 | http://localhost:8761 |
+### Infraestructura
+| Servicio | Puerto | Health |
+|----------|--------|--------|
+| **PostgreSQL 15** | 5432 | healthcheck via `pg_isready` |
+| **RabbitMQ 3.12** | 5672 / 15672 | healthcheck via `rabbitmq-diagnostics` |
+| **Adminer** | 8089 | http://localhost:8089 |
+
+### Servicios Core
+| Servicio | Puerto | Health |
+|----------|--------|--------|
+| **Eureka Server** | 8761 | http://localhost:8761/actuator/health |
 | **API Gateway** | 8080 | http://localhost:8080/actuator/health |
+| **Frontend** | 3000 | http://localhost:3000 |
+
+### Microservicios (8)
+| Servicio | Puerto | Health |
+|----------|--------|--------|
 | **MS-Auth** | 8081 | http://localhost:8081/actuator/health |
 | **MS-Estudiantes** | 8082 | http://localhost:8082/actuator/health |
 | **MS-Instructores** | 8083 | http://localhost:8083/actuator/health |
@@ -48,6 +62,11 @@ Incluye todos los anteriores **más**:
 | **MS-Cobros** | 8086 | http://localhost:8086/actuator/health |
 | **MS-Reportes** | 8087 | http://localhost:8087/actuator/health |
 | **MS-Notificaciones** | 8088 | http://localhost:8088/actuator/health |
+
+### Herramientas
+| Servicio | Puerto | Descripción |
+|----------|--------|------------|
+| **Jenkins** | 8090 | http://localhost:8090 (CI/CD pipeline) |
 
 **Credenciales admin:** `admin@escuela.local` / `Admin123!` (fijado correctamente desde Sprint 9 con migración `V6__fix_admin_password_hash.sql` en ms-auth).
 
@@ -103,9 +122,11 @@ Ver detalle completo en [`docs/database/schema.md §6`](../../docs/database/sche
 
 ## Comandos comunes
 
+### Desde la raíz del proyecto
+
 ```bash
 # Solo infra (los MS corren desde el IDE)
-docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
+docker compose -f infrastructure/docker/docker-compose.dev.yml up -d
 
 # Stack completo containerizado
 docker compose -f infrastructure/docker/docker-compose.yml up -d
@@ -130,6 +151,16 @@ docker compose -f infrastructure/docker/docker-compose.yml down
 
 # Detener y BORRAR la data (CUIDADO)
 docker compose -f infrastructure/docker/docker-compose.yml down -v
+```
+
+### Desde esta carpeta (infrastructure/docker/)
+
+```bash
+# Equivalentes (si estás en infrastructure/docker/):
+docker compose up -d
+docker compose up -d --build
+docker compose ps
+docker compose down
 ```
 
 ### Tiempos de arranque esperados
