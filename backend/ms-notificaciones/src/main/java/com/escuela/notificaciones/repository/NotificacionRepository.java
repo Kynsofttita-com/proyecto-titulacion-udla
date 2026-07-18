@@ -5,8 +5,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
 
 @Repository
 public interface NotificacionRepository extends JpaRepository<Notificacion, Long> {
@@ -31,4 +34,22 @@ public interface NotificacionRepository extends JpaRepository<Notificacion, Long
         @Param("prioridad") String prioridad,
         Pageable pageable
     );
+
+    /**
+     * Marca todas las notificaciones no leidas de un usuario como leidas.
+     * @return numero de filas afectadas
+     */
+    @Modifying
+    @Query("UPDATE Notificacion n SET n.leida = TRUE, n.fechaLectura = :ahora " +
+           "WHERE n.usuarioId = :usuarioId AND n.leida = FALSE AND n.deletedAt IS NULL")
+    int marcarTodasComoLeidas(@Param("usuarioId") Long usuarioId, @Param("ahora") LocalDateTime ahora);
+
+    /**
+     * Soft-delete de todas las notificaciones no eliminadas de un usuario.
+     * @return numero de filas afectadas
+     */
+    @Modifying
+    @Query("UPDATE Notificacion n SET n.deletedAt = :ahora " +
+           "WHERE n.usuarioId = :usuarioId AND n.deletedAt IS NULL")
+    int eliminarTodasPorUsuario(@Param("usuarioId") Long usuarioId, @Param("ahora") LocalDateTime ahora);
 }

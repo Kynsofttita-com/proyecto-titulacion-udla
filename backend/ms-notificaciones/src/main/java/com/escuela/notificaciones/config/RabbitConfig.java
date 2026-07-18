@@ -27,12 +27,25 @@ public class RabbitConfig extends AbstractRabbitConfig {
 
     public static final String EXCHANGE_NAME = "notificaciones.exchange";
     public static final String QUEUE_NAME = "notificaciones.queue";
+    public static final String OPERATIVO_QUEUE_NAME = "notificaciones.operativo.queue";
     public static final String DLX_NAME = "notificaciones.dlx";
     public static final String DLQ_NAME = "notificaciones.dlq";
     public static final String ROUTING_KEY = "notificaciones.#";
 
     /** Nombre del exchange de MS-Auth (declarado tambien alla, idempotente). */
     public static final String AUTH_EXCHANGE_NAME = "auth.exchange";
+
+    /** Nombre del exchange de MS-Vehiculos. */
+    public static final String VEHICULOS_EXCHANGE_NAME = "vehiculos.exchange";
+
+    /** Nombre del exchange de MS-Instructores. */
+    public static final String INSTRUCTORES_EXCHANGE_NAME = "instructores.exchange";
+
+    /** Nombre del exchange de MS-Estudiantes. */
+    public static final String ESTUDIANTES_EXCHANGE_NAME = "estudiantes.exchange";
+
+    /** Nombre del exchange de MS-Cobros. */
+    public static final String COBROS_EXCHANGE_NAME = "cobros.exchange";
 
     @Bean
     public TopicExchange notificacionesExchange() {
@@ -112,5 +125,71 @@ public class RabbitConfig extends AbstractRabbitConfig {
         return BindingBuilder.bind(notificacionesQueue())
                 .to(authExchangeReference())
                 .with("auth.usuario.bloqueado");
+    }
+
+    // -----------------------------------------------------------------------
+    // Bindings a exchanges operativos (vencimientos, atrasos, curso completado)
+    // -----------------------------------------------------------------------
+
+    @Bean
+    public TopicExchange vehiculosExchangeReference() {
+        return new TopicExchange(VEHICULOS_EXCHANGE_NAME, true, false);
+    }
+
+    @Bean
+    public TopicExchange instructoresExchangeReference() {
+        return new TopicExchange(INSTRUCTORES_EXCHANGE_NAME, true, false);
+    }
+
+    @Bean
+    public TopicExchange estudiantesExchangeReference() {
+        return new TopicExchange(ESTUDIANTES_EXCHANGE_NAME, true, false);
+    }
+
+    @Bean
+    public TopicExchange cobrosExchangeReference() {
+        return new TopicExchange(COBROS_EXCHANGE_NAME, true, false);
+    }
+
+    /**
+     * Queue dedicada para eventos operativos (SOAT, licencia, curso, pagos).
+     * Separada de {@link #QUEUE_NAME} para que las dos clases de listener no
+     * compitan por los mismos mensajes (round-robin de Spring AMQP causaria
+     * que un evento SOAT llegue al listener auth y caiga en el
+     * {@code @RabbitHandler(isDefault=true)}).
+     */
+    @Bean
+    public Queue notificacionesOperativoQueue() {
+        return QueueBuilder.durable(OPERATIVO_QUEUE_NAME)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .build();
+    }
+
+    @Bean
+    public Binding vehiculosSoatVencimientoBinding() {
+        return BindingBuilder.bind(notificacionesOperativoQueue())
+                .to(vehiculosExchangeReference())
+                .with("vehiculos.soat.vencimiento.proximo");
+    }
+
+    @Bean
+    public Binding instructoresLicenciaVencimientoBinding() {
+        return BindingBuilder.bind(notificacionesOperativoQueue())
+                .to(instructoresExchangeReference())
+                .with("instructores.licencia.vencimiento.proximo");
+    }
+
+    @Bean
+    public Binding estudiantesCursoCompletadoBinding() {
+        return BindingBuilder.bind(notificacionesOperativoQueue())
+                .to(estudiantesExchangeReference())
+                .with("estudiantes.curso.completado");
+    }
+
+    @Bean
+    public Binding cobrosPagoAtrasadoBinding() {
+        return BindingBuilder.bind(notificacionesOperativoQueue())
+                .to(cobrosExchangeReference())
+                .with("cobros.pago.atrasado");
     }
 }

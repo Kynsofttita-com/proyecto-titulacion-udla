@@ -70,14 +70,17 @@ public class EstudianteServiceImpl implements EstudianteService {
     private final EstudianteRepository repository;
     private final EstudianteEventDispatcher eventDispatcher;
     private final ObjectProvider<AuthClient> authClientProvider;
+    private final ObjectProvider<com.escuela.estudiantes.feign.TipoCursoClient> tipoCursoClientProvider;
     private EstudianteMapper mapper;
 
     public EstudianteServiceImpl(EstudianteRepository repository,
                                  EstudianteEventDispatcher eventDispatcher,
-                                 ObjectProvider<AuthClient> authClientProvider) {
+                                 ObjectProvider<AuthClient> authClientProvider,
+                                 ObjectProvider<com.escuela.estudiantes.feign.TipoCursoClient> tipoCursoClientProvider) {
         this.repository = repository;
         this.eventDispatcher = eventDispatcher;
         this.authClientProvider = authClientProvider;
+        this.tipoCursoClientProvider = tipoCursoClientProvider;
     }
 
     private EstudianteMapper getMapper() {
@@ -297,9 +300,35 @@ public class EstudianteServiceImpl implements EstudianteService {
             log.info("Estudiante id={} transicionado MATRICULADO -> CURSANDO al sumar horas", id);
         }
 
-        // TODO: futura mejora — consultar tipo_curso para obtener total de horas requeridas
-        // y auto-transicionar a COMPLETADO. Por ahora dejamos solo MATRICULADO->CURSANDO.
+        // Consulta tipo_curso para saber si ya completo el 100% de horas requeridas.
+        // Si es asi, transiciona a COMPLETADO y publica CursoCompletadoEvent.
+        Integer horasRequeridas = obtenerHorasRequeridasSafe(e.getTipoCursoId());
+        boolean cursoCompletadoAhora = false;
+        if (horasRequeridas != null && horasRequeridas > 0
+                && !"COMPLETADO".equals(e.getEstado())
+                && nuevo >= horasRequeridas * 60) {
+            e.setEstado("COMPLETADO");
+            cursoCompletadoAhora = true;
+            log.info("Estudiante id={} transicionado {} -> COMPLETADO al alcanzar {} min (={}h de {}h)",
+                    id, estadoAnterior, nuevo, nuevo / 60, horasRequeridas);
+        }
+
         repository.save(e);
+
+        if (cursoCompletadoAhora) {
+            eventDispatcher.publishCursoCompletado(
+                    com.escuela.common.events.estudiantes.CursoCompletadoEvent.builder()
+                            .estudianteId(e.getId())
+                            .usuarioIdEstudiante(e.getUsuarioId())
+                            .cedula(e.getCedula())
+                            .nombreCompleto(nombreCompleto(e))
+                            .email(e.getEmail())
+                            .tipoCursoNombre(obtenerNombreCursoSafe(e.getTipoCursoId()))
+                            .horasCompletadas(nuevo / 60)
+                            .horasRequeridas(horasRequeridas)
+                            .fechaCompletado(java.time.LocalDate.now())
+                            .build());
+        }
 
         log.info("Estudiante id={} minutos {} -> {} fuente={}", id, anterior, nuevo, request.fuente());
         String obs = transicionado
@@ -337,6 +366,43 @@ public class EstudianteServiceImpl implements EstudianteService {
 
     private String nombreCompleto(Estudiante e) {
         return e.getNombre() + " " + e.getApellido();
+    }
+
+    /**
+     * Consulta MS-Auth por el tipo de curso y devuelve {@code duracionTotalHoras}.
+     * Devuelve {@code null} si el estudiante no tiene tipo_curso_id asignado, si
+     * MS-Auth esta caido, o si la respuesta no incluye el campo.
+     */
+    private Integer obtenerHorasRequeridasSafe(Long tipoCursoId) {
+        if (tipoCursoId == null) return null;
+        com.escuela.estudiantes.feign.TipoCursoClient client = tipoCursoClientProvider.getIfAvailable();
+        if (client == null) {
+            log.debug("TipoCursoClient no disponible; no se puede calcular horas requeridas");
+            return null;
+        }
+        try {
+            java.util.Map<String, Object> tc = client.obtener(tipoCursoId);
+            Object horas = tc == null ? null : tc.get("duracionTotalHoras");
+            if (horas instanceof Number n) return n.intValue();
+            if (horas != null) return Integer.parseInt(horas.toString());
+            return null;
+        } catch (Exception ex) {
+            log.warn("Fallo consultar tipoCurso id={} para horas requeridas: {}", tipoCursoId, ex.getMessage());
+            return null;
+        }
+    }
+
+    private String obtenerNombreCursoSafe(Long tipoCursoId) {
+        if (tipoCursoId == null) return null;
+        com.escuela.estudiantes.feign.TipoCursoClient client = tipoCursoClientProvider.getIfAvailable();
+        if (client == null) return null;
+        try {
+            java.util.Map<String, Object> tc = client.obtener(tipoCursoId);
+            Object nombre = tc == null ? null : tc.get("nombre");
+            return nombre == null ? null : nombre.toString();
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     /**

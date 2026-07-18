@@ -1,6 +1,7 @@
 package com.escuela.estudiantes.service;
 
 import com.escuela.common.events.BaseEvent;
+import com.escuela.common.events.estudiantes.CursoCompletadoEvent;
 import com.escuela.common.events.estudiantes.EstudianteActualizadoEvent;
 import com.escuela.common.events.estudiantes.EstudianteCreadoEvent;
 import com.escuela.common.events.estudiantes.EstudianteEliminadoEvent;
@@ -54,6 +55,10 @@ public class EstudianteEventDispatcher {
 
     public void publishMatriculado(EstudianteMatriculadoEvent event) {
         publish(EstudianteMatriculadoEvent.ROUTING_KEY, event);
+    }
+
+    public void publishCursoCompletado(CursoCompletadoEvent event) {
+        publish(CursoCompletadoEvent.ROUTING_KEY, event);
     }
 
     private void publish(String routingKey, BaseEvent event) {
