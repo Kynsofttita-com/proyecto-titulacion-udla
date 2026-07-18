@@ -14,8 +14,8 @@
         <ReporteExporter
           tipoReporte="MOROSIDAD"
           titulo="Reporte de Morosidad"
-          :datos="datos"
-          :tienesDatos="datos.length > 0"
+          :datos="datosFiltrados"
+          :tienesDatos="datosFiltrados.length > 0"
         />
         <Button
           label="Generar reporte"
@@ -39,6 +39,13 @@
       </div>
     </div>
 
+    <ReporteFiltros
+      v-if="datos.length > 0"
+      :campos="camposFiltrables"
+      :datos="datos"
+      @update:datosFiltrados="datosFiltrados = $event"
+    />
+
     <!-- Tabla de morosos -->
     <DataTableCard title="Clientes morosos">
       <div v-if="cargando" class="flex items-center justify-center py-12">
@@ -47,6 +54,10 @@
 
       <div v-else-if="datos.length === 0" class="py-12">
         <EmptyState icon="pi pi-inbox" title="Sin datos" description="No hay clientes morosos" />
+      </div>
+
+      <div v-else-if="datosFiltrados.length === 0" class="py-12">
+        <EmptyState icon="pi pi-filter-slash" title="Sin coincidencias" description="Ningun moroso coincide con el filtro" />
       </div>
 
       <table v-else class="w-full text-sm">
@@ -60,7 +71,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-ink-200">
-          <tr v-for="moroso in datos" :key="moroso.id" class="hover:bg-ink-50">
+          <tr v-for="moroso in datosFiltrados" :key="moroso.id" class="hover:bg-ink-50">
             <td class="px-4 py-3 font-medium">{{ moroso.estudianteNombre }}</td>
             <td class="px-4 py-3 text-ink-600">{{ moroso.telefono }}</td>
             <td class="px-4 py-3 text-right font-mono font-bold text-danger-700">
@@ -90,12 +101,22 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ReporteExporter from '@/components/reportes/ReporteExporter.vue'
+import ReporteFiltros, { type CampoFiltro } from '@/components/reportes/ReporteFiltros.vue'
 import Button from 'primevue/button'
 import reportesService from '@/services/reportes'
 
 const datos = ref<any[]>([])
+const datosFiltrados = ref<any[]>([])
 const cargando = ref(false)
 const totalMoroso = ref(0)
+
+const camposFiltrables: CampoFiltro[] = [
+  { key: 'estudianteNombre',  label: 'Estudiante',   tipo: 'text' },
+  { key: 'telefono',          label: 'Telefono',     tipo: 'text' },
+  { key: 'fechaVencimiento',  label: 'Vencimiento',  tipo: 'date' },
+  { key: 'diasAtraso',        label: 'Dias atraso',  tipo: 'number' },
+  { key: 'montoVencido',      label: 'Monto vencido', tipo: 'number' }
+]
 
 function formatMoney(valor: number): string {
   return new Intl.NumberFormat('es-ES', {

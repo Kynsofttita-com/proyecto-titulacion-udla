@@ -14,8 +14,8 @@
         <ReporteExporter
           tipoReporte="ASISTENCIA"
           titulo="Reporte de Asistencia"
-          :datos="datos"
-          :tienesDatos="datos.length > 0"
+          :datos="datosFiltrados"
+          :tienesDatos="datosFiltrados.length > 0"
         />
         <Button
           label="Generar reporte"
@@ -27,6 +27,13 @@
       </template>
     </PageHeader>
 
+    <ReporteFiltros
+      v-if="datos.length > 0"
+      :campos="camposFiltrables"
+      :datos="datos"
+      @update:datosFiltrados="datosFiltrados = $event"
+    />
+
     <DataTableCard title="Registros de asistencia">
       <div v-if="cargando" class="flex items-center justify-center py-12">
         <i class="pi pi-spin pi-spinner text-brand-600 text-2xl" />
@@ -34,6 +41,10 @@
 
       <div v-else-if="datos.length === 0" class="py-12">
         <EmptyState icon="pi pi-inbox" title="Sin datos" description="No hay registros" />
+      </div>
+
+      <div v-else-if="datosFiltrados.length === 0" class="py-12">
+        <EmptyState icon="pi pi-filter-slash" title="Sin coincidencias" description="Ningun registro coincide con el filtro" />
       </div>
 
       <table v-else class="w-full text-sm">
@@ -47,7 +58,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-ink-200">
-          <tr v-for="reg in datos" :key="reg.estudianteId" class="hover:bg-ink-50">
+          <tr v-for="reg in datosFiltrados" :key="reg.estudianteId" class="hover:bg-ink-50">
             <td class="px-4 py-3">{{ reg.estudianteNombre }}</td>
             <td class="px-4 py-3">
               <StatusBadge :status="reg.estado" />
@@ -71,16 +82,21 @@ import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import ReporteExporter from '@/components/reportes/ReporteExporter.vue'
+import ReporteFiltros, { type CampoFiltro } from '@/components/reportes/ReporteFiltros.vue'
 import Button from 'primevue/button'
 import reportesService from '@/services/reportes'
 
 const datos = ref<any[]>([])
+const datosFiltrados = ref<any[]>([])
 const cargando = ref(false)
 
-function formatearFecha(fecha: string): string {
-  if (!fecha) return '--'
-  return new Date(fecha).toLocaleDateString('es-ES')
-}
+const camposFiltrables: CampoFiltro[] = [
+  { key: 'estudianteNombre',  label: 'Estudiante',           tipo: 'text' },
+  { key: 'estado',            label: 'Estado',               tipo: 'select', opciones: ['PRE_MATRICULADO','MATRICULADO','CURSANDO','FINALIZADO','SUSPENDIDO'] },
+  { key: 'clasesProgramadas', label: 'Clases Programadas',   tipo: 'number' },
+  { key: 'clasesAsistidas',   label: 'Clases Asistidas',     tipo: 'number' },
+  { key: 'porcentaje',        label: '% Asistencia',         tipo: 'number' }
+]
 
 async function cargar() {
   cargando.value = true

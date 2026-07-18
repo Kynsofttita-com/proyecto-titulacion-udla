@@ -14,8 +14,8 @@
         <ReporteExporter
           tipoReporte="INSTRUCTORES_HORAS"
           titulo="Reporte de Horas de Instructores"
-          :datos="datos"
-          :tienesDatos="datos.length > 0"
+          :datos="datosFiltrados"
+          :tienesDatos="datosFiltrados.length > 0"
         />
         <Button
           label="Generar reporte"
@@ -27,6 +27,13 @@
       </template>
     </PageHeader>
 
+    <ReporteFiltros
+      v-if="datos.length > 0"
+      :campos="camposFiltrables"
+      :datos="datos"
+      @update:datosFiltrados="datosFiltrados = $event"
+    />
+
     <DataTableCard title="Horas por instructor">
       <div v-if="cargando" class="flex items-center justify-center py-12">
         <i class="pi pi-spin pi-spinner text-brand-600 text-2xl" />
@@ -37,6 +44,14 @@
           icon="pi pi-inbox"
           title="Sin datos"
           description="Genera el reporte para ver horas de instructores"
+        />
+      </div>
+
+      <div v-else-if="datosFiltrados.length === 0" class="py-12">
+        <EmptyState
+          icon="pi pi-filter-slash"
+          title="Sin coincidencias"
+          description="Ningun registro coincide con el filtro aplicado"
         />
       </div>
 
@@ -52,7 +67,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-ink-200">
-          <tr v-for="inst in datos" :key="inst.id" class="hover:bg-ink-50">
+          <tr v-for="inst in datosFiltrados" :key="inst.id" class="hover:bg-ink-50">
             <td class="px-4 py-3 font-medium">{{ inst.nombreCompleto || `${inst.nombre || ''} ${inst.apellido || ''}`.trim() }}</td>
             <td class="px-4 py-3 text-ink-600">{{ inst.email }}</td>
             <td class="px-4 py-3 text-ink-600">
@@ -71,8 +86,8 @@
         </tbody>
       </table>
 
-      <div v-if="datos.length > 0" class="mt-4 pt-4 border-t border-ink-200 text-xs text-ink-500">
-        Total: {{ datos.length }} instructores
+      <div v-if="datosFiltrados.length > 0" class="mt-4 pt-4 border-t border-ink-200 text-xs text-ink-500">
+        Total: {{ datosFiltrados.length }} instructores
       </div>
     </DataTableCard>
   </div>
@@ -85,11 +100,22 @@ import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import ReporteExporter from '@/components/reportes/ReporteExporter.vue'
+import ReporteFiltros, { type CampoFiltro } from '@/components/reportes/ReporteFiltros.vue'
 import Button from 'primevue/button'
 import reportesService from '@/services/reportes'
 
 const datos = ref<any[]>([])
+const datosFiltrados = ref<any[]>([])
 const cargando = ref(false)
+
+const camposFiltrables: CampoFiltro[] = [
+  { key: 'nombreCompleto',     label: 'Nombre',        tipo: 'text' },
+  { key: 'email',              label: 'Email',         tipo: 'text' },
+  { key: 'licenciaCategoria',  label: 'Licencia',      tipo: 'select', opciones: ['A','B','C','D','E','F'] },
+  { key: 'tipoContrato',       label: 'Tipo Contrato', tipo: 'select', opciones: ['TIEMPO_COMPLETO','MEDIO_TIEMPO','POR_HORAS'] },
+  { key: 'estado',             label: 'Estado',        tipo: 'select', opciones: ['ACTIVO','INACTIVO','SUSPENDIDO'] },
+  { key: 'horasDictadas',      label: 'Horas',         tipo: 'number' }
+]
 
 async function cargar() {
   cargando.value = true

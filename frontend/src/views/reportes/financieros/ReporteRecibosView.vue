@@ -14,8 +14,8 @@
         <ReporteExporter
           tipoReporte="RECIBOS"
           titulo="Reporte de Recibos"
-          :datos="datos"
-          :tienesDatos="datos.length > 0"
+          :datos="datosFiltrados"
+          :tienesDatos="datosFiltrados.length > 0"
         />
         <Button
           label="Generar reporte"
@@ -27,27 +27,12 @@
       </template>
     </PageHeader>
 
-    <!-- Filtros -->
-    <div class="bg-white rounded-lg border border-ink-200 p-4 flex gap-2 flex-wrap items-end">
-      <div>
-        <label class="text-xs font-semibold text-ink-500 block mb-1">Estado</label>
-        <select
-          v-model="filtroEstado"
-          class="px-3 py-2 border border-ink-200 rounded-lg text-sm"
-        >
-          <option value="">Todos</option>
-          <option value="EMITIDO">Emitido</option>
-          <option value="PAGADO">Pagado</option>
-          <option value="ANULADO">Anulado</option>
-        </select>
-      </div>
-      <button
-        @click="cargar"
-        class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-medium"
-      >
-        Filtrar
-      </button>
-    </div>
+    <ReporteFiltros
+      v-if="datos.length > 0"
+      :campos="camposFiltrables"
+      :datos="datos"
+      @update:datosFiltrados="datosFiltrados = $event"
+    />
 
     <!-- Tabla de recibos -->
     <DataTableCard title="Recibos">
@@ -57,6 +42,10 @@
 
       <div v-else-if="datos.length === 0" class="py-12">
         <EmptyState icon="pi pi-inbox" title="Sin datos" description="No hay recibos" />
+      </div>
+
+      <div v-else-if="datosFiltrados.length === 0" class="py-12">
+        <EmptyState icon="pi pi-filter-slash" title="Sin coincidencias" description="Ningun recibo coincide con el filtro" />
       </div>
 
       <table v-else class="w-full text-sm">
@@ -70,7 +59,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-ink-200">
-          <tr v-for="recibo in datos" :key="recibo.id" class="hover:bg-ink-50">
+          <tr v-for="recibo in datosFiltrados" :key="recibo.id" class="hover:bg-ink-50">
             <td class="px-4 py-3 font-mono font-bold text-brand-700">{{ recibo.numero }}</td>
             <td class="px-4 py-3">{{ recibo.estudianteNombre }}</td>
             <td class="px-4 py-3 text-right font-mono">{{ formatMoney(recibo.monto) }}</td>
@@ -92,12 +81,21 @@ import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import ReporteExporter from '@/components/reportes/ReporteExporter.vue'
+import ReporteFiltros, { type CampoFiltro } from '@/components/reportes/ReporteFiltros.vue'
 import Button from 'primevue/button'
 import reportesService from '@/services/reportes'
 
 const datos = ref<any[]>([])
+const datosFiltrados = ref<any[]>([])
 const cargando = ref(false)
-const filtroEstado = ref('')
+
+const camposFiltrables: CampoFiltro[] = [
+  { key: 'numero',            label: 'Numero',       tipo: 'text' },
+  { key: 'estudianteNombre',  label: 'Estudiante',   tipo: 'text' },
+  { key: 'fechaEmision',      label: 'Fecha Emision', tipo: 'date' },
+  { key: 'estado',            label: 'Estado',       tipo: 'select', opciones: ['EMITIDO','PAGADO','PARCIAL','ANULADO','PENDIENTE'] },
+  { key: 'monto',             label: 'Monto',        tipo: 'number' }
+]
 
 function formatMoney(valor: number): string {
   return new Intl.NumberFormat('es-ES', {

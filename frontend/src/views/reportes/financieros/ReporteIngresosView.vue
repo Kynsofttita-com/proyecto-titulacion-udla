@@ -14,8 +14,8 @@
         <ReporteExporter
           tipoReporte="INGRESOS_PERIODO"
           titulo="Reporte de Ingresos por Periodo"
-          :datos="datos"
-          :tienesDatos="tienesDatos"
+          :datos="datosFiltrados"
+          :tienesDatos="datosFiltrados.length > 0"
         />
         <Button
           label="Generar reporte"
@@ -43,6 +43,13 @@
       </div>
     </div>
 
+    <ReporteFiltros
+      v-if="datos.length > 0"
+      :campos="camposFiltrables"
+      :datos="datos"
+      @update:datosFiltrados="datosFiltrados = $event"
+    />
+
     <!-- Tabla de ingresos -->
     <DataTableCard title="Detalle de ingresos">
       <div v-if="cargando" class="flex items-center justify-center py-12">
@@ -51,6 +58,10 @@
 
       <div v-else-if="datos.length === 0" class="py-12">
         <EmptyState icon="pi pi-inbox" title="Sin datos" description="Genera el reporte" />
+      </div>
+
+      <div v-else-if="datosFiltrados.length === 0" class="py-12">
+        <EmptyState icon="pi pi-filter-slash" title="Sin coincidencias" description="Ningun ingreso coincide con el filtro" />
       </div>
 
       <table v-else class="w-full text-sm">
@@ -64,7 +75,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-ink-200">
-          <tr v-for="ing in datos" :key="ing.id" class="hover:bg-ink-50">
+          <tr v-for="ing in datosFiltrados" :key="ing.id" class="hover:bg-ink-50">
             <td class="px-4 py-3">{{ ing.estudianteNombre }}</td>
             <td class="px-4 py-3 text-sm text-ink-600">{{ ing.concepto }}</td>
             <td class="px-4 py-3 text-right font-mono font-semibold text-success-700">
@@ -88,13 +99,23 @@ import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import ReporteExporter from '@/components/reportes/ReporteExporter.vue'
+import ReporteFiltros, { type CampoFiltro } from '@/components/reportes/ReporteFiltros.vue'
 import Button from 'primevue/button'
 import reportesService from '@/services/reportes'
 
 const datos = ref<any[]>([])
+const datosFiltrados = ref<any[]>([])
 const cargando = ref(false)
 const totalIngresos = ref(0)
 const totalTransacciones = ref(0)
+
+const camposFiltrables: CampoFiltro[] = [
+  { key: 'estudianteNombre', label: 'Estudiante', tipo: 'text' },
+  { key: 'concepto',         label: 'Concepto',   tipo: 'text' },
+  { key: 'fecha',            label: 'Fecha',      tipo: 'date' },
+  { key: 'estado',           label: 'Estado',     tipo: 'select', opciones: ['PARCIAL','CONFIRMADO','ANULADO','PENDIENTE'] },
+  { key: 'monto',            label: 'Monto',      tipo: 'number' }
+]
 
 const promedio = computed(() => {
   return totalTransacciones.value > 0
