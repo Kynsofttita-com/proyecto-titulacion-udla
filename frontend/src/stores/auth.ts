@@ -32,6 +32,8 @@ export const useAuthStore = defineStore(
 
     const isAuthenticated = computed(() => !!token.value && !!user.value)
 
+    const userId = computed<number | null>(() => user.value?.id ?? null)
+
     const roles = computed<string[]>(() => user.value?.roles ?? [])
 
     const hasMultipleRoles = computed(() => roles.value.length > 1)
@@ -188,6 +190,7 @@ export const useAuthStore = defineStore(
       error,
       // computed
       isAuthenticated,
+      userId,
       roles,
       hasMultipleRoles,
       currentRole,
