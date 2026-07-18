@@ -16,11 +16,13 @@ public record EstudianteDetailDTO(
     String apellido,
     String cedula,
     Long tipoCursoId,
-    Long categoriaLicenciaId
+    Long categoriaLicenciaId,
+    String email,
+    Long usuarioId
 ) {
     /** Constructor de compatibilidad usado por el fallback del FeignClient. */
     public EstudianteDetailDTO(Long id, String estado) {
-        this(id, estado, null, null, null, null, null, null);
+        this(id, estado, null, null, null, null, null, null, null, null);
     }
 
     public String nombreCompleto() {

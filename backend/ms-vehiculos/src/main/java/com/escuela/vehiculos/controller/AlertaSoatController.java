@@ -4,6 +4,7 @@ import com.escuela.common.security.headers.UserHeaders;
 import com.escuela.vehiculos.dto.AlertaSoatResponse;
 import com.escuela.vehiculos.security.AuthHeaderGuard;
 import com.escuela.vehiculos.service.AlertaSoatService;
+import com.escuela.vehiculos.service.SoatAlertaScheduler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +21,11 @@ public class AlertaSoatController {
     private static final Set<String> ROLES_LECTURA = Set.of("ADMIN", "STAFF");
 
     private final AlertaSoatService service;
+    private final SoatAlertaScheduler scheduler;
 
-    public AlertaSoatController(AlertaSoatService service) {
+    public AlertaSoatController(AlertaSoatService service, SoatAlertaScheduler scheduler) {
         this.service = service;
+        this.scheduler = scheduler;
     }
 
     @GetMapping
@@ -38,5 +41,17 @@ public class AlertaSoatController {
             throw new IllegalArgumentException("dias debe estar entre 0 y 365");
         }
         return ResponseEntity.ok(service.alertasSoat(dias));
+    }
+
+    @PostMapping("/publicar")
+    @Operation(summary = "Dispara manualmente el scheduler de publicacion de alertas SOAT",
+            description = "Solo ADMIN. Uso: dev/testing. En prod corre 08:00 diario.")
+    public ResponseEntity<String> disparar(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles) {
+        AuthHeaderGuard.requireAuth(userEmail);
+        AuthHeaderGuard.requireAnyRole(userRoles, Set.of("ADMIN"));
+        scheduler.publicarAlertasSoat();
+        return ResponseEntity.accepted().body("Publicacion iniciada");
     }
 }

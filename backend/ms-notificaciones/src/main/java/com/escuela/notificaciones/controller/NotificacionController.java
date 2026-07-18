@@ -50,9 +50,23 @@ public class NotificacionController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR', 'ESTUDIANTE')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         service.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/usuario/{usuarioId}/marcar-todas-leidas")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR', 'ESTUDIANTE')")
+    public ResponseEntity<java.util.Map<String, Integer>> marcarTodasComoLeidas(@PathVariable Long usuarioId) {
+        int afectadas = service.marcarTodasComoLeidas(usuarioId);
+        return ResponseEntity.ok(java.util.Map.of("actualizadas", afectadas));
+    }
+
+    @DeleteMapping("/usuario/{usuarioId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR', 'ESTUDIANTE')")
+    public ResponseEntity<java.util.Map<String, Integer>> eliminarTodasPorUsuario(@PathVariable Long usuarioId) {
+        int afectadas = service.eliminarTodasPorUsuario(usuarioId);
+        return ResponseEntity.ok(java.util.Map.of("eliminadas", afectadas));
     }
 }

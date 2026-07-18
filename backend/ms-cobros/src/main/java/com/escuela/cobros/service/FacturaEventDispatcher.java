@@ -4,6 +4,7 @@ import com.escuela.cobros.config.RabbitConfig;
 import com.escuela.cobros.entity.Factura;
 import com.escuela.cobros.event.CobroCanceladoEvent;
 import com.escuela.common.events.cobros.FacturaEmitidaEvent;
+import com.escuela.common.events.cobros.PagoAtrasadoEvent;
 import com.escuela.common.events.publisher.EventPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -57,6 +58,26 @@ public class FacturaEventDispatcher {
                     factura.getId(), factura.getEstudianteId(), factura.getTipoPago());
         } catch (Exception e) {
             log.error("Error publicando FacturaEmitidaEvent (facturaId={})", factura.getId(), e);
+        }
+    }
+
+    /**
+     * Publica {@link PagoAtrasadoEvent} disparado por el scheduler diario cuando
+     * detecta una factura con cuota vencida.
+     */
+    public void publishPagoAtrasado(PagoAtrasadoEvent event) {
+        try {
+            EventPublisher publisher = resolvePublisher();
+            if (publisher == null) {
+                log.warn("RabbitTemplate no disponible; PagoAtrasadoEvent no publicado (facturaId={})",
+                        event.getFacturaId());
+                return;
+            }
+            publisher.publish(RabbitConfig.EXCHANGE_NAME, PagoAtrasadoEvent.ROUTING_KEY, event);
+            log.info("PagoAtrasadoEvent publicado facturaId={} estudianteId={} diasAtraso={}",
+                    event.getFacturaId(), event.getEstudianteId(), event.getDiasAtraso());
+        } catch (Exception e) {
+            log.error("Error publicando PagoAtrasadoEvent (facturaId={})", event.getFacturaId(), e);
         }
     }
 
