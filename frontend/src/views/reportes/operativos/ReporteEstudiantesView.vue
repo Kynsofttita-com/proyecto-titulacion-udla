@@ -14,8 +14,8 @@
         <ReporteExporter
           tipoReporte="ESTUDIANTES_ACTIVOS"
           titulo="Reporte de Estudiantes Activos"
-          :datos="datos"
-          :tienesDatos="datos.length > 0"
+          :datos="datosFiltrados"
+          :tienesDatos="datosFiltrados.length > 0"
         />
         <Button
           label="Generar reporte"
@@ -26,6 +26,14 @@
         />
       </template>
     </PageHeader>
+
+    <!-- Filtros -->
+    <ReporteFiltros
+      v-if="datos.length > 0"
+      :campos="camposFiltrables"
+      :datos="datos"
+      @update:datosFiltrados="datosFiltrados = $event"
+    />
 
     <!-- Tabla de resultados -->
     <DataTableCard title="Estudiantes activos">
@@ -41,6 +49,14 @@
         />
       </div>
 
+      <div v-else-if="datosFiltrados.length === 0" class="py-12">
+        <EmptyState
+          icon="pi pi-filter-slash"
+          title="Sin coincidencias"
+          description="Ningun registro coincide con el filtro aplicado"
+        />
+      </div>
+
       <table v-else class="w-full text-sm">
         <thead class="border-b border-ink-200 bg-ink-50">
           <tr>
@@ -52,7 +68,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-ink-200">
-          <tr v-for="est in datos" :key="est.id" class="hover:bg-ink-50">
+          <tr v-for="est in datosFiltrados" :key="est.id" class="hover:bg-ink-50">
             <td class="px-4 py-3 font-mono text-xs">{{ est.id }}</td>
             <td class="px-4 py-3 font-medium">{{ est.nombreCompleto }}</td>
             <td class="px-4 py-3 text-ink-600">{{ est.email }}</td>
@@ -66,8 +82,8 @@
         </tbody>
       </table>
 
-      <div v-if="datos.length > 0" class="mt-4 pt-4 border-t border-ink-200 text-xs text-ink-500">
-        Total: {{ datos.length }} estudiantes
+      <div v-if="datosFiltrados.length > 0" class="mt-4 pt-4 border-t border-ink-200 text-xs text-ink-500">
+        Total: {{ datosFiltrados.length }} estudiantes
       </div>
     </DataTableCard>
   </div>
@@ -80,11 +96,21 @@ import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import ReporteExporter from '@/components/reportes/ReporteExporter.vue'
+import ReporteFiltros, { type CampoFiltro } from '@/components/reportes/ReporteFiltros.vue'
 import Button from 'primevue/button'
 import reportesService from '@/services/reportes'
 
 const datos = ref<any[]>([])
+const datosFiltrados = ref<any[]>([])
 const cargando = ref(false)
+
+const camposFiltrables: CampoFiltro[] = [
+  { key: 'nombreCompleto', label: 'Nombre',         tipo: 'text' },
+  { key: 'email',          label: 'Email',          tipo: 'text' },
+  { key: 'estado',         label: 'Estado',         tipo: 'select', opciones: ['PRE_MATRICULADO','MATRICULADO','CURSANDO','FINALIZADO','SUSPENDIDO'] },
+  { key: 'fechaMatricula', label: 'Fecha Matricula', tipo: 'date' },
+  { key: 'id',             label: 'ID',             tipo: 'number' }
+]
 
 function formatearFecha(fecha: string): string {
   if (!fecha) return '--'
