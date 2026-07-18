@@ -169,8 +169,14 @@ jobs:
           echo "OK: 401 correcto"
 
           echo ""
-          echo "=== 3. Endpoints autenticados ==="
+          echo "=== 3. Endpoints autenticados (con retry por endpoint) ==="
+          # El LB cache del Spring Cloud Gateway resuelve instancias contra Eureka
+          # lazy: la primera llamada a un MS que aun no fue invocado en la sesion
+          # del gateway devuelve 503 mientras el cache se pobla. Retry hasta 4
+          # intentos con sleep 5s cubre el registry-fetch-interval default (30s)
+          # y evita falsos negativos en CI.
           fails=0
+          failed_list=""
           for path in \
               "/estudiantes?page=0&size=3" \
               "/instructores?page=0&size=3" \
@@ -184,12 +190,22 @@ jobs:
               "/conceptos-facturacion" \
               "/usuarios?page=0&size=3" \
               "/configuracion"; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" "http://localhost:8080$path")
-            printf "  %-50s -> %s\n" "$path" "$code"
-            [ "$code" = "200" ] || fails=$((fails+1))
+            code="000"
+            attempt=0
+            for attempt in 1 2 3 4; do
+              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+                -H "Authorization: Bearer $TOKEN" "http://localhost:8080$path" || echo "000")
+              [ "$code" = "200" ] && break
+              [ "$attempt" -lt 4 ] && sleep 5
+            done
+            printf "  %-50s -> %s (intento %s)\n" "$path" "$code" "$attempt"
+            if [ "$code" != "200" ]; then
+              fails=$((fails+1))
+              failed_list="$failed_list\n  - $path -> $code"
+            fi
           done
           if [ "$fails" -gt 0 ]; then
-            echo "FAIL: $fails endpoints sin 200"
+            printf "FAIL: %s endpoints sin 200:%b\n" "$fails" "$failed_list"
             exit 1
           fi
 
