@@ -194,6 +194,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
   },
   {
+    path: '/notificaciones',
+    name: 'Notificaciones',
+    component: () => import('@/views/notificaciones/NotificacionesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/reportes/operativos/estudiantes',
     name: 'ReporteEstudiantes',
     component: () => import('@/views/reportes/operativos/ReporteEstudiantesView.vue'),
