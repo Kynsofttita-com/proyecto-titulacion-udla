@@ -149,18 +149,49 @@ class ReportesService {
     }
   }
 
-  async exportarReporte(datos: ExportarReporteRequest): Promise<Blob> {
-    try {
-      const response = await api.post('/reportes/exportar', datos, {
-        responseType: 'blob'
-      })
-      return response.data
-    } catch (error) {
-      console.error('Error exportando reporte:', error)
-      throw error
-    }
+  /**
+   * Exporta un reporte a PDF.
+   * Backend: POST /reportes/exportar/pdf?titulo=X
+   * Body: List<Map<String,Object>> (una fila por registro)
+   */
+  async exportarPDF(titulo: string, datos: Record<string, any>[]): Promise<Blob> {
+    const response = await api.post(
+      `/reportes/exportar/pdf?titulo=${encodeURIComponent(titulo)}`,
+      datos,
+      { responseType: 'blob' }
+    )
+    return response.data
   }
 
+  /**
+   * Exporta un reporte a Excel.
+   * Backend: POST /reportes/exportar/excel?titulo=X
+   * Body: Map<String,Object> (con clave 'registros' y array de filas)
+   */
+  async exportarExcel(titulo: string, datos: Record<string, any>[]): Promise<Blob> {
+    const response = await api.post(
+      `/reportes/exportar/excel?titulo=${encodeURIComponent(titulo)}`,
+      { registros: datos },
+      { responseType: 'blob' }
+    )
+    return response.data
+  }
+
+  /**
+   * Exporta un reporte a CSV.
+   * Backend: POST /reportes/exportar/csv?titulo=X
+   * Body: Map<String,Object> (con clave 'registros' y array de filas)
+   */
+  async exportarCSV(titulo: string, datos: Record<string, any>[]): Promise<Blob> {
+    const response = await api.post(
+      `/reportes/exportar/csv?titulo=${encodeURIComponent(titulo)}`,
+      { registros: datos },
+      { responseType: 'blob' }
+    )
+    return response.data
+  }
+
+  /** Descarga un blob como archivo con el nombre indicado. */
   descargarArchivo(blob: Blob, nombre: string): void {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -172,9 +203,11 @@ class ReportesService {
     window.URL.revokeObjectURL(url)
   }
 
-  generarNombreArchivo(tipo: string, formato: string): string {
+  /** Formato: reporte_{tipo}_{yyyy-mm-dd}.{ext} */
+  generarNombreArchivo(tipo: string, formato: 'PDF' | 'EXCEL' | 'CSV'): string {
     const fecha = new Date().toISOString().split('T')[0]
-    return `reporte_${tipo}_${fecha}.${formato.toLowerCase() === 'excel' ? 'xlsx' : 'csv'}`
+    const ext = formato === 'PDF' ? 'pdf' : formato === 'EXCEL' ? 'xlsx' : 'csv'
+    return `reporte_${tipo.toLowerCase()}_${fecha}.${ext}`
   }
 }
 

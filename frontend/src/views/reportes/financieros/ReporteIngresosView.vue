@@ -13,6 +13,8 @@
       <template #actions>
         <ReporteExporter
           tipoReporte="INGRESOS_PERIODO"
+          titulo="Reporte de Ingresos por Periodo"
+          :datos="datos"
           :tienesDatos="tienesDatos"
         />
         <Button

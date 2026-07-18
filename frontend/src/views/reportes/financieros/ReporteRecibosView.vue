@@ -13,6 +13,8 @@
       <template #actions>
         <ReporteExporter
           tipoReporte="RECIBOS"
+          titulo="Reporte de Recibos"
+          :datos="datos"
           :tienesDatos="datos.length > 0"
         />
         <Button

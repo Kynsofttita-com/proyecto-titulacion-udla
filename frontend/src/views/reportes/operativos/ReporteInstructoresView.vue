@@ -13,6 +13,8 @@
       <template #actions>
         <ReporteExporter
           tipoReporte="INSTRUCTORES_HORAS"
+          titulo="Reporte de Horas de Instructores"
+          :datos="datos"
           :tienesDatos="datos.length > 0"
         />
         <Button

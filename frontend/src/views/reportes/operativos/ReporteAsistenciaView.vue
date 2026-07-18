@@ -13,6 +13,8 @@
       <template #actions>
         <ReporteExporter
           tipoReporte="ASISTENCIA"
+          titulo="Reporte de Asistencia"
+          :datos="datos"
           :tienesDatos="datos.length > 0"
         />
         <Button
