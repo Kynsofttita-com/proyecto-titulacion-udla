@@ -4,11 +4,12 @@ export interface Notificacion {
   id: number
   usuarioId: number
   titulo: string
-  contenido: string
-  tipo: 'EMAIL' | 'IN_APP' | 'SMS'
+  mensaje: string
+  tipo: string
   prioridad: 'BAJA' | 'NORMAL' | 'ALTA'
   leida: boolean
-  leidaEn?: string
+  fechaCreacion?: string
+  fechaLectura?: string
   createdAt: string
   updatedAt?: string
 }
@@ -32,6 +33,15 @@ export interface NotificacionesResponse {
   pageSize: number
 }
 
+// Formato Page<> devuelto por Spring Data (backend)
+interface SpringPage<T> {
+  content: T[]
+  totalElements: number
+  totalPages: number
+  number: number
+  size: number
+}
+
 class NotificacionesService {
   async obtenerNotificaciones(
     usuarioId: number,
@@ -45,10 +55,16 @@ class NotificacionesService {
           .reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {})
       })
 
-      const response = await api.get<NotificacionesResponse>(
+      const response = await api.get<SpringPage<Notificacion>>(
         `/notificaciones?${params}`
       )
-      return response.data
+      return {
+        data: response.data.content ?? [],
+        totalElements: response.data.totalElements ?? 0,
+        totalPages: response.data.totalPages ?? 0,
+        currentPage: response.data.number ?? 0,
+        pageSize: response.data.size ?? 0
+      }
     } catch (error) {
       console.error('Error obteniendo notificaciones:', error)
       throw error
@@ -95,7 +111,7 @@ class NotificacionesService {
 
   async marcarComoLeida(notificacionId: number): Promise<Notificacion> {
     try {
-      const response = await api.patch<Notificacion>(
+      const response = await api.put<Notificacion>(
         `/notificaciones/${notificacionId}/marcar-leida`
       )
       return response.data
@@ -107,7 +123,7 @@ class NotificacionesService {
 
   async marcarTodasComoLeidas(usuarioId: number): Promise<void> {
     try {
-      await api.patch(`/notificaciones/usuario/${usuarioId}/marcar-todas-leidas`)
+      await api.put(`/notificaciones/usuario/${usuarioId}/marcar-todas-leidas`)
     } catch (error) {
       console.error('Error marcando todas como leídas:', error)
       throw error

@@ -85,7 +85,7 @@
                     />
                   </div>
                   <p class="text-xs text-ink-500 mt-1 line-clamp-2">
-                    {{ notif.contenido }}
+                    {{ notif.mensaje }}
                   </p>
                   <p class="text-[11px] text-ink-400 mt-1">
                     {{ formatearFecha(notif.createdAt) }}

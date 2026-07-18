@@ -123,6 +123,7 @@
         </div>
 
         <div class="flex items-center gap-1">
+          <AlertasSoatBadge />
           <NotificacionesDropdown />
           <button class="w-10 h-10 rounded-lg hover:bg-ink-100 text-ink-600 flex items-center justify-center transition" title="Ayuda">
             <i class="pi pi-question-circle" />
@@ -190,6 +191,7 @@ import Tooltip from 'primevue/tooltip'
 import NavItem from '@/components/ui/NavItem.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import NotificacionesDropdown from '@/components/notificaciones/NotificacionesDropdown.vue'
+import AlertasSoatBadge from '@/components/notificaciones/AlertasSoatBadge.vue'
 
 const vTooltip = Tooltip
 
