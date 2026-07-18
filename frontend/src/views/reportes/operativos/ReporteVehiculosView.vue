@@ -100,19 +100,34 @@ async function cargar() {
 
     // Extraer datos del reporte
     const vehiculos = response.datos?.vehiculos || []
-    console.log('Vehículos recibidos:', vehiculos)
 
-    // Mapear a formato esperado si es necesario
-    datos.value = vehiculos.map((v: any) => ({
-      id: v.id,
-      placa: v.placa,
-      marca: v.marca,
-      modelo: v.modelo,
-      fechaVencimientoSoat: v.fecha_soat || v.fechaSoat || v.fecha_vencimiento_soat,
-      soatVigente: v.soat_vigente !== false && v.soatVigente !== false,
-      estado: v.estado,
-      diasParaVencer: v.dias_para_vencer || v.diasParaVencer
-    }))
+    // Backend devuelve: soatVencimiento (YYYY-MM-DD). Calculamos vigencia y dias en frontend.
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+
+    datos.value = vehiculos.map((v: any) => {
+      const fechaSoat = v.soatVencimiento
+      let diasParaVencer: number | null = null
+      let soatVigente = false
+
+      if (fechaSoat) {
+        const vence = new Date(fechaSoat + 'T00:00:00')
+        const msPorDia = 1000 * 60 * 60 * 24
+        diasParaVencer = Math.floor((vence.getTime() - hoy.getTime()) / msPorDia)
+        soatVigente = diasParaVencer >= 0
+      }
+
+      return {
+        id: v.id,
+        placa: v.placa,
+        marca: v.marca,
+        modelo: v.modelo,
+        fechaVencimientoSoat: fechaSoat,
+        soatVigente,
+        estado: v.estado,
+        diasParaVencer
+      }
+    })
   } catch (err: any) {
     console.error('Error generando reporte:', err)
     error.value = err.response?.data?.message || err.message || 'Error al generar el reporte. Intenta de nuevo.'

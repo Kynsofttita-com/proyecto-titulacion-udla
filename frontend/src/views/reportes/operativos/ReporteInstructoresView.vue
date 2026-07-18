@@ -45,15 +45,25 @@
           <tr>
             <th class="px-4 py-3 text-left font-semibold">Nombre</th>
             <th class="px-4 py-3 text-left font-semibold">Email</th>
+            <th class="px-4 py-3 text-left font-semibold">Licencia</th>
+            <th class="px-4 py-3 text-left font-semibold">Tipo Contrato</th>
             <th class="px-4 py-3 text-right font-semibold">Horas Dictadas</th>
             <th class="px-4 py-3 text-left font-semibold">Estado</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-ink-200">
           <tr v-for="inst in datos" :key="inst.id" class="hover:bg-ink-50">
-            <td class="px-4 py-3 font-medium">{{ inst.nombreCompleto }}</td>
+            <td class="px-4 py-3 font-medium">{{ inst.nombreCompleto || `${inst.nombre || ''} ${inst.apellido || ''}`.trim() }}</td>
             <td class="px-4 py-3 text-ink-600">{{ inst.email }}</td>
-            <td class="px-4 py-3 text-right font-mono">{{ inst.horasDictadas || 0 }}h</td>
+            <td class="px-4 py-3 text-ink-600">
+              <span class="font-mono text-xs">{{ inst.licenciaCategoria || '-' }}</span>
+              <span v-if="inst.licenciaNumero" class="text-xs text-ink-500 ml-1">({{ inst.licenciaNumero }})</span>
+            </td>
+            <td class="px-4 py-3 text-xs text-ink-600">{{ inst.tipoContrato || '-' }}</td>
+            <td class="px-4 py-3 text-right font-mono">
+              <span v-if="inst.horasDictadas != null">{{ inst.horasDictadas }}h</span>
+              <span v-else class="text-ink-400 text-xs italic">--</span>
+            </td>
             <td class="px-4 py-3">
               <StatusBadge :status="inst.estado" />
             </td>

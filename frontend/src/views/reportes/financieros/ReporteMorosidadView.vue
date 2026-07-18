@@ -115,15 +115,34 @@ async function cargar() {
     const response = await reportesService.generarReporteMorosidad({
       tipoReporte: 'MOROSIDAD'
     })
-    totalMoroso.value = response.datos.totalMoroso || 0
-    datos.value = response.datos.morosos || response.datos.data || []
+    // Backend devuelve datos.cobrosMorosos con: id, facturaId, monto, fechaPago, metodoPago, referenciaTransaccion
+    // Adaptamos los campos a lo que la tabla espera. Calculamos totalMoroso sumando los montos.
+    const cobros = response.datos.cobrosMorosos || response.datos.morosos || response.datos.data || []
+    totalMoroso.value = response.datos.totalMoroso || cobros.reduce((acc: number, c: any) => acc + (c.monto || 0), 0)
+
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+
+    datos.value = cobros.map((c: any) => {
+      const fechaVenc = c.fechaVencimiento || c.fechaPago
+      let diasAtraso = 0
+      if (fechaVenc) {
+        const venc = new Date(fechaVenc.substring(0, 10) + 'T00:00:00')
+        diasAtraso = Math.max(0, Math.floor((hoy.getTime() - venc.getTime()) / (1000 * 60 * 60 * 24)))
+      }
+      return {
+        id: c.id,
+        estudianteNombre: c.estudianteNombre || `Factura #${c.facturaId ?? '?'}`,
+        telefono: c.telefono || '--',
+        montoVencido: c.montoVencido ?? c.monto ?? 0,
+        fechaVencimiento: fechaVenc,
+        diasAtraso: c.diasAtraso ?? diasAtraso
+      }
+    })
   } catch (error) {
     console.error('Error:', error)
-    totalMoroso.value = 3000
-    datos.value = [
-      { id: 1, estudianteNombre: 'Pedro Gómez', telefono: '0987654321', montoVencido: 1500, fechaVencimiento: '2026-06-15', diasAtraso: 24 },
-      { id: 2, estudianteNombre: 'Rosa Martínez', telefono: '0912345678', montoVencido: 1500, fechaVencimiento: '2026-06-20', diasAtraso: 19 }
-    ]
+    totalMoroso.value = 0
+    datos.value = []
   } finally {
     cargando.value = false
   }
