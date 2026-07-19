@@ -449,7 +449,10 @@ public class ReporteService {
                     String fechaVencStr = node.has("fechaVencimiento") ? node.get("fechaVencimiento").asText(null) : null;
                     if (fechaVencStr == null) continue;
                     java.time.LocalDate fechaVenc = java.time.LocalDate.parse(fechaVencStr);
-                    if (!fechaVenc.isBefore(hoy)) continue;
+                    // Se considera morosa desde el DIA de vencimiento inclusive: si vence
+                    // hoy y no se pago, aparece con 0 dias de atraso. Alinea el criterio
+                    // del reporte con el badge rojo "Pendiente de pago" en la ficha.
+                    if (fechaVenc.isAfter(hoy)) continue;
 
                     long diasAtraso = java.time.temporal.ChronoUnit.DAYS.between(fechaVenc, hoy);
                     Long estudianteId = node.has("estudianteId") ? node.get("estudianteId").asLong() : null;
