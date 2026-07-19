@@ -181,7 +181,7 @@ class FacturaServiceImplTest {
         Page<FacturaListResponse> expected = new PageImpl<>(
             List.of(new FacturaListResponse(1L, "FAC-0001", 1L,
                 BigDecimal.valueOf(1000), BigDecimal.ZERO,
-                BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), "CONTADO", 1, 0, null))
+                BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), LocalDate.now().plusDays(30), "CONTADO", 1, 0, null))
         );
 
         when(facturaRepository.findByDeletedAtIsNull(pageable))
@@ -239,7 +239,7 @@ class FacturaServiceImplTest {
         when(facturaMapper.toListResponse(facturaMock))
             .thenReturn(new FacturaListResponse(1L, "FAC-0001", 1L,
                 BigDecimal.valueOf(1000), BigDecimal.ZERO,
-                BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), "CONTADO", 1, 0, null));
+                BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), LocalDate.now().plusDays(30), "CONTADO", 1, 0, null));
 
         Page<FacturaListResponse> result = facturaService.findByEstudianteId(1L, pageable);
 
