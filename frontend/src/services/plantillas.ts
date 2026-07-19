@@ -3,13 +3,11 @@ import api from './api'
 export interface Plantilla {
   id: number
   codigo: string
-  nombre: string
-  descripcion: string
   asunto: string
-  contenido: string
+  cuerpoHtml: string
   activa: boolean
-  variables?: Record<string, any>
-  createdAt: string
+  variables?: string[]
+  createdAt?: string
   updatedAt?: string
   createdBy?: string
   updatedBy?: string
@@ -17,21 +15,18 @@ export interface Plantilla {
 
 export interface CreatePlantillaRequest {
   codigo: string
-  nombre: string
-  descripcion: string
   asunto: string
-  contenido: string
+  cuerpoHtml: string
   activa?: boolean
-  variables?: Record<string, any>
+  variables?: string[]
 }
 
 export interface UpdatePlantillaRequest {
-  nombre?: string
-  descripcion?: string
+  codigo?: string
   asunto?: string
-  contenido?: string
+  cuerpoHtml?: string
   activa?: boolean
-  variables?: Record<string, any>
+  variables?: string[]
 }
 
 export interface LogEnvio {
@@ -62,7 +57,7 @@ class PlantillasService {
   async obtenerPlantillas(activas?: boolean): Promise<Plantilla[]> {
     try {
       const params = activas !== undefined ? `?activas=${activas}` : ''
-      const response = await api.get<Plantilla[]>(`/plantillas${params}`)
+      const response = await api.get<Plantilla[]>(`/plantillas-email${params}`)
       return response.data
     } catch (error) {
       console.error('Error obteniendo plantillas:', error)
@@ -72,7 +67,7 @@ class PlantillasService {
 
   async obtenerPlantillaPorId(id: number): Promise<Plantilla> {
     try {
-      const response = await api.get<Plantilla>(`/plantillas/${id}`)
+      const response = await api.get<Plantilla>(`/plantillas-email/${id}`)
       return response.data
     } catch (error) {
       console.error(`Error obteniendo plantilla ${id}:`, error)
@@ -92,7 +87,7 @@ class PlantillasService {
 
   async crearPlantilla(datos: CreatePlantillaRequest): Promise<Plantilla> {
     try {
-      const response = await api.post<Plantilla>('/plantillas', datos)
+      const response = await api.post<Plantilla>('/plantillas-email', datos)
       return response.data
     } catch (error) {
       console.error('Error creando plantilla:', error)
@@ -102,7 +97,7 @@ class PlantillasService {
 
   async actualizarPlantilla(id: number, datos: UpdatePlantillaRequest): Promise<Plantilla> {
     try {
-      const response = await api.put<Plantilla>(`/plantillas/${id}`, datos)
+      const response = await api.put<Plantilla>(`/plantillas-email/${id}`, datos)
       return response.data
     } catch (error) {
       console.error(`Error actualizando plantilla ${id}:`, error)
@@ -112,7 +107,7 @@ class PlantillasService {
 
   async eliminarPlantilla(id: number): Promise<void> {
     try {
-      await api.delete(`/plantillas/${id}`)
+      await api.delete(`/plantillas-email/${id}`)
     } catch (error) {
       console.error(`Error eliminando plantilla ${id}:`, error)
       throw error

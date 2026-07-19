@@ -29,34 +29,17 @@
     >
       <div class="space-y-4">
         <!-- Metadata -->
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-ink-900 mb-2">Código</label>
-            <InputText
-              v-model="formulario.codigo"
-              placeholder="Ej: CONFIRMACION_INSCRIPCION"
-              class="w-full"
-              :disabled="!!plantillaEdicion"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-ink-900 mb-2">Nombre</label>
-            <InputText
-              v-model="formulario.nombre"
-              placeholder="Ej: Confirmación de Inscripción"
-              class="w-full"
-            />
-          </div>
-        </div>
-
         <div>
-          <label class="block text-sm font-medium text-ink-900 mb-2">Descripción</label>
-          <Textarea
-            v-model="formulario.descripcion"
-            placeholder="Descripción breve de la plantilla"
+          <label class="block text-sm font-medium text-ink-900 mb-2">Código único</label>
+          <InputText
+            v-model="formulario.codigo"
+            placeholder="Ej: INVITACION_USUARIO"
             class="w-full"
-            rows="2"
+            :disabled="!!plantillaEdicion"
           />
+          <p class="text-xs text-ink-500 mt-1">
+            Identificador único en MAYÚSCULAS_CON_GUION_BAJO. No se puede modificar después.
+          </p>
         </div>
 
         <div>
@@ -84,13 +67,13 @@
 
           <div class="grid gap-4" :class="mostrarPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'">
             <HtmlEditor
-              v-model="formulario.contenido"
+              v-model="formulario.cuerpoHtml"
               :variables="variablesDisponibles"
             />
             <EmailPreview
               v-if="mostrarPreview"
               :asunto="formulario.asunto"
-              :cuerpo="formulario.contenido"
+              :cuerpo="formulario.cuerpoHtml"
             />
           </div>
 
@@ -139,7 +122,7 @@
         <thead class="border-b border-ink-200 bg-ink-50">
           <tr>
             <th class="px-4 py-3 text-left font-semibold">Código</th>
-            <th class="px-4 py-3 text-left font-semibold">Nombre</th>
+            <th class="px-4 py-3 text-left font-semibold">Asunto</th>
             <th class="px-4 py-3 text-left font-semibold">Estado</th>
             <th class="px-4 py-3 text-center font-semibold">Acciones</th>
           </tr>
@@ -147,7 +130,7 @@
         <tbody class="divide-y divide-ink-200">
           <tr v-for="p in plantillas" :key="p.id" class="hover:bg-ink-50">
             <td class="px-4 py-3 font-mono text-xs">{{ p.codigo }}</td>
-            <td class="px-4 py-3">{{ p.nombre }}</td>
+            <td class="px-4 py-3">{{ p.asunto }}</td>
             <td class="px-4 py-3">
               <StatusBadge :status="p.activa ? 'ACTIVA' : 'INACTIVA'" />
             </td>
@@ -194,7 +177,6 @@ import EmailPreview from '@/components/ui/EmailPreview.vue'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
-import Textarea from 'primevue/textarea'
 import Checkbox from 'primevue/checkbox'
 import plantillasService, { Plantilla, CreatePlantillaRequest, UpdatePlantillaRequest } from '@/services/plantillas'
 
@@ -225,10 +207,8 @@ const variablesDisponibles = [
 
 const formulario = ref<CreatePlantillaRequest>({
   codigo: '',
-  nombre: '',
-  descripcion: '',
   asunto: '',
-  contenido: '',
+  cuerpoHtml: '',
   activa: true
 })
 
@@ -248,10 +228,8 @@ function abrirFormulario(plantilla?: Plantilla) {
     plantillaEdicion.value = plantilla
     formulario.value = {
       codigo: plantilla.codigo,
-      nombre: plantilla.nombre,
-      descripcion: plantilla.descripcion,
       asunto: plantilla.asunto,
-      contenido: plantilla.contenido,
+      cuerpoHtml: plantilla.cuerpoHtml,
       activa: plantilla.activa
     }
   } else {
@@ -264,17 +242,15 @@ function limpiarFormulario() {
   plantillaEdicion.value = null
   formulario.value = {
     codigo: '',
-    nombre: '',
-    descripcion: '',
     asunto: '',
-    contenido: '',
+    cuerpoHtml: '',
     activa: true
   }
 }
 
 async function guardarPlantilla() {
-  if (!formulario.value.codigo || !formulario.value.nombre || !formulario.value.asunto || !formulario.value.contenido) {
-    alert('Por favor completa todos los campos requeridos')
+  if (!formulario.value.codigo || !formulario.value.asunto || !formulario.value.cuerpoHtml) {
+    alert('Por favor completa todos los campos requeridos (código, asunto y contenido)')
     return
   }
 
@@ -283,10 +259,8 @@ async function guardarPlantilla() {
     if (plantillaEdicion.value) {
       // Editar plantilla existente
       const updateData: UpdatePlantillaRequest = {
-        nombre: formulario.value.nombre,
-        descripcion: formulario.value.descripcion,
         asunto: formulario.value.asunto,
-        contenido: formulario.value.contenido,
+        cuerpoHtml: formulario.value.cuerpoHtml,
         activa: formulario.value.activa
       }
       await plantillasService.actualizarPlantilla(plantillaEdicion.value.id, updateData)

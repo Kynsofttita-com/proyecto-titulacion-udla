@@ -102,9 +102,9 @@ class EstadoCuentaServiceImplTest {
         when(facturaRepository.findByEstudianteIdAndDeletedAtIsNull(1L, PageRequest.of(0, 1000)))
             .thenReturn(page);
 
-        FacturaListResponse pendienteResponse = new FacturaListResponse(1L, "FAC-0001", 1L, BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), "CONTADO", 1, 0, LocalDateTime.now());
-        FacturaListResponse parcialResponse = new FacturaListResponse(2L, "FAC-0002", 1L, BigDecimal.valueOf(500), BigDecimal.valueOf(200), BigDecimal.valueOf(300), "PARCIAL", LocalDate.now(), "CONTADO", 1, 0, LocalDateTime.now());
-        FacturaListResponse vencidaResponse = new FacturaListResponse(4L, "FAC-0004", 1L, BigDecimal.valueOf(1500), BigDecimal.ZERO, BigDecimal.valueOf(1500), "PENDIENTE", LocalDate.now(), "CONTADO", 1, 0, LocalDateTime.now());
+        FacturaListResponse pendienteResponse = new FacturaListResponse(1L, "FAC-0001", 1L, BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), LocalDate.now().plusDays(30), "CONTADO", 1, 0, LocalDateTime.now());
+        FacturaListResponse parcialResponse = new FacturaListResponse(2L, "FAC-0002", 1L, BigDecimal.valueOf(500), BigDecimal.valueOf(200), BigDecimal.valueOf(300), "PARCIAL", LocalDate.now(), LocalDate.now().plusDays(30), "CONTADO", 1, 0, LocalDateTime.now());
+        FacturaListResponse vencidaResponse = new FacturaListResponse(4L, "FAC-0004", 1L, BigDecimal.valueOf(1500), BigDecimal.ZERO, BigDecimal.valueOf(1500), "PENDIENTE", LocalDate.now(), LocalDate.now().plusDays(30), "CONTADO", 1, 0, LocalDateTime.now());
 
         when(facturaMapper.toListResponse(facturaPendiente)).thenReturn(pendienteResponse);
         when(facturaMapper.toListResponse(facturaParcial)).thenReturn(parcialResponse);
@@ -181,8 +181,8 @@ class EstadoCuentaServiceImplTest {
         when(facturaRepository.findByEstudianteIdAndDeletedAtIsNull(1L, PageRequest.of(0, 1000)))
             .thenReturn(page);
 
-        FacturaListResponse pendienteResponse = new FacturaListResponse(1L, "FAC-0001", 1L, BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), "CONTADO", 1, 0, LocalDateTime.now());
-        FacturaListResponse vencidaResponse = new FacturaListResponse(4L, "FAC-0004", 1L, BigDecimal.valueOf(1500), BigDecimal.ZERO, BigDecimal.valueOf(1500), "PENDIENTE", LocalDate.now(), "CONTADO", 1, 0, LocalDateTime.now());
+        FacturaListResponse pendienteResponse = new FacturaListResponse(1L, "FAC-0001", 1L, BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), LocalDate.now().plusDays(30), "CONTADO", 1, 0, LocalDateTime.now());
+        FacturaListResponse vencidaResponse = new FacturaListResponse(4L, "FAC-0004", 1L, BigDecimal.valueOf(1500), BigDecimal.ZERO, BigDecimal.valueOf(1500), "PENDIENTE", LocalDate.now(), LocalDate.now().plusDays(30), "CONTADO", 1, 0, LocalDateTime.now());
 
         when(facturaMapper.toListResponse(facturaPendiente)).thenReturn(pendienteResponse);
         when(facturaMapper.toListResponse(facturaVencida)).thenReturn(vencidaResponse);
@@ -209,7 +209,7 @@ class EstadoCuentaServiceImplTest {
         when(facturaRepository.findByEstudianteIdAndDeletedAtIsNull(1L, PageRequest.of(0, 1000)))
             .thenReturn(page);
 
-        FacturaListResponse pendienteResponse = new FacturaListResponse(1L, "FAC-0001", 1L, BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), "CONTADO", 1, 0, LocalDateTime.now());
+        FacturaListResponse pendienteResponse = new FacturaListResponse(1L, "FAC-0001", 1L, BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.valueOf(1000), "PENDIENTE", LocalDate.now(), LocalDate.now().plusDays(30), "CONTADO", 1, 0, LocalDateTime.now());
         when(facturaMapper.toListResponse(facturaPendiente)).thenReturn(pendienteResponse);
 
         EstadoCuentaService service = estadoCuentaService;
