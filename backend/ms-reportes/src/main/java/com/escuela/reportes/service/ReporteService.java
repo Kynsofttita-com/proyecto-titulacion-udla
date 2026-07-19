@@ -428,27 +428,81 @@ public class ReporteService {
         long inicio = System.currentTimeMillis();
         try {
             Map<String, Object> datos = new HashMap<>();
-            JsonNode response = cobrosClient.listarPorEstado("VENCIDO", 0, 500);
+            // Facturas atrasadas = estado != PAGADA/ANULADA + saldo > 0 + fechaVencimiento < hoy.
+            // Filtramos aqui (en ms-reportes) para no agregar endpoint dedicado a ms-cobros.
+            JsonNode response = cobrosClient.listarCobros(0, 500);
 
             List<Map<String, Object>> morosos = new ArrayList<>();
-            long totalMorosos = 0;
+            java.math.BigDecimal montoVencidoTotal = java.math.BigDecimal.ZERO;
+            java.time.LocalDate hoy = java.time.LocalDate.now();
 
             if (response != null && response.has("content")) {
-                response.get("content").forEach(node ->
-                    morosos.add(new ObjectMapper().convertValue(node, Map.class))
-                );
-                totalMorosos = response.get("totalElements").asLong(0);
+                for (JsonNode node : response.get("content")) {
+                    String estado = node.has("estado") ? node.get("estado").asText("") : "";
+                    if ("PAGADA".equals(estado) || "ANULADA".equals(estado)) continue;
+
+                    java.math.BigDecimal saldo = node.has("saldo")
+                        ? new java.math.BigDecimal(node.get("saldo").asText("0"))
+                        : java.math.BigDecimal.ZERO;
+                    if (saldo.compareTo(java.math.BigDecimal.ZERO) <= 0) continue;
+
+                    String fechaVencStr = node.has("fechaVencimiento") ? node.get("fechaVencimiento").asText(null) : null;
+                    if (fechaVencStr == null) continue;
+                    java.time.LocalDate fechaVenc = java.time.LocalDate.parse(fechaVencStr);
+                    if (!fechaVenc.isBefore(hoy)) continue;
+
+                    long diasAtraso = java.time.temporal.ChronoUnit.DAYS.between(fechaVenc, hoy);
+                    Long estudianteId = node.has("estudianteId") ? node.get("estudianteId").asLong() : null;
+
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("id", node.has("id") ? node.get("id").asLong() : null);
+                    row.put("numeroFactura", node.has("numeroFactura") ? node.get("numeroFactura").asText() : "");
+                    row.put("estudianteId", estudianteId);
+                    row.put("estudianteNombre", estudianteId != null ? obtenerNombreEstudiante(estudianteId) : "");
+                    row.put("telefono", estudianteId != null ? obtenerTelefonoEstudiante(estudianteId) : "");
+                    row.put("montoOriginal", node.has("montoOriginal") ? node.get("montoOriginal").asText() : "0");
+                    row.put("montoPagado", node.has("montoPagado") ? node.get("montoPagado").asText() : "0");
+                    row.put("montoVencido", saldo.toPlainString());
+                    row.put("saldo", saldo.toPlainString());
+                    row.put("estado", estado);
+                    row.put("fechaVencimiento", fechaVencStr);
+                    row.put("diasAtraso", diasAtraso);
+                    morosos.add(row);
+
+                    montoVencidoTotal = montoVencidoTotal.add(saldo);
+                }
             }
 
-            datos.put("totalMorosos", totalMorosos);
+            // Ordenar por dias de atraso descendente (los mas viejos primero)
+            morosos.sort((a, b) -> Long.compare(
+                ((Number) b.getOrDefault("diasAtraso", 0)).longValue(),
+                ((Number) a.getOrDefault("diasAtraso", 0)).longValue()
+            ));
+
+            datos.put("totalMorosos", (long) morosos.size());
+            datos.put("montoVencidoTotal", montoVencidoTotal.toPlainString());
             datos.put("cobrosMorosos", morosos);
+            datos.put("morosos", morosos); // alias por compatibilidad con la UI
             long duracion = System.currentTimeMillis() - inicio;
-            log.info("Reporte morosidad generado en {}ms", duracion);
+            log.info("Reporte morosidad generado en {}ms. Facturas vencidas: {}. Monto: ${}",
+                    duracion, morosos.size(), montoVencidoTotal);
             return new ReporteFinancieroResponse("morosidad", datos, LocalDateTime.now(), duracion);
         } catch (Exception ex) {
             log.error("Error generando reporte morosidad", ex);
             throw new RuntimeException("Error generando reporte: " + ex.getMessage());
         }
+    }
+
+    private String obtenerTelefonoEstudiante(Long estudianteId) {
+        try {
+            JsonNode estudianteNode = estudiantesClient.obtenerEstudiante(estudianteId);
+            if (estudianteNode != null && estudianteNode.has("telefono")) {
+                return estudianteNode.get("telefono").asText("");
+            }
+        } catch (Exception ex) {
+            log.debug("No se pudo obtener telefono del estudiante {}: {}", estudianteId, ex.getMessage());
+        }
+        return "";
     }
 
     @Transactional(readOnly = true)
