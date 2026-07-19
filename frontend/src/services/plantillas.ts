@@ -56,9 +56,16 @@ export interface LogEnviosFilter {
 class PlantillasService {
   async obtenerPlantillas(activas?: boolean): Promise<Plantilla[]> {
     try {
-      const params = activas !== undefined ? `?activas=${activas}` : ''
-      const response = await api.get<Plantilla[]>(`/plantillas-email${params}`)
-      return response.data
+      // Backend paginado: devuelve Spring Page { content, totalElements, ... }.
+      // Traemos hasta 200 para que la UI muestre todas sin paginacion.
+      const params = new URLSearchParams()
+      params.append('size', '200')
+      if (activas !== undefined) params.append('activas', String(activas))
+      const response = await api.get<any>(`/plantillas-email?${params}`)
+      // Compatibilidad: si algun dia el backend devuelve array plano, seguir funcionando.
+      const data = response.data
+      if (Array.isArray(data)) return data
+      return data?.content ?? []
     } catch (error) {
       console.error('Error obteniendo plantillas:', error)
       throw error
