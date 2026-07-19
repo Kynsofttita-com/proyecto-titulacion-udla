@@ -78,6 +78,15 @@ public class ConfiguracionEscuela implements Serializable {
     @Column(name = "dias_alerta_soat", nullable = false)
     private Short diasAlertaSoat = 30;
 
+    @Column(name = "max_intentos_fallidos", nullable = false)
+    private Short maxIntentosFallidos = 3;
+
+    @Column(name = "duracion_bloqueo_minutos", nullable = false)
+    private Short duracionBloqueoMinutos = 15;
+
+    @Column(name = "expiracion_token_reset_minutos", nullable = false)
+    private Short expiracionTokenResetMinutos = 60;
+
     // ----- Audit fields (sin deleted_at) -----
 
     @CreatedDate

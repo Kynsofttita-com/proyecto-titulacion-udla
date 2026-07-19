@@ -38,7 +38,8 @@ class ConfiguracionServiceTest {
         when(repository.findAll()).thenReturn(List.of(conf));
         when(mapper.toResponse(conf)).thenReturn(new ConfiguracionResponse(
                 1L, "Escuela Demo", "1791251237001", null, null, null, null, null, null,
-                (short) 60, null, null, (short) 24, (short) 30));
+                (short) 60, null, null, (short) 24, (short) 30,
+                (short) 3, (short) 15, (short) 60));
 
         ConfiguracionResponse r = service.obtener();
 
@@ -65,7 +66,7 @@ class ConfiguracionServiceTest {
 
         UpdateConfiguracionRequest req = new UpdateConfiguracionRequest(
                 "X", "0999999999001", null, null, null, null, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
 
         assertThrows(DuplicateResourceException.class, () -> service.actualizar(req));
     }
@@ -78,11 +79,12 @@ class ConfiguracionServiceTest {
         when(repository.findAll()).thenReturn(List.of(conf));
         when(mapper.toResponse(any())).thenReturn(new ConfiguracionResponse(
                 1L, "Nombre Nuevo", "1791251237001", null, null, null, null, null, null,
-                (short) 60, null, null, (short) 24, (short) 30));
+                (short) 60, null, null, (short) 24, (short) 30,
+                (short) 3, (short) 15, (short) 60));
 
         UpdateConfiguracionRequest req = new UpdateConfiguracionRequest(
                 "Nombre Nuevo", "1791251237001", null, null, null, null, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
 
         ConfiguracionResponse r = service.actualizar(req);
 

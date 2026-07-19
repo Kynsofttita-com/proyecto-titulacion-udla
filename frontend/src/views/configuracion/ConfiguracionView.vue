@@ -1,5 +1,6 @@
 <template>
   <div class="space-y-6 max-w-6xl">
+    <Toast />
     <PageHeader
       title="Configuración de la escuela"
       description="Datos institucionales que aparecen en facturas, reportes y reglas operativas del sistema."
@@ -516,12 +517,16 @@ import Dropdown from 'primevue/dropdown'
 import Checkbox from 'primevue/checkbox'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import FormCard from '@/components/ui/FormCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import api from '@/services/api'
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
 
 const vTooltip = Tooltip
 
@@ -563,19 +568,74 @@ const config = reactive<any>({
   expiracionTokenResetMinutos: 60
 })
 
+// PrimeVue Calendar timeOnly trabaja con Date; el backend habla LocalTime (HH:mm:ss).
+const horaStringADate = (hhmmss: string | null | undefined): Date | null => {
+  if (!hhmmss) return null
+  const [h, m, s] = hhmmss.split(':').map((n) => parseInt(n, 10) || 0)
+  const d = new Date()
+  d.setHours(h, m, s || 0, 0)
+  return d
+}
+const horaDateAString = (d: Date | string | null | undefined): string | null => {
+  if (!d) return null
+  if (typeof d === 'string') return d.length === 5 ? `${d}:00` : d
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
 const cargar = async () => {
   try {
     const { data } = await api.get('/configuracion')
-    Object.assign(config, data)
-  } catch (e) { console.error(e) }
+    Object.assign(config, data, {
+      horarioApertura: horaStringADate(data.horarioApertura),
+      horarioCierre: horaStringADate(data.horarioCierre)
+    })
+  } catch (e) {
+    console.error(e)
+    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la configuración', life: 4000 })
+  }
 }
 
 const guardar = async () => {
   guardando.value = true
   try {
-    await api.put('/configuracion', config)
-  } catch (e) { console.error(e) }
-  finally { guardando.value = false }
+    // Whitelist: enviamos SOLO los campos que el backend acepta.
+    // Cualquier extra (ej: futuras props del frontend sin backend) revienta la validación.
+    const payload = {
+      nombre: config.nombre,
+      ruc: config.ruc,
+      direccion: config.direccion,
+      telefono: config.telefono,
+      email: config.email,
+      logoUrl: config.logoUrl,
+      colorPrimario: config.colorPrimario,
+      colorSecundario: config.colorSecundario,
+      duracionClaseDefaultMin: config.duracionClaseDefaultMin,
+      horarioApertura: horaDateAString(config.horarioApertura),
+      horarioCierre: horaDateAString(config.horarioCierre),
+      horasRecordatorioClase: config.horasRecordatorioClase,
+      diasAlertaSoat: config.diasAlertaSoat,
+      maxIntentosFallidos: config.maxIntentosFallidos,
+      duracionBloqueoMinutos: config.duracionBloqueoMinutos,
+      expiracionTokenResetMinutos: config.expiracionTokenResetMinutos
+    }
+    const { data } = await api.put('/configuracion', payload)
+    // Re-hidratar horarios como Date para que Calendar los siga mostrando bien
+    Object.assign(config, data, {
+      horarioApertura: horaStringADate(data.horarioApertura),
+      horarioCierre: horaStringADate(data.horarioCierre)
+    })
+    toast.add({ severity: 'success', summary: 'Guardado', detail: 'Configuración actualizada', life: 2500 })
+  } catch (e: any) {
+    console.error(e)
+    const detail = e.response?.data?.detail
+      || e.response?.data?.message
+      || (Array.isArray(e.response?.data?.errors) ? e.response.data.errors.join(', ') : null)
+      || 'No se pudo guardar la configuración'
+    toast.add({ severity: 'error', summary: 'Error', detail, life: 5000 })
+  } finally {
+    guardando.value = false
+  }
 }
 
 // =========================================================================
