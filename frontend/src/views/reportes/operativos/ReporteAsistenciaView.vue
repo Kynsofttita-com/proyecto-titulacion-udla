@@ -108,9 +108,11 @@ async function cargar() {
     // { estudianteId, estado, porcentaje_asistencia, clases_programadas, clases_asistidas, nombre, apellido }
     const asistencias = response.datos.asistencias || response.datos.data || []
     datos.value = asistencias.map((a: any) => {
-      const nombre = a.nombre || ''
-      const apellido = a.apellido || ''
-      const nombreCompleto = (nombre + ' ' + apellido).trim() || `Estudiante #${a.estudianteId}`
+      // Prioridad: estudianteNombre (nuevo) → nombreCompleto → nombre+apellido → fallback
+      const nombreCompleto = a.estudianteNombre
+        || a.nombreCompleto
+        || `${a.nombre ?? ''} ${a.apellido ?? ''}`.trim()
+        || `Estudiante #${a.estudianteId}`
       return {
         estudianteId: a.estudianteId,
         estudianteNombre: nombreCompleto,

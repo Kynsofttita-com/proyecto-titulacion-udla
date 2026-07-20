@@ -16,5 +16,8 @@ public record ConfiguracionResponse(
         LocalTime horarioApertura,
         LocalTime horarioCierre,
         Short horasRecordatorioClase,
-        Short diasAlertaSoat
+        Short diasAlertaSoat,
+        Short maxIntentosFallidos,
+        Short duracionBloqueoMinutos,
+        Short expiracionTokenResetMinutos
 ) {}

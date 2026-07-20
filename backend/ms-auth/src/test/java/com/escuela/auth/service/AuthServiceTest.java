@@ -7,6 +7,7 @@ import com.escuela.auth.entity.PasswordResetToken;
 import com.escuela.auth.entity.RefreshToken;
 import com.escuela.auth.entity.Rol;
 import com.escuela.auth.entity.Usuario;
+import com.escuela.auth.repository.ConfiguracionEscuelaRepository;
 import com.escuela.auth.repository.PasswordResetTokenRepository;
 import com.escuela.auth.repository.RefreshTokenRepository;
 import com.escuela.auth.repository.UsuarioRepository;
@@ -51,6 +52,7 @@ class AuthServiceTest {
     @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private PasswordResetTokenRepository passwordResetTokenRepository;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private ConfiguracionEscuelaRepository configuracionRepository;
     @Mock private AuthEventDispatcher eventDispatcher;
 
     private JwtTokenProvider jwtTokenProvider;
@@ -77,7 +79,7 @@ class AuthServiceTest {
         authService = new AuthService(
                 usuarioRepository, refreshTokenRepository, passwordResetTokenRepository,
                 passwordEncoder, jwtTokenProvider, jwtProperties, authProperties,
-                eventDispatcher);
+                configuracionRepository, eventDispatcher);
 
         Rol rolAdmin = Rol.builder().id(1L).nombre("ADMIN").build();
         Set<Rol> roles = new HashSet<>();

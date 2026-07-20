@@ -3,10 +3,12 @@ package com.escuela.auth.service;
 import com.escuela.auth.config.AuthProperties;
 import com.escuela.auth.dto.LoginRequest;
 import com.escuela.auth.dto.LoginResponse;
+import com.escuela.auth.entity.ConfiguracionEscuela;
 import com.escuela.auth.entity.PasswordResetToken;
 import com.escuela.auth.entity.RefreshToken;
 import com.escuela.auth.entity.Rol;
 import com.escuela.auth.entity.Usuario;
+import com.escuela.auth.repository.ConfiguracionEscuelaRepository;
 import com.escuela.auth.repository.PasswordResetTokenRepository;
 import com.escuela.auth.repository.RefreshTokenRepository;
 import com.escuela.auth.repository.UsuarioRepository;
@@ -47,6 +49,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
     private final AuthProperties authProperties;
+    private final ConfiguracionEscuelaRepository configuracionRepository;
     private final AuthEventDispatcher eventDispatcher;
 
     public AuthService(UsuarioRepository usuarioRepository,
@@ -56,6 +59,7 @@ public class AuthService {
                        JwtTokenProvider jwtTokenProvider,
                        JwtProperties jwtProperties,
                        AuthProperties authProperties,
+                       ConfiguracionEscuelaRepository configuracionRepository,
                        AuthEventDispatcher eventDispatcher) {
         this.usuarioRepository = usuarioRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -64,7 +68,33 @@ public class AuthService {
         this.jwtTokenProvider = jwtTokenProvider;
         this.jwtProperties = jwtProperties;
         this.authProperties = authProperties;
+        this.configuracionRepository = configuracionRepository;
         this.eventDispatcher = eventDispatcher;
+    }
+
+    /**
+     * Devuelve maxIntentosFallidos leyendo de la configuracion en BD. Si la fila
+     * o el campo estan ausentes, cae al default de {@link AuthProperties}.
+     */
+    private int getMaxIntentosFallidos() {
+        return configuracionRepository.findAll().stream().findFirst()
+                .map(ConfiguracionEscuela::getMaxIntentosFallidos)
+                .map(Short::intValue)
+                .orElse(authProperties.getMaxFailedAttempts());
+    }
+
+    private int getDuracionBloqueoMinutos() {
+        return configuracionRepository.findAll().stream().findFirst()
+                .map(ConfiguracionEscuela::getDuracionBloqueoMinutos)
+                .map(Short::intValue)
+                .orElse(authProperties.getLockoutDurationMinutes());
+    }
+
+    private int getExpiracionTokenResetMinutos() {
+        return configuracionRepository.findAll().stream().findFirst()
+                .map(ConfiguracionEscuela::getExpiracionTokenResetMinutos)
+                .map(Short::intValue)
+                .orElse(authProperties.getResetTokenExpirationMinutes());
     }
 
     // -----------------------------------------------------------------------
@@ -128,9 +158,9 @@ public class AuthService {
         short intentos = (short) (usuario.getFailedAttempts() + 1);
         usuario.setFailedAttempts(intentos);
 
-        if (intentos >= authProperties.getMaxFailedAttempts()) {
+        if (intentos >= getMaxIntentosFallidos()) {
             LocalDateTime lockUntil = LocalDateTime.now()
-                    .plusMinutes(authProperties.getLockoutDurationMinutes());
+                    .plusMinutes(getDuracionBloqueoMinutos());
             usuario.setLocked(true);
             usuario.setLockUntil(lockUntil);
             usuarioRepository.save(usuario);
@@ -262,9 +292,9 @@ public class AuthService {
             return;
         }
 
+        int expiracionMin = getExpiracionTokenResetMinutos();
         UUID token = UUID.randomUUID();
-        LocalDateTime expira = LocalDateTime.now()
-                .plusMinutes(authProperties.getResetTokenExpirationMinutes());
+        LocalDateTime expira = LocalDateTime.now().plusMinutes(expiracionMin);
 
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .usuario(usuario)
@@ -279,7 +309,7 @@ public class AuthService {
                 .email(usuario.getEmail())
                 .nombre(usuario.getNombre())
                 .resetToken(token.toString())
-                .expiraEnMinutos(authProperties.getResetTokenExpirationMinutes())
+                .expiraEnMinutos(expiracionMin)
                 .build();
         eventDispatcher.publishPasswordResetSolicitado(event);
     }
