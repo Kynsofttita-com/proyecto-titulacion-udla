@@ -385,6 +385,18 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
       JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
+      # SMTP: se leen del archivo .env (Mailtrap en dev/prod-testing,
+      # Gmail SMTP para prod-real). Si estan vacios, los emails no se envian.
+      MAIL_HOST: ${MAIL_HOST:-sandbox.smtp.mailtrap.io}
+      MAIL_PORT: ${MAIL_PORT:-2525}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@escuela-conduccion.local}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Escuela de Conduccion}
+      # Activa el envio real por SMTP. Si esta false (default), los emails
+      # se persisten como PENDIENTE en log_envios_email pero NO se envian
+      # (modo dry-run para dev sin credenciales).
+      JAVA_MAIL_ENABLED: ${JAVA_MAIL_ENABLED:-false}
     ports:
       - "8088:8088"
     healthcheck:

@@ -51,9 +51,6 @@
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Finanzas</p>
           <NavItem to="/cobros"        icon="pi-wallet"    label="Cobros y Pagos" />
 
-          <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Notificaciones</p>
-          <NavItem to="/plantillas"    icon="pi-envelope"  label="Plantillas" />
-
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Reportes Operativos</p>
           <NavItem to="/reportes/operativos/estudiantes" icon="pi-chart-bar" label="Estudiantes" />
           <NavItem to="/reportes/operativos/instructores" icon="pi-chart-bar" label="Instructores" />
