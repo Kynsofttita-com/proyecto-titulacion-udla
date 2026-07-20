@@ -292,15 +292,14 @@ public class ReporteService {
 
     /**
      * Recorre las asignaciones paginadas de ms-asignaciones y devuelve por
-     * estudianteId un par [programadas, asistidas]. Solo se cuentan clases
-     * cuya fecha cae en el rango [desde, hasta] cuando ambos vienen definidos
-     * y cuya fecha ya ocurrió (para no inflar "programadas" con clases futuras
-     * que aún no debían darse). Las clases CANCELADA se excluyen del total.
+     * estudianteId un par [programadas, asistidas]. "Programada" = clase
+     * agendada en el sistema (cualquier estado excepto CANCELADA), incluye
+     * futuras. "Asistida" = solo estado COMPLETADA. Si el request trae
+     * desde/hasta se filtra por rango; sin rango se cuenta todo el historial.
      */
     private Map<Long, long[]> agregarAsistenciaPorEstudiante(
             java.time.LocalDate desde, java.time.LocalDate hasta) {
         Map<Long, long[]> agregado = new HashMap<>();
-        java.time.LocalDate hoy = java.time.LocalDate.now();
         int page = 0;
         int size = 500;
         int totalPages = 1;
@@ -314,18 +313,19 @@ public class ReporteService {
                 String estado = node.has("estado") ? node.get("estado").asText("") : "";
                 if ("CANCELADA".equals(estado)) continue;
 
-                String fechaStr = node.has("fecha") && !node.get("fecha").isNull()
-                    ? node.get("fecha").asText(null) : null;
-                if (fechaStr == null) continue;
-                java.time.LocalDate fecha;
-                try {
-                    fecha = java.time.LocalDate.parse(fechaStr);
-                } catch (Exception ex) {
-                    continue;
+                if (desde != null || hasta != null) {
+                    String fechaStr = node.has("fecha") && !node.get("fecha").isNull()
+                        ? node.get("fecha").asText(null) : null;
+                    if (fechaStr == null) continue;
+                    java.time.LocalDate fecha;
+                    try {
+                        fecha = java.time.LocalDate.parse(fechaStr);
+                    } catch (Exception ex) {
+                        continue;
+                    }
+                    if (desde != null && fecha.isBefore(desde)) continue;
+                    if (hasta != null && fecha.isAfter(hasta)) continue;
                 }
-                if (fecha.isAfter(hoy)) continue;
-                if (desde != null && fecha.isBefore(desde)) continue;
-                if (hasta != null && fecha.isAfter(hasta)) continue;
 
                 Long estId = node.has("estudianteId") && !node.get("estudianteId").isNull()
                     ? node.get("estudianteId").asLong() : null;
