@@ -398,33 +398,6 @@
               </div>
             </div>
           </TabPanel>
-
-          <!-- Tab 5: Documentos -->
-          <TabPanel header="Documentos">
-            <div class="card p-5">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="heading-3 flex items-center gap-2">
-                  <i class="pi pi-file text-brand-600" />
-                  Documentos archivados
-                  <span v-if="documentos.length" class="text-xs text-ink-500 font-normal">({{ documentos.length }})</span>
-                </h3>
-              </div>
-              <div v-if="documentos.length === 0" class="text-center py-8">
-                <i class="pi pi-file text-4xl text-ink-300 mb-2" />
-                <p class="text-sm text-ink-500">Sin documentos registrados</p>
-                <p class="text-xs text-ink-400 mt-1">Próximamente: upload directo desde aquí.</p>
-              </div>
-              <div v-else class="space-y-2">
-                <div v-for="d in documentos" :key="d.id" class="p-3 rounded-lg bg-ink-50 border border-ink-200 flex items-center justify-between gap-3">
-                  <div>
-                    <p class="text-sm font-semibold text-ink-900">{{ d.tipo }} <span v-if="d.numero" class="text-ink-500 font-normal">· {{ d.numero }}</span></p>
-                    <p class="text-xs text-ink-500">Vence: {{ d.fechaVencimiento || '—' }}</p>
-                  </div>
-                  <a :href="d.urlArchivo" target="_blank" rel="noopener" class="text-brand-600 text-xs"><i class="pi pi-external-link" /> Ver</a>
-                </div>
-              </div>
-            </div>
-          </TabPanel>
         </TabView>
       </div>
     </div>
@@ -585,7 +558,6 @@ import vehiculosService, {
   type MantenimientoResponse, type MantenimientoRequest,
   type InspeccionResponse, type InspeccionRequest,
   type CombustibleResponse,
-  type DocumentoVehiculoResponse,
   type CategoriaLicenciaResponse, type TipoCombustibleResponse
 } from '@/services/vehiculos'
 import { fmtFechaLocal, fmtFechaHoraLocal } from '@/utils/fechas'
@@ -965,9 +937,6 @@ const confirmarEliminarCombustible = (r: CombustibleResponse) => {
   })
 }
 
-// ----- Documentos -----
-const documentos = ref<DocumentoVehiculoResponse[]>([])
-
 // ----- Carga inicial -----
 const cargar = async () => {
   loading.value = true
@@ -983,7 +952,6 @@ const cargar = async () => {
     cargarMantenimientos()
     cargarInspecciones()
     cargarCombustible()
-    cargarDocumentos()
   } catch (e: any) {
     toast.add({ severity:'error', summary:'Error', detail:'No se pudo cargar el vehículo', life:4000 })
     setTimeout(() => router.back(), 1200)
@@ -1009,10 +977,6 @@ const cargarCombustible = async () => {
     combustibleRegistros.value = r.content
   } catch { combustibleRegistros.value = [] }
   finally { cargandoComb.value = false }
-}
-const cargarDocumentos = async () => {
-  try { documentos.value = await vehiculosService.listarDocumentos(vehiculoId.value) }
-  catch { documentos.value = [] }
 }
 
 // ----- Eliminar vehículo -----
