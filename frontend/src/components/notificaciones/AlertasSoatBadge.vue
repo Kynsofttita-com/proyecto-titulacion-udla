@@ -200,7 +200,12 @@ function textoDias(a: AlertaSoatResponse): string {
 
 function formatearFecha(fecha: string): string {
   if (!fecha) return '--'
-  return new Date(fecha).toLocaleDateString('es-ES')
+  // El backend manda LocalDate "YYYY-MM-DD" (sin hora). new Date(str) lo
+  // interpreta como UTC medianoche, y al mostrar en TZ Ecuador (UTC-5)
+  // aparece el dia anterior. Parseamos manualmente en local para evitarlo.
+  const [y, m, d] = fecha.substring(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return fecha
+  return new Date(y, m - 1, d).toLocaleDateString('es-ES')
 }
 
 function irAVehiculo(id: number) {
