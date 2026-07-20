@@ -32,7 +32,7 @@
           <div>
             <h3 class="font-semibold text-ink-900 flex items-center gap-2">
               <i class="pi pi-car text-brand-600" />
-              Alertas SOAT
+              Alertas SOAT / RTV
             </h3>
             <p class="text-[11px] text-ink-500 mt-0.5">Vencimientos próximos y vencidos</p>
           </div>
@@ -58,7 +58,7 @@
           <ul v-else class="divide-y divide-ink-100">
             <li
               v-for="alerta in alertasOrdenadas"
-              :key="alerta.vehiculoId"
+              :key="`${alerta.vehiculoId}-${alerta.tipoDocumento}`"
               class="px-4 py-3 hover:bg-ink-50 transition cursor-pointer"
               :class="claseFilaAlerta(alerta)"
               @click="irAVehiculo(alerta.vehiculoId)"
@@ -71,10 +71,16 @@
                   <i class="pi pi-car text-sm" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 flex-wrap">
                     <p class="font-mono font-bold text-brand-700 text-sm">
                       {{ alerta.placa }}
                     </p>
+                    <span
+                      class="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase"
+                      :class="badgeTipo(alerta)"
+                    >
+                      {{ alerta.tipoDocumento }}
+                    </span>
                     <span
                       class="text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase"
                       :class="badgeEstado(alerta)"
@@ -88,7 +94,7 @@
                   <div class="flex items-center gap-3 mt-1 text-[11px] text-ink-500">
                     <span>
                       <i class="pi pi-calendar text-[10px] mr-1" />
-                      {{ formatearFecha(alerta.soatVencimiento) }}
+                      {{ formatearFecha(alerta.fechaVencimiento) }}
                     </span>
                     <span :class="colorTexto(alerta)">
                       {{ textoDias(alerta) }}
@@ -124,13 +130,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import vehiculosService, { type AlertaSoatResponse } from '@/services/vehiculos'
+import vehiculosService, { type AlertaDocumentoResponse } from '@/services/vehiculos'
 import { fmtFechaLocal } from '@/utils/fechas'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const alertas = ref<AlertaSoatResponse[]>([])
+const alertas = ref<AlertaDocumentoResponse[]>([])
 const cargando = ref(false)
 const mostrarDropdown = ref(false)
 let intervalId: number | null = null
@@ -145,7 +151,7 @@ const alertasOrdenadas = computed(() =>
 )
 
 const tituloBoton = computed(() => {
-  if (totalAlertas.value === 0) return 'Alertas SOAT - Todo al día'
+  if (totalAlertas.value === 0) return 'Alertas SOAT/RTV - Todo al día'
   const vencidos = alertas.value.filter(a => a.vencido).length
   const proximos = totalAlertas.value - vencidos
   return `${vencidos} vencido(s), ${proximos} próximo(s) a vencer`
@@ -159,39 +165,46 @@ const colorBadge = computed(() => {
   return 'bg-yellow-500'
 })
 
-function claseFilaAlerta(a: AlertaSoatResponse): string {
+function claseFilaAlerta(a: AlertaDocumentoResponse): string {
   if (a.vencido) return 'border-l-2 border-red-500 bg-red-50/40'
   if (a.diasParaVencer <= 7) return 'border-l-2 border-orange-500 bg-orange-50/40'
   return 'border-l-2 border-yellow-500 bg-yellow-50/40'
 }
 
-function claseIcono(a: AlertaSoatResponse): string {
+function claseIcono(a: AlertaDocumentoResponse): string {
   if (a.vencido) return 'bg-red-100 text-red-600'
   if (a.diasParaVencer <= 7) return 'bg-orange-100 text-orange-600'
   return 'bg-yellow-100 text-yellow-600'
 }
 
-function badgeEstado(a: AlertaSoatResponse): string {
+// Badge del TIPO (SOAT/RTV). Colores diferenciados para distinguirlos rapido.
+function badgeTipo(a: AlertaDocumentoResponse): string {
+  return a.tipoDocumento === 'SOAT'
+    ? 'bg-brand-100 text-brand-700'
+    : 'bg-info-100 text-info-700'
+}
+
+function badgeEstado(a: AlertaDocumentoResponse): string {
   if (a.vencido) return 'bg-red-100 text-red-700'
   if (a.diasParaVencer <= 7) return 'bg-orange-100 text-orange-700'
   return 'bg-yellow-100 text-yellow-700'
 }
 
-function etiquetaEstado(a: AlertaSoatResponse): string {
+function etiquetaEstado(a: AlertaDocumentoResponse): string {
   if (a.vencido) return 'Vencido'
   if (a.diasParaVencer <= 7) return 'Urgente'
   return 'Próximo'
 }
 
-function colorTexto(a: AlertaSoatResponse): string {
+function colorTexto(a: AlertaDocumentoResponse): string {
   if (a.vencido) return 'text-red-600 font-semibold'
   if (a.diasParaVencer <= 7) return 'text-orange-600 font-semibold'
   return 'text-yellow-700 font-medium'
 }
 
-function textoDias(a: AlertaSoatResponse): string {
+function textoDias(a: AlertaDocumentoResponse): string {
   if (a.vencido) {
-    // Backend marca vencido = diasFalta <= 0. Si es 0 el SOAT vence hoy
+    // Backend marca vencido = diasFalta <= 0. Si es 0 el documento vence hoy
     // (ya no debe circular), lo mostramos como "Vencido hoy" en lugar de
     // "Vencido hace 0 días".
     if (a.diasParaVencer === 0) return 'Vencido hoy'
@@ -215,9 +228,9 @@ async function cargarAlertas() {
   if (!mostrar.value) return
   cargando.value = true
   try {
-    alertas.value = await vehiculosService.alertasSoat(30)
+    alertas.value = await vehiculosService.alertasDocumentos(30)
   } catch (err) {
-    console.error('Error cargando alertas SOAT:', err)
+    console.error('Error cargando alertas SOAT/RTV:', err)
     alertas.value = []
   } finally {
     cargando.value = false

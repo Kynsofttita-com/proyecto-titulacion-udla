@@ -47,6 +47,16 @@ public interface VehiculoRepository extends JpaRepository<Vehiculo, Long> {
     """)
     List<Vehiculo> findConSoatPorVencer(@Param("limite") LocalDate limite);
 
+    /** RTV (revision tecnica) vencida o por vencer en {@code limite} (inclusive). */
+    @Query("""
+        SELECT v FROM Vehiculo v
+        WHERE v.deletedAt IS NULL
+          AND v.revisionVencimiento IS NOT NULL
+          AND v.revisionVencimiento <= :limite
+        ORDER BY v.revisionVencimiento ASC
+    """)
+    List<Vehiculo> findConRevisionPorVencer(@Param("limite") LocalDate limite);
+
     /** Query alternativa SIN filtrar por deletedAt - para debugging. */
     @Query("""
         SELECT v FROM Vehiculo v
