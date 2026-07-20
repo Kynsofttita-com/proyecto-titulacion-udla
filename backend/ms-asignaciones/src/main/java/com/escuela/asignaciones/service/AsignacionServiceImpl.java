@@ -493,12 +493,16 @@ public class AsignacionServiceImpl implements AsignacionService {
 
         long totalMinutos = 0;
         for (Asignacion a : completadas) {
-            if (a.getHoraInicioReal() != null && a.getHoraFinReal() != null) {
-                // Preferimos la duracion REAL (registrada al iniciar/finalizar la clase).
-                totalMinutos += ChronoUnit.MINUTES.between(a.getHoraInicioReal(), a.getHoraFinReal());
-            } else if (a.getDuracionMinutos() != null) {
-                // Fallback: duracion programada.
+            // Fuente principal: la duracion PROGRAMADA (contrato con el
+            // instructor). No usamos la duracion real porque el instructor
+            // puede iniciar/finalizar tarde o rapido y no debemos castigarlo
+            // por eso. Si en el futuro se necesita distinguir "trabajo real"
+            // vs "programado" se agrega otro endpoint.
+            if (a.getDuracionMinutos() != null) {
                 totalMinutos += a.getDuracionMinutos();
+            } else if (a.getHoraInicioReal() != null && a.getHoraFinReal() != null) {
+                // Fallback defensivo si por algun motivo duracionMinutos es null.
+                totalMinutos += ChronoUnit.MINUTES.between(a.getHoraInicioReal(), a.getHoraFinReal());
             }
         }
 
