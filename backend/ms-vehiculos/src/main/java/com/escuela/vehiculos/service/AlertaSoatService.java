@@ -29,7 +29,10 @@ public class AlertaSoatService {
         return vehiculoRepository.findConSoatPorVencer(limite).stream()
                 .map(v -> {
                     long diasFalta = ChronoUnit.DAYS.between(hoy, v.getSoatVencimiento());
-                    boolean vencido = diasFalta < 0;
+                    // Un SOAT que vence hoy (diasFalta == 0) ya se considera vencido:
+                    // desde el dia del vencimiento inclusive no debe circular el vehiculo.
+                    // Mismo criterio que morosidad (vence hoy y no se pago = ya moroso).
+                    boolean vencido = diasFalta <= 0;
                     return new AlertaSoatResponse(
                             v.getId(), v.getPlaca(), v.getMarca(), v.getModelo(),
                             v.getSoatVencimiento(), diasFalta, vencido);

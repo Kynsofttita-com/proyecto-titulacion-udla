@@ -8,6 +8,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { fmtFechaLocal } from '@/utils/fechas'
 
 interface Props {
   label: string
@@ -25,7 +26,9 @@ const formattedValue = computed(() => {
   }
 
   if (props.type === 'date' && typeof props.value === 'string') {
-    return new Date(props.value).toLocaleDateString('es-EC')
+    // fmtFechaLocal parsea "YYYY-MM-DD" en local (evita corrimiento -1 dia por TZ)
+    // y delega en Date para strings con hora explicita.
+    return fmtFechaLocal(props.value)
   }
 
   if (typeof props.value === 'boolean') {

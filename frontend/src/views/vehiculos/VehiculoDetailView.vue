@@ -195,13 +195,13 @@
                         m.tipo === 'PREVENTIVO' ? 'bg-info-100 text-info-700' : 'bg-warning-100 text-warning-700']">
                         {{ m.tipo }}
                       </span>
-                      <span class="text-sm font-semibold text-ink-900">{{ new Date(m.fecha).toLocaleDateString('es-EC') }}</span>
+                      <span class="text-sm font-semibold text-ink-900">{{ fmtFechaLocal(m.fecha) }}</span>
                       <span class="text-sm font-bold text-success-700">${{ Number(m.costo).toFixed(2) }}</span>
                       <span v-if="m.kilometrajeServicio" class="text-xs text-ink-500">@ {{ m.kilometrajeServicio.toLocaleString('es-EC') }} km</span>
                     </div>
                     <p class="text-sm text-ink-700">{{ m.descripcion }}</p>
                     <p v-if="m.taller" class="text-xs text-ink-500 mt-1"><i class="pi pi-building mr-1" />{{ m.taller }}</p>
-                    <p v-if="m.proximaFecha" class="text-xs text-info-600 mt-1"><i class="pi pi-calendar mr-1" />Próximo: {{ new Date(m.proximaFecha).toLocaleDateString('es-EC') }}</p>
+                    <p v-if="m.proximaFecha" class="text-xs text-info-600 mt-1"><i class="pi pi-calendar mr-1" />Próximo: {{ fmtFechaLocal(m.proximaFecha) }}</p>
                   </div>
                   <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmarEliminarMantenimiento(m)" />
                 </div>
@@ -240,10 +240,10 @@
                         'bg-danger-100 text-danger-700']">
                         {{ i.resultado }}
                       </span>
-                      <span class="text-sm font-semibold text-ink-900">{{ new Date(i.fecha).toLocaleDateString('es-EC') }}</span>
+                      <span class="text-sm font-semibold text-ink-900">{{ fmtFechaLocal(i.fecha) }}</span>
                     </div>
                     <p v-if="i.observaciones" class="text-xs text-ink-600 italic">{{ i.observaciones }}</p>
-                    <p v-if="i.proximaInspeccion" class="text-xs text-info-600 mt-1"><i class="pi pi-calendar mr-1" />Próxima: {{ new Date(i.proximaInspeccion).toLocaleDateString('es-EC') }}</p>
+                    <p v-if="i.proximaInspeccion" class="text-xs text-info-600 mt-1"><i class="pi pi-calendar mr-1" />Próxima: {{ fmtFechaLocal(i.proximaInspeccion) }}</p>
                   </div>
                   <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmarEliminarInspeccion(i)" />
                 </div>
@@ -313,7 +313,7 @@
                         <span class="text-xs font-normal text-ink-500">km</span>
                       </p>
                       <p class="text-xs text-ink-500 mt-0.5">
-                        {{ eficiencia.fechaUltimaCarga ? new Date(eficiencia.fechaUltimaCarga).toLocaleDateString('es-EC') : '' }}
+                        {{ fmtFechaLocal(eficiencia.fechaUltimaCarga, {}, '') }}
                       </p>
                     </div>
 
@@ -380,7 +380,7 @@
                   </thead>
                   <tbody>
                     <tr v-for="r in combustibleRegistros" :key="r.id" class="border-b border-ink-100 hover:bg-ink-50">
-                      <td class="py-2 pr-2 text-ink-900 whitespace-nowrap">{{ new Date(r.fecha).toLocaleString('es-EC', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) }}</td>
+                      <td class="py-2 pr-2 text-ink-900 whitespace-nowrap">{{ fmtFechaHoraLocal(r.fecha, { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) }}</td>
                       <td class="py-2 px-2 text-right text-ink-700">{{ Number(r.litros).toFixed(2) }}</td>
                       <td class="py-2 px-2 text-right font-semibold text-ink-900">${{ Number(r.costoTotal).toFixed(2) }}</td>
                       <td class="py-2 px-2 text-right text-ink-500 text-xs">${{ Number(r.costoPorLitro).toFixed(4) }}</td>
@@ -585,6 +585,7 @@ import vehiculosService, {
   type DocumentoVehiculoResponse,
   type CategoriaLicenciaResponse, type TipoCombustibleResponse
 } from '@/services/vehiculos'
+import { fmtFechaLocal, fmtFechaHoraLocal } from '@/utils/fechas'
 
 const vTooltip = Tooltip
 const route = useRoute()
@@ -722,7 +723,7 @@ const guardarMantenimiento = async () => {
 }
 const confirmarEliminarMantenimiento = (m: MantenimientoResponse) => {
   confirm.require({
-    message: `¿Eliminar mantenimiento del ${new Date(m.fecha).toLocaleDateString('es-EC')}?`,
+    message: `¿Eliminar mantenimiento del ${fmtFechaLocal(m.fecha)}?`,
     header: 'Eliminar', icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Cancelar', acceptLabel: 'Eliminar', acceptClass: 'p-button-danger',
     accept: async () => {
@@ -772,7 +773,7 @@ const guardarInspeccion = async () => {
 }
 const confirmarEliminarInspeccion = (i: InspeccionResponse) => {
   confirm.require({
-    message: `¿Eliminar inspección ${i.tipo} del ${new Date(i.fecha).toLocaleDateString('es-EC')}?`,
+    message: `¿Eliminar inspección ${i.tipo} del ${fmtFechaLocal(i.fecha)}?`,
     header: 'Eliminar', icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Cancelar', acceptLabel: 'Eliminar', acceptClass: 'p-button-danger',
     accept: async () => {
@@ -906,7 +907,7 @@ const guardarCombustible = async () => {
 }
 const confirmarEliminarCombustible = (r: CombustibleResponse) => {
   confirm.require({
-    message: `¿Eliminar carga del ${new Date(r.fecha).toLocaleDateString('es-EC')}?`,
+    message: `¿Eliminar carga del ${fmtFechaHoraLocal(r.fecha, { day: '2-digit', month: 'short', year: 'numeric' })}?`,
     header: 'Eliminar', icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Cancelar', acceptLabel: 'Eliminar', acceptClass: 'p-button-danger',
     accept: async () => {

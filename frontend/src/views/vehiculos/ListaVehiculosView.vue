@@ -190,7 +190,7 @@
         <Column header="SOAT">
           <template #body="{ data }">
             <div v-if="data.soatVencimiento" class="flex flex-col">
-              <span class="text-xs text-ink-900">{{ new Date(data.soatVencimiento).toLocaleDateString('es-EC') }}</span>
+              <span class="text-xs text-ink-900">{{ fmtFechaLocal(data.soatVencimiento) }}</span>
               <span :class="['text-xs font-medium', tonoBadgeFecha(data.soatVencimiento)]">
                 {{ etiquetaTiempoFecha(data.soatVencimiento) }}
               </span>
@@ -238,6 +238,7 @@ import StatCard from '@/components/ui/StatCard.vue'
 import DataTableCard from '@/components/ui/DataTableCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import { fmtFechaLocal, parseLocalDate } from '@/utils/fechas'
 import vehiculosService, {
   type VehiculoListResponse,
   type CategoriaLicenciaResponse,
@@ -277,15 +278,19 @@ const opcionesCombustible = computed(() =>
 )
 
 const diasParaVencer = (fecha?: string): number | null => {
-  if (!fecha) return null
+  // Parseamos "YYYY-MM-DD" en local para que no se corra un dia por TZ (UTC-5).
+  const d = parseLocalDate(fecha)
+  if (!d) return null
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
-  return Math.floor((new Date(fecha).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+  d.setHours(0, 0, 0, 0)
+  return Math.floor((d.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
 }
 
+// Criterio: vencido = hoy o antes (coherente con AlertaSoatService y con morosidad).
 const tonoBadgeFecha = (fecha?: string): string => {
   const d = diasParaVencer(fecha)
   if (d === null) return 'text-ink-400'
-  if (d < 0) return 'text-danger-600'
+  if (d <= 0) return 'text-danger-600'
   if (d < 30) return 'text-warning-600'
   return 'text-success-600'
 }
@@ -294,7 +299,7 @@ const etiquetaTiempoFecha = (fecha?: string): string => {
   const d = diasParaVencer(fecha)
   if (d === null) return ''
   if (d < 0) return `Vencido ${Math.abs(d)}d`
-  if (d === 0) return 'Vence hoy'
+  if (d === 0) return 'Vencido hoy'
   return `${d}d`
 }
 
@@ -318,8 +323,8 @@ const vehiculosFiltrados = computed(() => {
     r = r.filter(v => {
       const d = diasParaVencer(v.soatVencimiento)
       if (d === null) return false
-      if (filtroSoat.value === 'POR_VENCER') return d >= 0 && d < 30
-      if (filtroSoat.value === 'VENCIDO') return d < 0
+      if (filtroSoat.value === 'POR_VENCER') return d > 0 && d < 30
+      if (filtroSoat.value === 'VENCIDO') return d <= 0
       return true
     })
   }
@@ -373,11 +378,11 @@ const cargar = async () => {
     stats.mantenimiento = vehiculos.value.filter(v => v.estado === 'MANTENIMIENTO').length
     stats.soatPorVencer = vehiculos.value.filter(v => {
       const d = diasParaVencer(v.soatVencimiento)
-      return d !== null && d >= 0 && d < 30
+      return d !== null && d > 0 && d < 30
     }).length
     stats.soatVencido = vehiculos.value.filter(v => {
       const d = diasParaVencer(v.soatVencimiento)
-      return d !== null && d < 0
+      return d !== null && d <= 0
     }).length
   } catch (e: any) {
     toast.add({

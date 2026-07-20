@@ -185,7 +185,7 @@
         <Column header="Caducidad licencia">
           <template #body="{ data }">
             <div v-if="data.licenciaCaducidad" class="flex flex-col">
-              <span class="text-sm text-ink-900">{{ new Date(data.licenciaCaducidad).toLocaleDateString('es-EC') }}</span>
+              <span class="text-sm text-ink-900">{{ fmtFechaLocal(data.licenciaCaducidad) }}</span>
               <span :class="['text-xs font-medium', tonoBadgeLicencia(data.licenciaCaducidad)]">
                 {{ etiquetaTiempoLicencia(data.licenciaCaducidad) }}
               </span>
@@ -245,6 +245,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import instructoresService, { type InstructorListResponse, type TipoContrato } from '@/services/instructores'
+import { fmtFechaLocal, parseLocalDate } from '@/utils/fechas'
 
 const vTooltip = Tooltip
 const router = useRouter()
@@ -282,16 +283,19 @@ const opcionesLicencia = [
 
 // ----- Helpers -----
 const diasParaVencer = (caducidad?: string): number | null => {
-  if (!caducidad) return null
+  // Parse local para evitar corrimiento -1 dia por TZ.
+  const v = parseLocalDate(caducidad)
+  if (!v) return null
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
-  const v = new Date(caducidad)
+  v.setHours(0, 0, 0, 0)
   return Math.floor((v.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
 }
 
+// Criterio: vencida = hoy o antes (coherente con SOAT y morosidad).
 const tonoBadgeLicencia = (caducidad?: string): string => {
   const d = diasParaVencer(caducidad)
   if (d === null) return 'text-ink-400'
-  if (d < 0) return 'text-danger-600'
+  if (d <= 0) return 'text-danger-600'
   if (d < 60) return 'text-warning-600'
   return 'text-success-600'
 }
@@ -300,7 +304,7 @@ const etiquetaTiempoLicencia = (caducidad?: string): string => {
   const d = diasParaVencer(caducidad)
   if (d === null) return ''
   if (d < 0) return `Vencida hace ${Math.abs(d)} días`
-  if (d === 0) return 'Vence hoy'
+  if (d === 0) return 'Vencida hoy'
   if (d < 60) return `Vence en ${d} días`
   return `Vigente (${d} días)`
 }
@@ -344,8 +348,8 @@ const instructoresFiltrados = computed(() => {
       const d = diasParaVencer(i.licenciaCaducidad)
       if (d === null) return false
       if (filtroLicencia.value === 'VIGENTE') return d >= 60
-      if (filtroLicencia.value === 'POR_VENCER') return d >= 0 && d < 60
-      if (filtroLicencia.value === 'VENCIDA') return d < 0
+      if (filtroLicencia.value === 'POR_VENCER') return d > 0 && d < 60
+      if (filtroLicencia.value === 'VENCIDA') return d <= 0
       return true
     })
   }
@@ -390,11 +394,11 @@ const cargar = async () => {
     stats.activos = instructores.value.filter(i => i.estado === 'ACTIVO').length
     stats.vencen = instructores.value.filter(i => {
       const d = diasParaVencer(i.licenciaCaducidad)
-      return d !== null && d >= 0 && d < 60
+      return d !== null && d > 0 && d < 60
     }).length
     stats.vencidas = instructores.value.filter(i => {
       const d = diasParaVencer(i.licenciaCaducidad)
-      return d !== null && d < 0
+      return d !== null && d <= 0
     }).length
   } catch (e: any) {
     toast.add({

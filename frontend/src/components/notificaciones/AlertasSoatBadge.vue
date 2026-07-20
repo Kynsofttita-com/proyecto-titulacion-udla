@@ -125,6 +125,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import vehiculosService, { type AlertaSoatResponse } from '@/services/vehiculos'
+import { fmtFechaLocal } from '@/utils/fechas'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -190,22 +191,19 @@ function colorTexto(a: AlertaSoatResponse): string {
 
 function textoDias(a: AlertaSoatResponse): string {
   if (a.vencido) {
+    // Backend marca vencido = diasFalta <= 0. Si es 0 el SOAT vence hoy
+    // (ya no debe circular), lo mostramos como "Vencido hoy" en lugar de
+    // "Vencido hace 0 días".
+    if (a.diasParaVencer === 0) return 'Vencido hoy'
     const dias = Math.abs(a.diasParaVencer)
     return `Vencido hace ${dias} día${dias === 1 ? '' : 's'}`
   }
-  if (a.diasParaVencer === 0) return 'Vence hoy'
   if (a.diasParaVencer === 1) return 'Vence mañana'
   return `Vence en ${a.diasParaVencer} días`
 }
 
 function formatearFecha(fecha: string): string {
-  if (!fecha) return '--'
-  // El backend manda LocalDate "YYYY-MM-DD" (sin hora). new Date(str) lo
-  // interpreta como UTC medianoche, y al mostrar en TZ Ecuador (UTC-5)
-  // aparece el dia anterior. Parseamos manualmente en local para evitarlo.
-  const [y, m, d] = fecha.substring(0, 10).split('-').map(Number)
-  if (!y || !m || !d) return fecha
-  return new Date(y, m - 1, d).toLocaleDateString('es-ES')
+  return fmtFechaLocal(fecha, {}, '--', 'es-ES')
 }
 
 function irAVehiculo(id: number) {
