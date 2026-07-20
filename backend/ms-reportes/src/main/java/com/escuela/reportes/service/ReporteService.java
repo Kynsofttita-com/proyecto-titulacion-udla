@@ -1,5 +1,6 @@
 package com.escuela.reportes.service;
 
+import com.escuela.reportes.client.AsignacionesClient;
 import com.escuela.reportes.client.CobrosClient;
 import com.escuela.reportes.client.EstudiantesClient;
 import com.escuela.reportes.client.InstructoresClient;
@@ -33,6 +34,7 @@ public class ReporteService {
     private final CobrosClient cobrosClient;
     private final InstructoresClient instructoresClient;
     private final VehiculosClient vehiculosClient;
+    private final AsignacionesClient asignacionesClient;
     private final EjecucionReporteRepository ejecucionReporteRepository;
 
     private String obtenerNombreEstudiante(Long estudianteId) {
@@ -221,22 +223,48 @@ public class ReporteService {
         try {
             Map<String, Object> datos = new HashMap<>();
 
+            // Paso 1: agregar asignaciones por estudiante desde ms-asignaciones.
+            // Programadas = clases con fecha ya pasada (o del dia de hoy) que NO fueron canceladas.
+            // Asistidas   = clases COMPLETADA. NO_ASISTIO cuenta como programada pero no asistida.
+            // Si el request trae rango de fechas se filtra por él; si no, se toma todo el historial.
+            Map<Long, long[]> agregadoPorEstudiante = agregarAsistenciaPorEstudiante(
+                request.desde(), request.hasta());
+
             JsonNode estudiantesResponse = estudiantesClient.listarEstudiantes(0, 1000);
             List<Map<String, Object>> asistencias = new ArrayList<>();
             long totalAsistencias = 0;
 
             if (estudiantesResponse != null && estudiantesResponse.has("content")) {
-                estudiantesResponse.get("content").forEach(node -> {
+                for (JsonNode node : estudiantesResponse.get("content")) {
                     Map<String, Object> asistencia = new HashMap<>();
-                    asistencia.put("estudianteId", node.get("id"));
-                    asistencia.put("nombre", node.get("nombre"));
-                    asistencia.put("apellido", node.get("apellido"));
-                    asistencia.put("estado", node.get("estado"));
-                    asistencia.put("clases_programadas", 10);
-                    asistencia.put("clases_asistidas", 9);
-                    asistencia.put("porcentaje_asistencia", 90.0);
+                    Long estId = node.has("id") ? node.get("id").asLong() : null;
+                    // El listado paginado de ms-estudiantes devuelve nombreCompleto,
+                    // no nombre/apellido separados. Nos apoyamos en eso y damos
+                    // fallback a los campos separados por si el DTO cambia.
+                    String nombreCompleto = node.has("nombreCompleto") && !node.get("nombreCompleto").isNull()
+                        ? node.get("nombreCompleto").asText()
+                        : ((node.has("nombre") ? node.get("nombre").asText("") : "")
+                            + " "
+                            + (node.has("apellido") ? node.get("apellido").asText("") : "")).trim();
+
+                    long[] contadores = agregadoPorEstudiante.getOrDefault(estId, new long[]{0L, 0L});
+                    long programadas = contadores[0];
+                    long asistidas = contadores[1];
+                    double porcentaje = programadas > 0
+                        ? Math.round((asistidas * 1000.0 / programadas)) / 10.0
+                        : 0.0;
+
+                    asistencia.put("estudianteId", estId);
+                    asistencia.put("estudianteNombre", nombreCompleto);
+                    asistencia.put("nombreCompleto", nombreCompleto);
+                    asistencia.put("cedula", node.has("cedula") ? node.get("cedula").asText("") : "");
+                    asistencia.put("telefono", node.has("telefono") ? node.get("telefono").asText("") : "");
+                    asistencia.put("estado", node.has("estado") ? node.get("estado").asText("") : "");
+                    asistencia.put("clases_programadas", programadas);
+                    asistencia.put("clases_asistidas", asistidas);
+                    asistencia.put("porcentaje_asistencia", porcentaje);
                     asistencias.add(asistencia);
-                });
+                }
                 totalAsistencias = asistencias.size();
             }
 
@@ -260,6 +288,56 @@ public class ReporteService {
             log.error("Error generando reporte asistencia", ex);
             throw new RuntimeException("Error generando reporte: " + ex.getMessage());
         }
+    }
+
+    /**
+     * Recorre las asignaciones paginadas de ms-asignaciones y devuelve por
+     * estudianteId un par [programadas, asistidas]. Solo se cuentan clases
+     * cuya fecha cae en el rango [desde, hasta] cuando ambos vienen definidos
+     * y cuya fecha ya ocurrió (para no inflar "programadas" con clases futuras
+     * que aún no debían darse). Las clases CANCELADA se excluyen del total.
+     */
+    private Map<Long, long[]> agregarAsistenciaPorEstudiante(
+            java.time.LocalDate desde, java.time.LocalDate hasta) {
+        Map<Long, long[]> agregado = new HashMap<>();
+        java.time.LocalDate hoy = java.time.LocalDate.now();
+        int page = 0;
+        int size = 500;
+        int totalPages = 1;
+
+        while (page < totalPages) {
+            JsonNode response = asignacionesClient.listarAsignaciones(page, size);
+            if (response == null || !response.has("content")) break;
+            totalPages = response.has("totalPages") ? response.get("totalPages").asInt(1) : 1;
+
+            for (JsonNode node : response.get("content")) {
+                String estado = node.has("estado") ? node.get("estado").asText("") : "";
+                if ("CANCELADA".equals(estado)) continue;
+
+                String fechaStr = node.has("fecha") && !node.get("fecha").isNull()
+                    ? node.get("fecha").asText(null) : null;
+                if (fechaStr == null) continue;
+                java.time.LocalDate fecha;
+                try {
+                    fecha = java.time.LocalDate.parse(fechaStr);
+                } catch (Exception ex) {
+                    continue;
+                }
+                if (fecha.isAfter(hoy)) continue;
+                if (desde != null && fecha.isBefore(desde)) continue;
+                if (hasta != null && fecha.isAfter(hasta)) continue;
+
+                Long estId = node.has("estudianteId") && !node.get("estudianteId").isNull()
+                    ? node.get("estudianteId").asLong() : null;
+                if (estId == null) continue;
+
+                long[] contadores = agregado.computeIfAbsent(estId, k -> new long[]{0L, 0L});
+                contadores[0]++;
+                if ("COMPLETADA".equals(estado)) contadores[1]++;
+            }
+            page++;
+        }
+        return agregado;
     }
 
     @Transactional(readOnly = true)
@@ -449,7 +527,10 @@ public class ReporteService {
                     String fechaVencStr = node.has("fechaVencimiento") ? node.get("fechaVencimiento").asText(null) : null;
                     if (fechaVencStr == null) continue;
                     java.time.LocalDate fechaVenc = java.time.LocalDate.parse(fechaVencStr);
-                    if (!fechaVenc.isBefore(hoy)) continue;
+                    // Se considera morosa desde el DIA de vencimiento inclusive: si vence
+                    // hoy y no se pago, aparece con 0 dias de atraso. Alinea el criterio
+                    // del reporte con el badge rojo "Pendiente de pago" en la ficha.
+                    if (fechaVenc.isAfter(hoy)) continue;
 
                     long diasAtraso = java.time.temporal.ChronoUnit.DAYS.between(fechaVenc, hoy);
                     Long estudianteId = node.has("estudianteId") ? node.get("estudianteId").asLong() : null;

@@ -1,5 +1,6 @@
 package com.escuela.reportes.service;
 
+import com.escuela.reportes.client.AsignacionesClient;
 import com.escuela.reportes.client.CobrosClient;
 import com.escuela.reportes.client.EstudiantesClient;
 import com.escuela.reportes.client.InstructoresClient;
@@ -40,6 +41,9 @@ class ReporteServiceTest {
 
     @Mock
     private VehiculosClient vehiculosClient;
+
+    @Mock
+    private AsignacionesClient asignacionesClient;
 
     @Mock
     private EjecucionReporteRepository ejecucionReporteRepository;
