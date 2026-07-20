@@ -129,11 +129,44 @@ public class ReporteService {
                 }
             }
 
+            // Enriquecemos cada instructor con las horas dictadas reales
+            // (clases COMPLETADA en el rango). Si el request no trae rango,
+            // usamos ultimo dia del mes actual - primer dia del mes actual.
+            java.time.LocalDate desde = request != null && request.desde() != null
+                    ? request.desde()
+                    : java.time.LocalDate.now().withDayOfMonth(1);
+            java.time.LocalDate hasta = request != null && request.hasta() != null
+                    ? request.hasta()
+                    : java.time.LocalDate.now().withDayOfMonth(
+                            java.time.LocalDate.now().lengthOfMonth());
+
+            for (Map<String, Object> inst : instructoresLista) {
+                Object idObj = inst.get("id");
+                if (!(idObj instanceof Number)) {
+                    inst.put("horasDictadas", 0);
+                    continue;
+                }
+                Long instructorId = ((Number) idObj).longValue();
+                try {
+                    JsonNode horas = asignacionesClient.horasCumplidasInstructor(instructorId, desde, hasta);
+                    double horasDictadas = horas != null && horas.has("horasCumplidas")
+                            ? horas.get("horasCumplidas").asDouble(0)
+                            : 0;
+                    inst.put("horasDictadas", horasDictadas);
+                } catch (Exception ex) {
+                    log.debug("No se pudo consultar horas del instructor {}: {}", instructorId, ex.getMessage());
+                    inst.put("horasDictadas", 0);
+                }
+            }
+
             datos.put("totalInstructores", totalInstructores);
             datos.put("instructores", instructoresLista);
+            datos.put("periodoDesde", desde);
+            datos.put("periodoHasta", hasta);
 
             long duracion = System.currentTimeMillis() - inicio;
-            log.info("Reporte instructores_horas generado en {}ms", duracion);
+            log.info("Reporte instructores_horas generado en {}ms (rango {} -> {})",
+                    duracion, desde, hasta);
 
             return new ReporteOperativoResponse(
                 "instructores_horas",
