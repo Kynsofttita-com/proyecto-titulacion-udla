@@ -95,8 +95,10 @@ spring:
   mail:
     host: ${MAIL_HOST:sandbox.smtp.mailtrap.io}
     port: ${MAIL_PORT:2525}
-    username: ${MAILTRAP_USER:}
-    password: ${MAILTRAP_PASSWORD:}
+    # Alias: se aceptan MAIL_USERNAME/MAIL_PASSWORD (estandar, en .env) o
+    # MAILTRAP_USER/MAILTRAP_PASSWORD (nombres viejos) por compatibilidad.
+    username: ${MAIL_USERNAME:${MAILTRAP_USER:}}
+    password: ${MAIL_PASSWORD:${MAILTRAP_PASSWORD:}}
     properties:
       mail:
         smtp:
