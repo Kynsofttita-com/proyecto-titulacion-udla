@@ -218,7 +218,7 @@
                   Inspecciones técnicas
                   <span v-if="inspecciones.length" class="text-xs text-ink-500 font-normal">({{ inspecciones.length }})</span>
                 </h3>
-                <Button label="Registrar" icon="pi pi-plus" size="small" @click="abrirDialogInspeccion" />
+                <Button label="Registrar" icon="pi pi-plus" size="small" @click="abrirDialogInspeccion()" />
               </div>
 
               <div v-if="cargandoInsp" class="text-center py-6"><ProgressSpinner style="width:32px;height:32px" /></div>
@@ -765,7 +765,9 @@ const strToDate = (s?: string | null): Date | null => {
 }
 
 const abrirDialogInspeccion = (i?: InspeccionResponse) => {
-  if (i) {
+  // Defensa: si Vue nos pasa el MouseEvent (por @click="abrirDialogInspeccion")
+  // sin parentesis), i seria truthy pero sin id — lo tratamos como alta.
+  if (i && typeof (i as any).id === 'number') {
     inspeccionEnEdicion.value = i
     Object.assign(formInsp, {
       tipo: i.tipo,
