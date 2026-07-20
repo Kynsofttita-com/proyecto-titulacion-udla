@@ -1,0 +1,55 @@
+# =============================================================================
+# Jenkins CI para el proyecto Escuela de Conduccion
+# =============================================================================
+# Se levanta como stack independiente del compose principal — Jenkins es
+# infraestructura de CI, no parte de la aplicacion de negocio. Corre en su
+# propia red y su propio volumen para persistir configuracion.
+#
+# USO:
+#   sudo docker compose -f docker-compose.jenkins.yml up -d
+#   Web UI:            http://<host>:8100/
+#   Password inicial:  sudo docker exec proyecto-jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+#
+# El pipeline se define en /Jenkinsfile de este repo (raiz).
+# =============================================================================
+
+services:
+  jenkins:
+    # LTS con JDK 21 para poder correr el build del backend Spring Boot 3.4
+    image: jenkins/jenkins:lts-jdk21
+    container_name: proyecto-jenkins
+    restart: unless-stopped
+    user: root  # necesario para montar /var/run/docker.sock (docker-in-docker)
+    ports:
+      - "8100:8080"    # UI web
+      - "50000:50000"  # JNLP para agents remotos (por ahora usamos agent local)
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      # Docker socket montado -> los pipelines pueden construir imagenes
+      # y correr contenedores efimeros (ej. maven:3.9-eclipse-temurin-21)
+      # como agents. Ver Jenkinsfile de la raiz.
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      # Setup wizard clasico (pide password inicial + crear admin).
+      JAVA_OPTS: >-
+        -Djenkins.install.runSetupWizard=true
+        -Duser.timezone=America/Guayaquil
+      # Timezone del contenedor.
+      TZ: America/Guayaquil
+    networks:
+      - jenkins-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/login"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  jenkins_home:
+    name: proyecto-jenkins-home
+
+networks:
+  jenkins-net:
+    name: proyecto-jenkins-net
+    driver: bridge
