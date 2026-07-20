@@ -378,6 +378,95 @@
           </div>
         </div>
 
+        <!-- Facturas del estudiante -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="heading-3 flex items-center gap-2">
+              <i class="pi pi-file-invoice text-brand-600" />
+              Facturas
+              <span v-if="facturasEstudiante.length > 0" class="text-xs font-normal text-ink-500">
+                ({{ facturasEstudiante.length }})
+              </span>
+            </h3>
+          </div>
+
+          <!-- Mini-resumen de la cuenta del estudiante -->
+          <div v-if="facturasEstudiante.length > 0" class="grid grid-cols-3 gap-3 mb-4">
+            <div class="rounded-lg bg-info-50 border border-info-200 p-3">
+              <p class="text-[10px] uppercase text-ink-500 font-semibold mb-1">Facturado</p>
+              <p class="text-lg font-bold text-info-700">${{ resumenFacturas.facturado.toFixed(2) }}</p>
+            </div>
+            <div class="rounded-lg bg-success-50 border border-success-200 p-3">
+              <p class="text-[10px] uppercase text-ink-500 font-semibold mb-1">Cobrado</p>
+              <p class="text-lg font-bold text-success-700">${{ resumenFacturas.cobrado.toFixed(2) }}</p>
+            </div>
+            <div class="rounded-lg bg-warning-50 border border-warning-200 p-3">
+              <p class="text-[10px] uppercase text-ink-500 font-semibold mb-1">Saldo pendiente</p>
+              <p class="text-lg font-bold text-warning-700">${{ resumenFacturas.saldo.toFixed(2) }}</p>
+            </div>
+          </div>
+
+          <div v-if="cargandoFacturas" class="text-sm text-ink-500 italic">Cargando...</div>
+          <div v-else-if="facturasEstudiante.length === 0" class="text-sm text-ink-500 italic">
+            Sin facturas emitidas
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-ink-200 text-left text-xs text-ink-600 uppercase">
+                  <th class="py-2 pr-3 font-medium">N° Factura</th>
+                  <th class="py-2 px-3 font-medium">Tipo</th>
+                  <th class="py-2 px-3 font-medium text-right text-info-700">Facturado</th>
+                  <th class="py-2 px-3 font-medium text-right text-success-700">Cobrado</th>
+                  <th class="py-2 px-3 font-medium text-right text-warning-700">Saldo</th>
+                  <th class="py-2 px-3 font-medium">Vence</th>
+                  <th class="py-2 pl-3 font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="f in facturasEstudiante"
+                  :key="f.id"
+                  class="border-b border-ink-100 hover:bg-ink-50"
+                >
+                  <td class="py-2 pr-3 font-mono font-semibold text-brand-700">{{ f.numeroFactura }}</td>
+                  <td class="py-2 px-3">
+                    <span
+                      class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                      :class="f.tipoPago === 'CREDITO' ? 'bg-info-100 text-info-700' : 'bg-brand-100 text-brand-700'"
+                    >
+                      {{ f.tipoPago }}
+                    </span>
+                    <p v-if="f.tipoPago === 'CREDITO' && f.numeroCuotas > 1" class="text-[10px] text-ink-500 mt-0.5">
+                      Cuota {{ f.cuotasPagadas }}/{{ f.numeroCuotas }}
+                    </p>
+                  </td>
+                  <td class="py-2 px-3 text-right font-mono text-info-700">${{ Number(f.montoOriginal).toFixed(2) }}</td>
+                  <td class="py-2 px-3 text-right font-mono text-success-700 font-semibold">${{ Number(f.montoPagado).toFixed(2) }}</td>
+                  <td class="py-2 px-3 text-right font-mono" :class="Number(f.saldo) > 0 ? 'text-warning-700 font-bold' : 'text-ink-400'">
+                    ${{ Number(f.saldo).toFixed(2) }}
+                  </td>
+                  <td class="py-2 px-3 text-xs text-ink-700">{{ fmtFechaLocal(f.fechaVencimiento) }}</td>
+                  <td class="py-2 pl-3">
+                    <StatusBadge :status="f.estado" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Aclaracion CREDITO -->
+            <div v-if="tieneCredito" class="mt-3 p-3 rounded-lg bg-info-50 border border-info-200 text-xs text-ink-700 flex items-start gap-2">
+              <i class="pi pi-info-circle text-info-600 mt-0.5" />
+              <div>
+                <strong>Facturas a crédito:</strong> el sistema asume cobro por
+                <strong>débito automático</strong> desde tarjeta. El saldo pendiente se
+                cobrará mensualmente por el banco, por eso el estudiante ya está habilitado
+                para tomar clases aunque no aparezcan pagos aún.
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Historial de pagos -->
         <div class="card p-5">
           <div class="flex items-center justify-between mb-4">
@@ -544,7 +633,7 @@ import DetailRow from '@/components/ui/DetailRow.vue'
 import api from '@/services/api'
 import estudiantesService, { EstudianteDetailResponse, ProgresoAcademico, ProgresoAcademicoHorasResponse } from '@/services/estudiantes'
 import asignacionesService, { type HistorialAsignacionItem } from '@/services/asignaciones'
-import cobrosService, { type HistorialPagoItem } from '@/services/cobros'
+import cobrosService, { type HistorialPagoItem, type FacturaEstudianteItem } from '@/services/cobros'
 import { fmtFechaLocal, fmtFechaHoraLocal } from '@/utils/fechas'
 
 const route = useRoute()
@@ -605,8 +694,24 @@ const formatearTamano = (bytes?: number) => {
 // ------- Historiales (asignaciones + pagos) -------
 const historialAsignaciones = ref<HistorialAsignacionItem[]>([])
 const historialPagos = ref<HistorialPagoItem[]>([])
+const facturasEstudiante = ref<FacturaEstudianteItem[]>([])
 const cargandoHistorialAsignaciones = ref(false)
 const cargandoHistorialPagos = ref(false)
+const cargandoFacturas = ref(false)
+
+const resumenFacturas = computed(() => {
+  // ANULADAS no cuentan en los totales del estudiante.
+  const activas = facturasEstudiante.value.filter(f => f.estado !== 'ANULADA')
+  return {
+    facturado: activas.reduce((s, f) => s + Number(f.montoOriginal || 0), 0),
+    cobrado:   activas.reduce((s, f) => s + Number(f.montoPagado || 0), 0),
+    saldo:     activas.reduce((s, f) => s + Number(f.saldo || 0), 0)
+  }
+})
+
+const tieneCredito = computed(() =>
+  facturasEstudiante.value.some(f => f.tipoPago === 'CREDITO' && f.estado !== 'ANULADA')
+)
 
 // Maps id -> nombre/placa para mostrar nombres reales (no IDs) en el historial.
 const mapInstructores = ref<Map<number, string>>(new Map())
@@ -685,6 +790,18 @@ const cargarHistorialPagos = async () => {
     historialPagos.value = []
   } finally {
     cargandoHistorialPagos.value = false
+  }
+}
+
+const cargarFacturasEstudiante = async () => {
+  cargandoFacturas.value = true
+  try {
+    facturasEstudiante.value = await cobrosService.obtenerFacturasPorEstudiante(parseInt(estudianteId))
+  } catch (e) {
+    console.warn('No se pudo cargar facturas del estudiante', e)
+    facturasEstudiante.value = []
+  } finally {
+    cargandoFacturas.value = false
   }
 }
 
@@ -1138,5 +1255,6 @@ onMounted(() => {
   cargarDocumentos()
   cargarHistorialAsignaciones()
   cargarHistorialPagos()
+  cargarFacturasEstudiante()
 })
 </script>

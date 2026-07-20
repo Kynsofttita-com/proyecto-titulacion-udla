@@ -114,6 +114,17 @@ const cobrosService = {
     return response.data?.content ?? []
   },
 
+  // Devuelve el detalle real de facturas del estudiante (paginado).
+  // Cada item incluye montoOriginal, montoPagado, saldo, tipoPago (CONTADO|CREDITO)
+  // y progreso de cuotas para créditos.
+  async obtenerFacturasPorEstudiante(estudianteId: number): Promise<FacturaEstudianteItem[]> {
+    const response = await api.get<{ content: FacturaEstudianteItem[] }>(
+      `/facturas/estudiante/${estudianteId}`,
+      { params: { size: 100 } }
+    )
+    return response.data?.content ?? []
+  },
+
   async generarReporteFiscal(fechaInicio: string, fechaFin: string): Promise<Blob> {
     const response = await api.get(`/cobros/reportes/fiscal`, {
       params: { fechaInicio, fechaFin },
@@ -133,6 +144,27 @@ export interface HistorialPagoItem {
   fechaPago: string
   metodoPago: string
   referenciaTransaccion: string | null
+}
+
+/**
+ * Item real que devuelve GET /facturas/estudiante/{id} (FacturaListResponse
+ * del backend). Se usa en el detalle del estudiante para mostrar el desglose
+ * facturado / cobrado / saldo y el progreso de cuotas para creditos.
+ */
+export interface FacturaEstudianteItem {
+  id: number
+  numeroFactura: string
+  estudianteId: number
+  montoOriginal: number
+  montoPagado: number
+  saldo: number
+  estado: 'PENDIENTE' | 'PARCIAL' | 'PAGADA' | 'ANULADA'
+  fechaEmision: string
+  fechaVencimiento: string
+  tipoPago: 'CONTADO' | 'CREDITO'
+  numeroCuotas: number
+  cuotasPagadas: number
+  createdAt?: string
 }
 
 export default cobrosService
