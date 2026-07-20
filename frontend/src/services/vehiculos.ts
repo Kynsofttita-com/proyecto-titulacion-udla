@@ -323,6 +323,11 @@ const vehiculosService = {
     return r.data
   },
 
+  async actualizarInspeccion(vehiculoId: number, inspeccionId: number, data: InspeccionRequest): Promise<InspeccionResponse> {
+    const r = await api.put<InspeccionResponse>(`/vehiculos/${vehiculoId}/inspecciones/${inspeccionId}`, data)
+    return r.data
+  },
+
   async eliminarInspeccion(vehiculoId: number, inspeccionId: number): Promise<void> {
     await api.delete(`/vehiculos/${vehiculoId}/inspecciones/${inspeccionId}`)
   },

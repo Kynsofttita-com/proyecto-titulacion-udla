@@ -245,7 +245,10 @@
                     <p v-if="i.observaciones" class="text-xs text-ink-600 italic">{{ i.observaciones }}</p>
                     <p v-if="i.proximaInspeccion" class="text-xs text-info-600 mt-1"><i class="pi pi-calendar mr-1" />Próxima: {{ fmtFechaLocal(i.proximaInspeccion) }}</p>
                   </div>
-                  <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmarEliminarInspeccion(i)" />
+                  <div class="flex items-center gap-1 flex-shrink-0">
+                    <Button icon="pi pi-pencil" text rounded size="small" severity="info" @click="abrirDialogInspeccion(i)" />
+                    <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmarEliminarInspeccion(i)" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -481,8 +484,8 @@
       </template>
     </Dialog>
 
-    <!-- Dialog: agregar inspección -->
-    <Dialog v-model:visible="dialogInspVisible" modal header="Registrar inspección" :style="{ width:'520px' }">
+    <!-- Dialog: agregar / editar inspección -->
+    <Dialog v-model:visible="dialogInspVisible" modal :header="inspeccionEnEdicion ? 'Editar inspección' : 'Registrar inspección'" :style="{ width:'520px' }">
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -508,8 +511,8 @@
         </div>
       </div>
       <template #footer>
-        <Button label="Cancelar" outlined @click="dialogInspVisible = false" />
-        <Button label="Guardar" icon="pi pi-check" :loading="guardandoInsp" @click="guardarInspeccion" />
+        <Button label="Cancelar" outlined @click="dialogInspVisible = false; inspeccionEnEdicion = null" />
+        <Button :label="inspeccionEnEdicion ? 'Guardar cambios' : 'Guardar'" icon="pi pi-check" :loading="guardandoInsp" @click="guardarInspeccion" />
       </template>
     </Dialog>
 
@@ -746,12 +749,38 @@ const inspeccionesOrdenadas = computed(() =>
 
 const dialogInspVisible = ref(false)
 const guardandoInsp = ref(false)
+// null = modo alta; con valor = modo edicion (habilita PUT en vez de POST)
+const inspeccionEnEdicion = ref<InspeccionResponse | null>(null)
 const formInsp = reactive<any>({
   tipo: 'TECNICA', resultado: 'APROBADA', fecha: new Date(),
   proximaInspeccion: null, observaciones: ''
 })
-const abrirDialogInspeccion = () => {
-  Object.assign(formInsp, { tipo:'TECNICA', resultado:'APROBADA', fecha:new Date(), proximaInspeccion:null, observaciones:'' })
+
+// Parser local para "YYYY-MM-DD" del backend -> Date sin corrimiento de TZ.
+const strToDate = (s?: string | null): Date | null => {
+  if (!s) return null
+  const [y, m, d] = String(s).substring(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return null
+  return new Date(y, m - 1, d)
+}
+
+const abrirDialogInspeccion = (i?: InspeccionResponse) => {
+  if (i) {
+    inspeccionEnEdicion.value = i
+    Object.assign(formInsp, {
+      tipo: i.tipo,
+      resultado: i.resultado,
+      fecha: strToDate(i.fecha) || new Date(),
+      proximaInspeccion: strToDate(i.proximaInspeccion),
+      observaciones: i.observaciones || ''
+    })
+  } else {
+    inspeccionEnEdicion.value = null
+    Object.assign(formInsp, {
+      tipo: 'TECNICA', resultado: 'APROBADA', fecha: new Date(),
+      proximaInspeccion: null, observaciones: ''
+    })
+  }
   dialogInspVisible.value = true
 }
 const guardarInspeccion = async () => {
@@ -763,12 +792,24 @@ const guardarInspeccion = async () => {
       proximaInspeccion: fmtFecha(formInsp.proximaInspeccion),
       observaciones: formInsp.observaciones?.trim() || undefined
     }
-    await vehiculosService.registrarInspeccion(vehiculoId.value, payload)
-    toast.add({ severity:'success', summary:'Registrada', detail:'Inspección agregada', life:2500 })
+    if (inspeccionEnEdicion.value) {
+      await vehiculosService.actualizarInspeccion(vehiculoId.value, inspeccionEnEdicion.value.id, payload)
+      toast.add({ severity:'success', summary:'Actualizada', detail:'Inspección actualizada', life:2500 })
+    } else {
+      await vehiculosService.registrarInspeccion(vehiculoId.value, payload)
+      toast.add({ severity:'success', summary:'Registrada', detail:'Inspección agregada', life:2500 })
+    }
     dialogInspVisible.value = false
+    inspeccionEnEdicion.value = null
+    // Recargamos vehiculo (para reflejar propagacion de fechas SOAT/RTV que hace
+    // el backend al guardar) y la lista de inspecciones.
     await cargarInspecciones()
+    try {
+      const vRefrescado = await vehiculosService.obtenerVehiculo(vehiculoId.value)
+      Object.assign(vehiculo, vRefrescado)
+    } catch { /* no rompemos el flujo si falla la recarga */ }
   } catch (e: any) {
-    toast.add({ severity:'error', summary:'Error', detail: e.response?.data?.detail || 'No se pudo registrar', life:4000 })
+    toast.add({ severity:'error', summary:'Error', detail: e.response?.data?.detail || 'No se pudo guardar', life:4000 })
   } finally { guardandoInsp.value = false }
 }
 const confirmarEliminarInspeccion = (i: InspeccionResponse) => {
