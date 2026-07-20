@@ -2,6 +2,7 @@ package com.escuela.asignaciones.service;
 
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
 import com.escuela.asignaciones.dto.FinalizarAsignacionRequest;
+import com.escuela.asignaciones.dto.HorasCumplidasResponse;
 import com.escuela.asignaciones.dto.IniciarAsignacionRequest;
 import com.escuela.asignaciones.dto.RecorridoResponse;
 import com.escuela.asignaciones.dto.UpdateAsignacionRequest;
@@ -10,6 +11,8 @@ import com.escuela.asignaciones.dto.AsignacionListResponse;
 import com.escuela.asignaciones.dto.AsignacionResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDate;
 
 public interface AsignacionService {
     Page<AsignacionListResponse> findAll(Pageable pageable);
@@ -29,4 +32,7 @@ public interface AsignacionService {
 
     /** Resumen del recorrido de una clase (km, duración real, etc). */
     RecorridoResponse obtenerRecorrido(Long id);
+
+    /** Total de horas de clases COMPLETADA de un instructor en [desde, hasta]. */
+    HorasCumplidasResponse horasCumplidasInstructor(Long instructorId, LocalDate desde, LocalDate hasta);
 }

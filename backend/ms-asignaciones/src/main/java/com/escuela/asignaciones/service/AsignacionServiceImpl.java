@@ -2,6 +2,7 @@ package com.escuela.asignaciones.service;
 
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
 import com.escuela.asignaciones.dto.FinalizarAsignacionRequest;
+import com.escuela.asignaciones.dto.HorasCumplidasResponse;
 import com.escuela.asignaciones.dto.IniciarAsignacionRequest;
 import com.escuela.asignaciones.dto.RecorridoResponse;
 import com.escuela.asignaciones.dto.UpdateAsignacionRequest;
@@ -31,9 +32,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -467,6 +472,41 @@ public class AsignacionServiceImpl implements AsignacionService {
         Asignacion a = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new AsignacionNotFoundException(id));
         return toRecorridoResponse(a, null, null, null, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public HorasCumplidasResponse horasCumplidasInstructor(Long instructorId, LocalDate desde, LocalDate hasta) {
+        if (desde == null || hasta == null) {
+            throw new IllegalArgumentException("desde y hasta son requeridos");
+        }
+        if (hasta.isBefore(desde)) {
+            throw new IllegalArgumentException("hasta no puede ser anterior a desde");
+        }
+        // Rango inclusivo: desde 00:00 del dia 'desde' hasta 23:59:59 del dia 'hasta'.
+        LocalDateTime inicio = desde.atStartOfDay();
+        LocalDateTime fin = hasta.atTime(LocalTime.MAX);
+
+        List<Asignacion> completadas = repository
+                .findByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
+                        instructorId, inicio, fin, "COMPLETADA");
+
+        long totalMinutos = 0;
+        for (Asignacion a : completadas) {
+            if (a.getHoraInicioReal() != null && a.getHoraFinReal() != null) {
+                // Preferimos la duracion REAL (registrada al iniciar/finalizar la clase).
+                totalMinutos += ChronoUnit.MINUTES.between(a.getHoraInicioReal(), a.getHoraFinReal());
+            } else if (a.getDuracionMinutos() != null) {
+                // Fallback: duracion programada.
+                totalMinutos += a.getDuracionMinutos();
+            }
+        }
+
+        BigDecimal horas = BigDecimal.valueOf(totalMinutos)
+                .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+        return new HorasCumplidasResponse(
+                instructorId, desde, hasta,
+                completadas.size(), totalMinutos, horas);
     }
 
     private RecorridoResponse toRecorridoResponse(Asignacion a,
