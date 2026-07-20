@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: escuela-conduccion
+data:
+  # Service discovery
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
+  EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+  EUREKA_CLIENT_FETCH_REGISTRY: "true"
+
+  # Base de datos
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "proyecto_db"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/proyecto_db"
+
+  # RabbitMQ
+  SPRING_RABBITMQ_HOST: "rabbitmq"
+  SPRING_RABBITMQ_PORT: "5672"
+
+  # MinIO
+  MINIO_ENDPOINT: "http://minio:9000"
+
+  # JVM
+  JAVA_OPTS: "-Duser.timezone=America/Guayaquil -XX:+UseContainerSupport -XX:MaxRAMPercentage=75"
+
+  # Perfiles
+  SPRING_PROFILES_ACTIVE: "prod"
+
+  # Mail (los credenciales van en el Secret)
+  MAIL_HOST: "sandbox.smtp.mailtrap.io"
+  MAIL_PORT: "2525"
+  MAIL_FROM: "noreply@escuela.local"
+  MAIL_FROM_NAME: "Escuela de Conduccion"
+  JAVA_MAIL_ENABLED: "true"

@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-vehiculos
+  namespace: escuela-conduccion
+spec:
+  ports:
+    - port: 8084
+      targetPort: 8084
+  selector:
+    app: ms-vehiculos
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-vehiculos
+  namespace: escuela-conduccion
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: ms-vehiculos } }
+  template:
+    metadata:
+      labels: { app: ms-vehiculos }
+    spec:
+      containers:
+        - name: ms-vehiculos
+          image: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-vehiculos:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef: { name: app-config }
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { secretKeyRef: { name: db-secrets, key: SPRING_DATASOURCE_USERNAME } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: db-secrets, key: SPRING_DATASOURCE_PASSWORD } }
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: SPRING_RABBITMQ_USERNAME } }
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: SPRING_RABBITMQ_PASSWORD } }
+            - name: JWT_SECRET
+              valueFrom: { secretKeyRef: { name: app-secrets, key: JWT_SECRET } }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8084 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8084 }
+            initialDelaySeconds: 180
+            periodSeconds: 30
+          resources:
+            requests: { cpu: "150m", memory: "512Mi" }
+            limits:   { cpu: "1",    memory: "1Gi" }
