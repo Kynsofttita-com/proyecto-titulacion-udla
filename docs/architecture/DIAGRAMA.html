@@ -128,7 +128,8 @@
     <div class="toc">
         <h3>Contenido</h3>
         <ol>
-            <li><a href="#s1">Vista general (deployment + comunicaciones)</a></li>
+            <li><a href="#s1">Vista general — capas del sistema</a></li>
+            <li><a href="#s1b">Backend detallado — los 8 microservicios</a></li>
             <li><a href="#s2">Sync cross-MS síncrono (Feign)</a></li>
             <li><a href="#s3">Eventos asíncronos (RabbitMQ)</a></li>
             <li><a href="#s4">Stack técnico</a></li>
@@ -140,109 +141,96 @@
     </div>
 
     <section id="s1">
-        <h2><span class="num">1</span>Vista general (deployment + comunicaciones)</h2>
-        <p class="lead">Todo el sistema corre en una única VM ARM de Oracle Cloud Free Tier (4 OCPU / 24 GB). El frontend Vue sirve por nginx, un API Gateway centraliza el ingreso, y los 8 microservicios se registran en Eureka. Persistencia en una sola instancia PostgreSQL con 9 schemas separados. Mensajería asíncrona por RabbitMQ. Observabilidad completa con Prometheus + Grafana.</p>
+        <h2><span class="num">1</span>Vista general — capas del sistema</h2>
+        <p class="lead">Todo el sistema corre en una única VM ARM de Oracle Cloud Free Tier (4 OCPU / 24 GB). El request de un usuario web pasa por 5 capas: <strong>Cliente → Frontend → Gateway → Backend → Datos</strong>. Observabilidad y descubrimiento de servicios son transversales.</p>
         <div class="mermaid">
-graph TB
-    subgraph Cliente["Cliente"]
-        USR["Usuario Web<br/>Chrome / Firefox"]
-    end
+flowchart TB
+    USR(["👤 Usuario Web<br/>Chrome / Firefox / Edge"])
 
-    subgraph Oracle["Oracle Cloud Free · VM.A1.Flex 4/24 · 160.34.220.63"]
+    subgraph VM["🖥️ Oracle Cloud Free · VM.A1.Flex 4 OCPU / 24 GB · 160.34.220.63"]
+        direction TB
 
-        subgraph FrontendLayer["Capa Presentación"]
-            FE["Frontend Vue 3 SPA<br/>nginx :80"]
+        FE["🎨 Frontend Vue 3 SPA<br/>nginx :80"]
+
+        GW["🚦 API Gateway :8080<br/>Spring Cloud Gateway · JWT HS512 · CORS · Routing"]
+
+        BE["⚙️ Backend<br/>8 microservicios Spring Boot 3.4 / Java 21<br/><small>auth · estudiantes · instructores · vehiculos<br/>asignaciones · cobros · reportes · notificaciones</small>"]
+
+        subgraph INFRA["🗄️ Infraestructura de datos"]
+            direction LR
+            PG[("🐘 PostgreSQL 15<br/>1 instancia · 9 schemas")]
+            RB["🐰 RabbitMQ 3.12<br/>eventos asíncronos"]
+            MI["📦 MinIO<br/>storage S3-compatible"]
         end
 
-        subgraph GatewayLayer["API Gateway"]
-            GW["Spring Cloud Gateway :8080<br/>JWT HS512 + CORS + Routing"]
-        end
-
-        subgraph DiscoveryLayer["Service Discovery"]
-            EU["Eureka Server :8761"]
-        end
-
-        subgraph MSLayer["8 Microservicios · Spring Boot 3.4 · Java 21"]
-            AU["ms-auth :8081"]
-            ES["ms-estudiantes :8082"]
-            IN["ms-instructores :8083"]
-            VE["ms-vehiculos :8084"]
-            AS["ms-asignaciones :8085"]
-            CO["ms-cobros :8086"]
-            RE["ms-reportes :8087"]
-            NO["ms-notificaciones :8088"]
-        end
-
-        subgraph DataLayer["Persistencia + Mensajería"]
-            PG[("PostgreSQL 15 :5432<br/>1 instancia · 9 schemas")]
-            RB["RabbitMQ 3.12<br/>:5672 / :15672"]
-            MI["MinIO :9000 / :9001<br/>Storage archivos"]
-        end
-
-        subgraph ObsLayer["Observabilidad"]
-            PR["Prometheus :9090<br/>13 targets · 15d"]
-            GR["Grafana :3030<br/>3 dashboards"]
-            CA["cAdvisor + Node-Exporter"]
+        subgraph CROSS["🧭 Servicios transversales"]
+            direction LR
+            EU["🔎 Eureka :8761<br/>service discovery"]
+            PR["📈 Prometheus :9090<br/>13 targets · retention 15d"]
+            GR["📊 Grafana :3030<br/>3 dashboards"]
         end
     end
 
     USR -->|HTTPS| FE
-    FE -->|"/api/**"| GW
-    GW --> AU
-    GW --> ES
-    GW --> IN
-    GW --> VE
-    GW --> AS
-    GW --> CO
-    GW --> RE
-    GW --> NO
-
-    AU -.registra.-> EU
-    ES -.-> EU
-    IN -.-> EU
-    VE -.-> EU
-    AS -.-> EU
-    CO -.-> EU
-    RE -.-> EU
-    NO -.-> EU
-
-    AU --> PG
-    ES --> PG
-    IN --> PG
-    VE --> PG
-    AS --> PG
-    CO --> PG
-    RE --> PG
-    NO --> PG
-
-    ES --> MI
-    VE --> MI
-
-    VE -.eventos SOAT.-> RB
-    IN -.eventos licencia.-> RB
-    CO -.eventos pago.-> RB
-    AS -.eventos asignación.-> RB
-    RB -.consume.-> NO
-
-    AU -.metrics.-> PR
-    ES -.-> PR
-    IN -.-> PR
-    VE -.-> PR
-    AS -.-> PR
-    CO -.-> PR
-    RE -.-> PR
-    NO -.-> PR
-    CA -.-> PR
+    FE -->|/api/**| GW
+    GW -->|routing por prefijo| BE
+    BE -->|JDBC :5432| PG
+    BE -->|publish / consume| RB
+    BE -->|upload / download| MI
+    BE -.registra + heartbeat.-> EU
+    BE -.metrics /actuator/prometheus.-> PR
     PR --> GR
 
-    style FE fill:#42b883,color:#fff
-    style GW fill:#6db33f,color:#fff
-    style EU fill:#6db33f,color:#fff
-    style PG fill:#336791,color:#fff
-    style RB fill:#ff6600,color:#fff
-    style MI fill:#c72c48,color:#fff
-    style PR fill:#e6522c,color:#fff
-    style GR fill:#f46800,color:#fff
+    style USR fill:#e0e7ff,stroke:#4c51bf,stroke-width:2px
+    style FE fill:#42b883,color:#fff,stroke:#2c8f66,stroke-width:2px
+    style GW fill:#6db33f,color:#fff,stroke:#4d8f2c,stroke-width:2px
+    style BE fill:#6366f1,color:#fff,stroke:#4c51bf,stroke-width:2px
+    style PG fill:#336791,color:#fff,stroke:#1e4666
+    style RB fill:#ff6600,color:#fff,stroke:#cc5200
+    style MI fill:#c72c48,color:#fff,stroke:#8f1f34
+    style EU fill:#8b5cf6,color:#fff,stroke:#6d28d9
+    style PR fill:#e6522c,color:#fff,stroke:#b83d1e
+    style GR fill:#f46800,color:#fff,stroke:#c25400
+        </div>
+    </section>
+
+    <section id="s1b">
+        <h2><span class="num">1<small>b</small></span>Backend detallado — los 8 microservicios</h2>
+        <p class="lead">Cada microservicio corre en su propio contenedor Docker, dueño de un schema PostgreSQL, y se comunica con los demás por Feign (síncrono) o RabbitMQ (asíncrono). El Gateway rutea por prefijo de path (<code>/auth</code>, <code>/estudiantes</code>, …).</p>
+        <div class="mermaid">
+flowchart LR
+    GW["🚦 API Gateway :8080"]
+
+    subgraph MS["8 microservicios · cada uno en su contenedor Docker"]
+        direction TB
+        AU["🔐 ms-auth :8081<br/><small>auth_schema · JWT · usuarios · roles · plantillas email · configuracion escuela</small>"]
+        ES["🎓 ms-estudiantes :8082<br/><small>estudiantes_schema · matrícula · progreso · documentos · tipos curso</small>"]
+        IN["👨‍🏫 ms-instructores :8083<br/><small>instructores_schema · horarios · excepciones · resumen horas + sueldo</small>"]
+        VE["🚗 ms-vehiculos :8084<br/><small>vehiculos_schema · mantenimientos · inspecciones · combustible · SOAT/RTV</small>"]
+        AS["📅 ms-asignaciones :8085<br/><small>asignaciones_schema · clase tripartita · kilometraje real · historial</small>"]
+        CO["💰 ms-cobros :8086<br/><small>cobros_schema · facturas · cuotas · pagos · morosidad · recibos</small>"]
+        RE["📊 ms-reportes :8087<br/><small>reportes_schema · agregación cross-MS · cache Caffeine · export PDF/Excel</small>"]
+        NO["✉️ ms-notificaciones :8088<br/><small>notificaciones_schema · listener RabbitMQ · idempotency · SMTP</small>"]
+    end
+
+    GW -->|/auth/**| AU
+    GW -->|/estudiantes/**| ES
+    GW -->|/instructores/**| IN
+    GW -->|/vehiculos/**| VE
+    GW -->|/asignaciones/**| AS
+    GW -->|/facturas /pagos /**| CO
+    GW -->|/reportes/**| RE
+    GW -->|/notificaciones/**| NO
+
+    style GW fill:#6db33f,color:#fff,stroke:#4d8f2c,stroke-width:2px
+    style AU fill:#fef3c7,stroke:#f59e0b
+    style ES fill:#dbeafe,stroke:#3b82f6
+    style IN fill:#e0e7ff,stroke:#6366f1
+    style VE fill:#fce7f3,stroke:#ec4899
+    style AS fill:#d1fae5,stroke:#10b981
+    style CO fill:#fed7aa,stroke:#f97316
+    style RE fill:#e9d5ff,stroke:#a855f7
+    style NO fill:#fee2e2,stroke:#ef4444
         </div>
     </section>
 
