@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -22,4 +23,11 @@ public interface AsignacionRepository extends JpaRepository<Asignacion, Long> {
             Long instructorId, LocalDateTime inicio, LocalDateTime fin, String estado, Long id);
     long countByVehiculoIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNullAndIdNot(
             Long vehiculoId, LocalDateTime inicio, LocalDateTime fin, String estado, Long id);
+
+    /**
+     * Clases del instructor en [inicio, fin] con un estado dado (tipicamente
+     * COMPLETADA para sumar horas impartidas).
+     */
+    List<Asignacion> findByInstructorIdAndFechaHoraBetweenAndEstadoAndDeletedAtIsNull(
+            Long instructorId, LocalDateTime inicio, LocalDateTime fin, String estado);
 }

@@ -195,13 +195,13 @@
                         m.tipo === 'PREVENTIVO' ? 'bg-info-100 text-info-700' : 'bg-warning-100 text-warning-700']">
                         {{ m.tipo }}
                       </span>
-                      <span class="text-sm font-semibold text-ink-900">{{ new Date(m.fecha).toLocaleDateString('es-EC') }}</span>
+                      <span class="text-sm font-semibold text-ink-900">{{ fmtFechaLocal(m.fecha) }}</span>
                       <span class="text-sm font-bold text-success-700">${{ Number(m.costo).toFixed(2) }}</span>
                       <span v-if="m.kilometrajeServicio" class="text-xs text-ink-500">@ {{ m.kilometrajeServicio.toLocaleString('es-EC') }} km</span>
                     </div>
                     <p class="text-sm text-ink-700">{{ m.descripcion }}</p>
                     <p v-if="m.taller" class="text-xs text-ink-500 mt-1"><i class="pi pi-building mr-1" />{{ m.taller }}</p>
-                    <p v-if="m.proximaFecha" class="text-xs text-info-600 mt-1"><i class="pi pi-calendar mr-1" />Próximo: {{ new Date(m.proximaFecha).toLocaleDateString('es-EC') }}</p>
+                    <p v-if="m.proximaFecha" class="text-xs text-info-600 mt-1"><i class="pi pi-calendar mr-1" />Próximo: {{ fmtFechaLocal(m.proximaFecha) }}</p>
                   </div>
                   <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmarEliminarMantenimiento(m)" />
                 </div>
@@ -218,7 +218,7 @@
                   Inspecciones técnicas
                   <span v-if="inspecciones.length" class="text-xs text-ink-500 font-normal">({{ inspecciones.length }})</span>
                 </h3>
-                <Button label="Registrar" icon="pi pi-plus" size="small" @click="abrirDialogInspeccion" />
+                <Button label="Registrar" icon="pi pi-plus" size="small" @click="abrirDialogInspeccion()" />
               </div>
 
               <div v-if="cargandoInsp" class="text-center py-6"><ProgressSpinner style="width:32px;height:32px" /></div>
@@ -240,12 +240,15 @@
                         'bg-danger-100 text-danger-700']">
                         {{ i.resultado }}
                       </span>
-                      <span class="text-sm font-semibold text-ink-900">{{ new Date(i.fecha).toLocaleDateString('es-EC') }}</span>
+                      <span class="text-sm font-semibold text-ink-900">{{ fmtFechaLocal(i.fecha) }}</span>
                     </div>
                     <p v-if="i.observaciones" class="text-xs text-ink-600 italic">{{ i.observaciones }}</p>
-                    <p v-if="i.proximaInspeccion" class="text-xs text-info-600 mt-1"><i class="pi pi-calendar mr-1" />Próxima: {{ new Date(i.proximaInspeccion).toLocaleDateString('es-EC') }}</p>
+                    <p v-if="i.proximaInspeccion" class="text-xs text-info-600 mt-1"><i class="pi pi-calendar mr-1" />Próxima: {{ fmtFechaLocal(i.proximaInspeccion) }}</p>
                   </div>
-                  <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmarEliminarInspeccion(i)" />
+                  <div class="flex items-center gap-1 flex-shrink-0">
+                    <Button icon="pi pi-pencil" text rounded size="small" severity="info" @click="abrirDialogInspeccion(i)" />
+                    <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmarEliminarInspeccion(i)" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -313,7 +316,7 @@
                         <span class="text-xs font-normal text-ink-500">km</span>
                       </p>
                       <p class="text-xs text-ink-500 mt-0.5">
-                        {{ eficiencia.fechaUltimaCarga ? new Date(eficiencia.fechaUltimaCarga).toLocaleDateString('es-EC') : '' }}
+                        {{ fmtFechaLocal(eficiencia.fechaUltimaCarga, {}, '') }}
                       </p>
                     </div>
 
@@ -380,7 +383,7 @@
                   </thead>
                   <tbody>
                     <tr v-for="r in combustibleRegistros" :key="r.id" class="border-b border-ink-100 hover:bg-ink-50">
-                      <td class="py-2 pr-2 text-ink-900 whitespace-nowrap">{{ new Date(r.fecha).toLocaleString('es-EC', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) }}</td>
+                      <td class="py-2 pr-2 text-ink-900 whitespace-nowrap">{{ fmtFechaHoraLocal(r.fecha, { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) }}</td>
                       <td class="py-2 px-2 text-right text-ink-700">{{ Number(r.litros).toFixed(2) }}</td>
                       <td class="py-2 px-2 text-right font-semibold text-ink-900">${{ Number(r.costoTotal).toFixed(2) }}</td>
                       <td class="py-2 px-2 text-right text-ink-500 text-xs">${{ Number(r.costoPorLitro).toFixed(4) }}</td>
@@ -392,33 +395,6 @@
                     </tr>
                   </tbody>
                 </table>
-              </div>
-            </div>
-          </TabPanel>
-
-          <!-- Tab 5: Documentos -->
-          <TabPanel header="Documentos">
-            <div class="card p-5">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="heading-3 flex items-center gap-2">
-                  <i class="pi pi-file text-brand-600" />
-                  Documentos archivados
-                  <span v-if="documentos.length" class="text-xs text-ink-500 font-normal">({{ documentos.length }})</span>
-                </h3>
-              </div>
-              <div v-if="documentos.length === 0" class="text-center py-8">
-                <i class="pi pi-file text-4xl text-ink-300 mb-2" />
-                <p class="text-sm text-ink-500">Sin documentos registrados</p>
-                <p class="text-xs text-ink-400 mt-1">Próximamente: upload directo desde aquí.</p>
-              </div>
-              <div v-else class="space-y-2">
-                <div v-for="d in documentos" :key="d.id" class="p-3 rounded-lg bg-ink-50 border border-ink-200 flex items-center justify-between gap-3">
-                  <div>
-                    <p class="text-sm font-semibold text-ink-900">{{ d.tipo }} <span v-if="d.numero" class="text-ink-500 font-normal">· {{ d.numero }}</span></p>
-                    <p class="text-xs text-ink-500">Vence: {{ d.fechaVencimiento || '—' }}</p>
-                  </div>
-                  <a :href="d.urlArchivo" target="_blank" rel="noopener" class="text-brand-600 text-xs"><i class="pi pi-external-link" /> Ver</a>
-                </div>
               </div>
             </div>
           </TabPanel>
@@ -481,8 +457,8 @@
       </template>
     </Dialog>
 
-    <!-- Dialog: agregar inspección -->
-    <Dialog v-model:visible="dialogInspVisible" modal header="Registrar inspección" :style="{ width:'520px' }">
+    <!-- Dialog: agregar / editar inspección -->
+    <Dialog v-model:visible="dialogInspVisible" modal :header="inspeccionEnEdicion ? 'Editar inspección' : 'Registrar inspección'" :style="{ width:'520px' }">
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -508,8 +484,8 @@
         </div>
       </div>
       <template #footer>
-        <Button label="Cancelar" outlined @click="dialogInspVisible = false" />
-        <Button label="Guardar" icon="pi pi-check" :loading="guardandoInsp" @click="guardarInspeccion" />
+        <Button label="Cancelar" outlined @click="dialogInspVisible = false; inspeccionEnEdicion = null" />
+        <Button :label="inspeccionEnEdicion ? 'Guardar cambios' : 'Guardar'" icon="pi pi-check" :loading="guardandoInsp" @click="guardarInspeccion" />
       </template>
     </Dialog>
 
@@ -582,9 +558,9 @@ import vehiculosService, {
   type MantenimientoResponse, type MantenimientoRequest,
   type InspeccionResponse, type InspeccionRequest,
   type CombustibleResponse,
-  type DocumentoVehiculoResponse,
   type CategoriaLicenciaResponse, type TipoCombustibleResponse
 } from '@/services/vehiculos'
+import { fmtFechaLocal, fmtFechaHoraLocal } from '@/utils/fechas'
 
 const vTooltip = Tooltip
 const route = useRoute()
@@ -722,7 +698,7 @@ const guardarMantenimiento = async () => {
 }
 const confirmarEliminarMantenimiento = (m: MantenimientoResponse) => {
   confirm.require({
-    message: `¿Eliminar mantenimiento del ${new Date(m.fecha).toLocaleDateString('es-EC')}?`,
+    message: `¿Eliminar mantenimiento del ${fmtFechaLocal(m.fecha)}?`,
     header: 'Eliminar', icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Cancelar', acceptLabel: 'Eliminar', acceptClass: 'p-button-danger',
     accept: async () => {
@@ -745,12 +721,40 @@ const inspeccionesOrdenadas = computed(() =>
 
 const dialogInspVisible = ref(false)
 const guardandoInsp = ref(false)
+// null = modo alta; con valor = modo edicion (habilita PUT en vez de POST)
+const inspeccionEnEdicion = ref<InspeccionResponse | null>(null)
 const formInsp = reactive<any>({
   tipo: 'TECNICA', resultado: 'APROBADA', fecha: new Date(),
   proximaInspeccion: null, observaciones: ''
 })
-const abrirDialogInspeccion = () => {
-  Object.assign(formInsp, { tipo:'TECNICA', resultado:'APROBADA', fecha:new Date(), proximaInspeccion:null, observaciones:'' })
+
+// Parser local para "YYYY-MM-DD" del backend -> Date sin corrimiento de TZ.
+const strToDate = (s?: string | null): Date | null => {
+  if (!s) return null
+  const [y, m, d] = String(s).substring(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return null
+  return new Date(y, m - 1, d)
+}
+
+const abrirDialogInspeccion = (i?: InspeccionResponse) => {
+  // Defensa: si Vue nos pasa el MouseEvent (por @click="abrirDialogInspeccion")
+  // sin parentesis), i seria truthy pero sin id — lo tratamos como alta.
+  if (i && typeof (i as any).id === 'number') {
+    inspeccionEnEdicion.value = i
+    Object.assign(formInsp, {
+      tipo: i.tipo,
+      resultado: i.resultado,
+      fecha: strToDate(i.fecha) || new Date(),
+      proximaInspeccion: strToDate(i.proximaInspeccion),
+      observaciones: i.observaciones || ''
+    })
+  } else {
+    inspeccionEnEdicion.value = null
+    Object.assign(formInsp, {
+      tipo: 'TECNICA', resultado: 'APROBADA', fecha: new Date(),
+      proximaInspeccion: null, observaciones: ''
+    })
+  }
   dialogInspVisible.value = true
 }
 const guardarInspeccion = async () => {
@@ -762,17 +766,29 @@ const guardarInspeccion = async () => {
       proximaInspeccion: fmtFecha(formInsp.proximaInspeccion),
       observaciones: formInsp.observaciones?.trim() || undefined
     }
-    await vehiculosService.registrarInspeccion(vehiculoId.value, payload)
-    toast.add({ severity:'success', summary:'Registrada', detail:'Inspección agregada', life:2500 })
+    if (inspeccionEnEdicion.value) {
+      await vehiculosService.actualizarInspeccion(vehiculoId.value, inspeccionEnEdicion.value.id, payload)
+      toast.add({ severity:'success', summary:'Actualizada', detail:'Inspección actualizada', life:2500 })
+    } else {
+      await vehiculosService.registrarInspeccion(vehiculoId.value, payload)
+      toast.add({ severity:'success', summary:'Registrada', detail:'Inspección agregada', life:2500 })
+    }
     dialogInspVisible.value = false
+    inspeccionEnEdicion.value = null
+    // Recargamos vehiculo (para reflejar propagacion de fechas SOAT/RTV que hace
+    // el backend al guardar) y la lista de inspecciones.
     await cargarInspecciones()
+    try {
+      const vRefrescado = await vehiculosService.obtenerVehiculo(vehiculoId.value)
+      Object.assign(vehiculo, vRefrescado)
+    } catch { /* no rompemos el flujo si falla la recarga */ }
   } catch (e: any) {
-    toast.add({ severity:'error', summary:'Error', detail: e.response?.data?.detail || 'No se pudo registrar', life:4000 })
+    toast.add({ severity:'error', summary:'Error', detail: e.response?.data?.detail || 'No se pudo guardar', life:4000 })
   } finally { guardandoInsp.value = false }
 }
 const confirmarEliminarInspeccion = (i: InspeccionResponse) => {
   confirm.require({
-    message: `¿Eliminar inspección ${i.tipo} del ${new Date(i.fecha).toLocaleDateString('es-EC')}?`,
+    message: `¿Eliminar inspección ${i.tipo} del ${fmtFechaLocal(i.fecha)}?`,
     header: 'Eliminar', icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Cancelar', acceptLabel: 'Eliminar', acceptClass: 'p-button-danger',
     accept: async () => {
@@ -906,7 +922,7 @@ const guardarCombustible = async () => {
 }
 const confirmarEliminarCombustible = (r: CombustibleResponse) => {
   confirm.require({
-    message: `¿Eliminar carga del ${new Date(r.fecha).toLocaleDateString('es-EC')}?`,
+    message: `¿Eliminar carga del ${fmtFechaHoraLocal(r.fecha, { day: '2-digit', month: 'short', year: 'numeric' })}?`,
     header: 'Eliminar', icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Cancelar', acceptLabel: 'Eliminar', acceptClass: 'p-button-danger',
     accept: async () => {
@@ -920,9 +936,6 @@ const confirmarEliminarCombustible = (r: CombustibleResponse) => {
     }
   })
 }
-
-// ----- Documentos -----
-const documentos = ref<DocumentoVehiculoResponse[]>([])
 
 // ----- Carga inicial -----
 const cargar = async () => {
@@ -939,7 +952,6 @@ const cargar = async () => {
     cargarMantenimientos()
     cargarInspecciones()
     cargarCombustible()
-    cargarDocumentos()
   } catch (e: any) {
     toast.add({ severity:'error', summary:'Error', detail:'No se pudo cargar el vehículo', life:4000 })
     setTimeout(() => router.back(), 1200)
@@ -965,10 +977,6 @@ const cargarCombustible = async () => {
     combustibleRegistros.value = r.content
   } catch { combustibleRegistros.value = [] }
   finally { cargandoComb.value = false }
-}
-const cargarDocumentos = async () => {
-  try { documentos.value = await vehiculosService.listarDocumentos(vehiculoId.value) }
-  catch { documentos.value = [] }
 }
 
 // ----- Eliminar vehículo -----

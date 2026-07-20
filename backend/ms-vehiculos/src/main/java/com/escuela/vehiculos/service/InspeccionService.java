@@ -49,6 +49,7 @@ public class InspeccionService {
                 .proximaInspeccion(request.proximaInspeccion())
                 .build();
         i = repository.save(i);
+        propagarFechaAlVehiculo(v, i);
         log.info("Inspeccion registrada id={} vehiculoId={} tipo={} resultado={}",
                 i.getId(), vehiculoId, i.getTipo(), i.getResultado());
         return toResponse(i);
@@ -64,8 +65,49 @@ public class InspeccionService {
         i.setObservaciones(request.observaciones());
         i.setProximaInspeccion(request.proximaInspeccion());
         repository.save(i);
+        propagarFechaAlVehiculo(i.getVehiculo(), i);
         log.info("Inspeccion actualizada id={}", inspeccionId);
         return toResponse(i);
+    }
+
+    /**
+     * Cuando se registra/actualiza una inspeccion SOAT o TECNICA con
+     * resultado APROBADA o CONDICIONADA y con proximaInspeccion definida,
+     * propagamos esa fecha al campo del vehiculo (soatVencimiento o
+     * revisionVencimiento). Asi el "resumen del vehiculo" y las alertas
+     * quedan sincronizadas con la inspeccion mas reciente.
+     *
+     * Reglas:
+     *  - Solo propagamos si la nueva proximaInspeccion es POSTERIOR a la
+     *    fecha actual del vehiculo (evita retroceder fecha por registro
+     *    de una inspeccion vieja o correccion tardia). Si el usuario
+     *    quiere forzar una fecha anterior, debe editar el vehiculo.
+     *  - Resultado REPROBADA no propaga (el documento no fue renovado).
+     *  - Tipo INTERNA no propaga (es solo control interno de la escuela).
+     */
+    private void propagarFechaAlVehiculo(Vehiculo v, Inspeccion i) {
+        String resultado = i.getResultado();
+        if (!"APROBADA".equals(resultado) && !"CONDICIONADA".equals(resultado)) return;
+        java.time.LocalDate nueva = i.getProximaInspeccion();
+        if (nueva == null) return;
+
+        boolean actualizado = false;
+        if ("SOAT".equals(i.getTipo())) {
+            if (v.getSoatVencimiento() == null || nueva.isAfter(v.getSoatVencimiento())) {
+                v.setSoatVencimiento(nueva);
+                actualizado = true;
+            }
+        } else if ("TECNICA".equals(i.getTipo())) {
+            if (v.getRevisionVencimiento() == null || nueva.isAfter(v.getRevisionVencimiento())) {
+                v.setRevisionVencimiento(nueva);
+                actualizado = true;
+            }
+        }
+        if (actualizado) {
+            vehiculoRepository.save(v);
+            log.info("Vehiculo id={} sincronizado desde inspeccion {}: nueva fecha {}",
+                    v.getId(), i.getTipo(), nueva);
+        }
     }
 
     public void eliminar(Long vehiculoId, Long inspeccionId) {

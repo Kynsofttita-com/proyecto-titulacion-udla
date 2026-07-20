@@ -50,7 +50,7 @@
             <div v-if="estudiante.fechaMatricula" class="flex items-center justify-between">
               <span class="text-sm text-ink-600">Matrícula:</span>
               <span class="text-xs font-medium text-ink-700">
-                {{ new Date(estudiante.fechaMatricula).toLocaleDateString('es-EC') }}
+                {{ fmtFechaLocal(estudiante.fechaMatricula) }}
               </span>
             </div>
           </div>
@@ -267,7 +267,7 @@
             >
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-ink-900">{{ humanizarTipo(doc.tipo) }}</p>
-                <p class="text-xs text-ink-600 mt-0.5">Subido {{ new Date(doc.fechaSubida).toLocaleString('es-EC') }}</p>
+                <p class="text-xs text-ink-600 mt-0.5">Subido {{ fmtFechaHoraLocal(doc.fechaSubida) }}</p>
                 <p class="text-xs text-ink-500">{{ formatearTamano(doc.tamanoBytes) }} · {{ doc.mimeType || 'tipo desconocido' }}</p>
               </div>
               <div class="flex gap-1 flex-shrink-0">
@@ -545,6 +545,7 @@ import api from '@/services/api'
 import estudiantesService, { EstudianteDetailResponse, ProgresoAcademico, ProgresoAcademicoHorasResponse } from '@/services/estudiantes'
 import asignacionesService, { type HistorialAsignacionItem } from '@/services/asignaciones'
 import cobrosService, { type HistorialPagoItem } from '@/services/cobros'
+import { fmtFechaLocal, fmtFechaHoraLocal } from '@/utils/fechas'
 
 const route = useRoute()
 const router = useRouter()

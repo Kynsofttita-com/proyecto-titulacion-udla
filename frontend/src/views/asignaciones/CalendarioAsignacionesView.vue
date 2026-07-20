@@ -547,9 +547,13 @@ const cargarListasParaForm = async () => {
       api.get('/instructores', { params: { size: 200 } }),
       api.get('/vehiculos', { params: { size: 200 } })
     ])
-    // Solo activos
+    // Estudiantes que pueden recibir clases: MATRICULADO (aun sin clases) o
+    // CURSANDO (ya en progreso). El backend rechaza los demas estados.
+    // NOTA: antes filtrabamos por 'ACTIVO' (que no existe como estado de
+    // estudiante) y omitiamos 'CURSANDO', asi que despues de agendar la
+    // primera clase el estudiante desaparecia del selector.
     estudiantesActivos.value = (estRes.data.content || [])
-      .filter((e: any) => e.estado === 'ACTIVO' || e.estado === 'MATRICULADO')
+      .filter((e: any) => e.estado === 'MATRICULADO' || e.estado === 'CURSANDO')
       .map((e: any) => ({
         ...e,
         nombreCompleto: e.nombreCompleto || `${e.nombre ?? ''} ${e.apellido ?? ''}`.trim()

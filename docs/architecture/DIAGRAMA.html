@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitectura del Sistema — Escuela de Conducir</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 24px;
+            color: #1f2937;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            text-align: center; color: white; margin-bottom: 32px;
+        }
+        .header h1 { font-size: 2.4em; margin-bottom: 8px; letter-spacing: -0.02em; }
+        .header .subtitle { font-size: 1.05em; opacity: 0.9; }
+        .header .meta {
+            display: inline-block; margin-top: 16px;
+            background: rgba(255,255,255,0.15); padding: 8px 16px;
+            border-radius: 20px; font-size: 0.85em; backdrop-filter: blur(8px);
+        }
+
+        section {
+            background: white; border-radius: 12px; padding: 32px;
+            margin-bottom: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        h2 {
+            font-size: 1.5em; color: #4c51bf; margin-bottom: 20px;
+            padding-bottom: 10px; border-bottom: 3px solid #667eea;
+        }
+        h2 .num {
+            display: inline-block; background: #667eea; color: white;
+            width: 32px; height: 32px; line-height: 32px; text-align: center;
+            border-radius: 50%; font-size: 0.85em; margin-right: 12px;
+            font-weight: 600;
+        }
+        h3 { color: #4c51bf; margin: 16px 0 8px; font-size: 1.1em; }
+        p, li { line-height: 1.65; color: #374151; }
+        .lead { font-size: 1.05em; margin-bottom: 20px; color: #4b5563; }
+
+        .mermaid {
+            display: flex; justify-content: center;
+            padding: 20px 0; overflow-x: auto;
+        }
+
+        table {
+            width: 100%; border-collapse: collapse; margin: 16px 0;
+            font-size: 0.92em;
+        }
+        th, td {
+            padding: 10px 14px; text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f5f3ff; color: #4c51bf;
+            font-weight: 600; font-size: 0.85em;
+            text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        tr:hover td { background: #fafafa; }
+        td code, .inline-code {
+            background: #f3f4f6; padding: 2px 6px;
+            border-radius: 4px; font-size: 0.88em;
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            color: #7c3aed;
+        }
+
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: 0.75em; font-weight: 600; margin-right: 6px;
+        }
+        .badge.vue { background: #42b883; color: white; }
+        .badge.spring { background: #6db33f; color: white; }
+        .badge.pg { background: #336791; color: white; }
+        .badge.rabbit { background: #ff6600; color: white; }
+        .badge.minio { background: #c72c48; color: white; }
+        .badge.docker { background: #2496ed; color: white; }
+
+        .rules ul { list-style: none; padding: 0; }
+        .rules li {
+            padding: 12px 16px; margin-bottom: 8px;
+            background: #fafafa; border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+        .rules li strong { color: #4c51bf; }
+
+        .warn {
+            background: #fef3c7; border-left: 4px solid #f59e0b;
+            padding: 12px 16px; border-radius: 4px; margin: 12px 0;
+            font-size: 0.9em; color: #92400e;
+        }
+
+        ul.refs li { margin: 6px 0; }
+        ul.refs code { font-size: 0.9em; }
+
+        .toc {
+            background: #f5f3ff; padding: 16px 24px; border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        .toc h3 { margin-top: 0; color: #4c51bf; }
+        .toc ol { padding-left: 20px; }
+        .toc a { color: #4c51bf; text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+
+        footer {
+            text-align: center; color: white; opacity: 0.8;
+            padding: 24px 0; font-size: 0.9em;
+        }
+        footer a { color: white; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>Arquitectura del Sistema</h1>
+        <p class="subtitle">Sistema de Control Administrativo y Financiero para Escuelas de Conducción</p>
+        <div class="meta">
+            Producción · Oracle Cloud Free · <code style="color:#fbbf24">160.34.220.63</code> · Actualizado 2026-07-20
+        </div>
+    </div>
+
+    <div class="toc">
+        <h3>Contenido</h3>
+        <ol>
+            <li><a href="#s1">Vista general — capas del sistema</a></li>
+            <li><a href="#s1b">Backend detallado — los 8 microservicios</a></li>
+            <li><a href="#s2">Sync cross-MS síncrono (Feign)</a></li>
+            <li><a href="#s3">Eventos asíncronos (RabbitMQ)</a></li>
+            <li><a href="#s4">Stack técnico</a></li>
+            <li><a href="#s5">Los 9 schemas de PostgreSQL</a></li>
+            <li><a href="#s6">Reglas arquitectónicas clave</a></li>
+            <li><a href="#s7">Puertos y URLs públicas</a></li>
+            <li><a href="#s8">Referencias cruzadas</a></li>
+        </ol>
+    </div>
+
+    <section id="s1">
+        <h2><span class="num">1</span>Vista general — capas del sistema</h2>
+        <p class="lead">Todo el sistema corre en una única VM ARM de Oracle Cloud Free Tier (4 OCPU / 24 GB). El request de un usuario web pasa por 5 capas: <strong>Cliente → Frontend → Gateway → Backend → Datos</strong>. Observabilidad y descubrimiento de servicios son transversales.</p>
+        <div class="mermaid">
+flowchart TB
+    USR(["👤 Usuario Web<br/>Chrome / Firefox / Edge"])
+
+    subgraph VM["🖥️ Oracle Cloud Free · VM.A1.Flex 4 OCPU / 24 GB · 160.34.220.63"]
+        direction TB
+
+        FE["🎨 Frontend Vue 3 SPA<br/>nginx :80"]
+
+        GW["🚦 API Gateway :8080<br/>Spring Cloud Gateway · JWT HS512 · CORS · Routing"]
+
+        BE["⚙️ Backend<br/>8 microservicios Spring Boot 3.4 / Java 21<br/><small>auth · estudiantes · instructores · vehiculos<br/>asignaciones · cobros · reportes · notificaciones</small>"]
+
+        subgraph INFRA["🗄️ Infraestructura de datos"]
+            direction LR
+            PG[("🐘 PostgreSQL 15<br/>1 instancia · 9 schemas")]
+            RB["🐰 RabbitMQ 3.12<br/>eventos asíncronos"]
+            MI["📦 MinIO<br/>storage S3-compatible"]
+        end
+
+        subgraph CROSS["🧭 Servicios transversales"]
+            direction LR
+            EU["🔎 Eureka :8761<br/>service discovery"]
+            PR["📈 Prometheus :9090<br/>13 targets · retention 15d"]
+            GR["📊 Grafana :3030<br/>3 dashboards"]
+        end
+    end
+
+    USR -->|HTTPS| FE
+    FE -->|/api/**| GW
+    GW -->|routing por prefijo| BE
+    BE -->|JDBC :5432| PG
+    BE -->|publish / consume| RB
+    BE -->|upload / download| MI
+    BE -.registra + heartbeat.-> EU
+    BE -.metrics /actuator/prometheus.-> PR
+    PR --> GR
+
+    style USR fill:#e0e7ff,stroke:#4c51bf,stroke-width:2px
+    style FE fill:#42b883,color:#fff,stroke:#2c8f66,stroke-width:2px
+    style GW fill:#6db33f,color:#fff,stroke:#4d8f2c,stroke-width:2px
+    style BE fill:#6366f1,color:#fff,stroke:#4c51bf,stroke-width:2px
+    style PG fill:#336791,color:#fff,stroke:#1e4666
+    style RB fill:#ff6600,color:#fff,stroke:#cc5200
+    style MI fill:#c72c48,color:#fff,stroke:#8f1f34
+    style EU fill:#8b5cf6,color:#fff,stroke:#6d28d9
+    style PR fill:#e6522c,color:#fff,stroke:#b83d1e
+    style GR fill:#f46800,color:#fff,stroke:#c25400
+        </div>
+    </section>
+
+    <section id="s1b">
+        <h2><span class="num">1<small>b</small></span>Backend detallado — los 8 microservicios</h2>
+        <p class="lead">Cada microservicio corre en su propio contenedor Docker, dueño de un schema PostgreSQL, y se comunica con los demás por Feign (síncrono) o RabbitMQ (asíncrono). El Gateway rutea por prefijo de path (<code>/auth</code>, <code>/estudiantes</code>, …).</p>
+        <div class="mermaid">
+flowchart LR
+    GW["🚦 API Gateway :8080"]
+
+    subgraph MS["8 microservicios · cada uno en su contenedor Docker"]
+        direction TB
+        AU["🔐 ms-auth :8081<br/><small>auth_schema · JWT · usuarios · roles · plantillas email · configuracion escuela</small>"]
+        ES["🎓 ms-estudiantes :8082<br/><small>estudiantes_schema · matrícula · progreso · documentos · tipos curso</small>"]
+        IN["👨‍🏫 ms-instructores :8083<br/><small>instructores_schema · horarios · excepciones · resumen horas + sueldo</small>"]
+        VE["🚗 ms-vehiculos :8084<br/><small>vehiculos_schema · mantenimientos · inspecciones · combustible · SOAT/RTV</small>"]
+        AS["📅 ms-asignaciones :8085<br/><small>asignaciones_schema · clase tripartita · kilometraje real · historial</small>"]
+        CO["💰 ms-cobros :8086<br/><small>cobros_schema · facturas · cuotas · pagos · morosidad · recibos</small>"]
+        RE["📊 ms-reportes :8087<br/><small>reportes_schema · agregación cross-MS · cache Caffeine · export PDF/Excel</small>"]
+        NO["✉️ ms-notificaciones :8088<br/><small>notificaciones_schema · listener RabbitMQ · idempotency · SMTP</small>"]
+    end
+
+    GW -->|/auth/**| AU
+    GW -->|/estudiantes/**| ES
+    GW -->|/instructores/**| IN
+    GW -->|/vehiculos/**| VE
+    GW -->|/asignaciones/**| AS
+    GW -->|/facturas /pagos /**| CO
+    GW -->|/reportes/**| RE
+    GW -->|/notificaciones/**| NO
+
+    style GW fill:#6db33f,color:#fff,stroke:#4d8f2c,stroke-width:2px
+    style AU fill:#fef3c7,stroke:#f59e0b
+    style ES fill:#dbeafe,stroke:#3b82f6
+    style IN fill:#e0e7ff,stroke:#6366f1
+    style VE fill:#fce7f3,stroke:#ec4899
+    style AS fill:#d1fae5,stroke:#10b981
+    style CO fill:#fed7aa,stroke:#f97316
+    style RE fill:#e9d5ff,stroke:#a855f7
+    style NO fill:#fee2e2,stroke:#ef4444
+        </div>
+    </section>
+
+    <section id="s2">
+        <h2><span class="num">2</span>Sync cross-MS síncrono (Feign)</h2>
+        <p class="lead">Cada flecha es una llamada HTTP interna con <code>X-User-Email/Roles/Id</code> propagado por un <code>RequestInterceptor</code> (<code>FeignConfig</code>). Cuando no hay request HTTP padre (schedulers, listeners), se usa identidad <code>system@escuela.local</code> con roles <code>SYSTEM,ADMIN</code>.</p>
+        <div class="mermaid">
+graph LR
+    AS["ms-asignaciones"]
+    VE["ms-vehiculos"]
+    ES["ms-estudiantes"]
+    IN["ms-instructores"]
+    RE["ms-reportes"]
+    CO["ms-cobros"]
+
+    AS -->|km_final al finalizar clase| VE
+    AS -->|+minutos completados| ES
+    AS -->|valida disponibilidad + licencia| IN
+    AS -->|valida SOAT/RTV/categoría| VE
+
+    IN -->|horas cumplidas del mes| AS
+
+    RE -->|listar / detalle| ES
+    RE -->|listar / detalle| IN
+    RE -->|listar / detalle| VE
+    RE -->|listar cobros + morosidad| CO
+    RE -->|paginado + horas x instructor| AS
+
+    CO -->|nombre + email del estudiante| ES
+        </div>
+    </section>
+
+    <section id="s3">
+        <h2><span class="num">3</span>Eventos asíncronos (RabbitMQ)</h2>
+        <p class="lead">Todo listener persiste el <code>eventId</code> en <code>IdempotencyStore</code> antes de procesar — así se evita ejecutar el mismo evento dos veces si el broker re-entrega. Los emails salen vía SMTP (Mailtrap en dev, Gmail SMTP en prod).</p>
+        <div class="mermaid">
+graph LR
+    VE["ms-vehiculos"] -->|SoatVencimientoProximoEvent| EX1{"Exchange<br/>vehiculos.events"}
+    IN["ms-instructores"] -->|LicenciaVencimientoProximoEvent| EX2{"Exchange<br/>instructores.events"}
+    CO["ms-cobros"] -->|PagoAtrasadoEvent| EX3{"Exchange<br/>cobros.events"}
+    AS["ms-asignaciones"] -->|"AsignacionCreada / Reprogramada / Cancelada"| EX4{"Exchange<br/>asignaciones.events"}
+
+    EX1 --> Q1["queue<br/>notificaciones.operativos"]
+    EX2 --> Q1
+    EX3 --> Q2["queue<br/>notificaciones.financieros"]
+    EX4 --> Q3["queue<br/>notificaciones.asignaciones"]
+
+    Q1 --> NO["ms-notificaciones<br/>+ IdempotencyStore"]
+    Q2 --> NO
+    Q3 --> NO
+
+    NO -->|SMTP| MT["Mailtrap (dev)<br/>Gmail SMTP (prod)"]
+    NO --> DB[("notificaciones_schema<br/>persistencia + audit")]
+        </div>
+    </section>
+
+    <section id="s4">
+        <h2><span class="num">4</span>Stack técnico</h2>
+        <table>
+            <thead><tr><th>Capa</th><th>Tecnología</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Frontend</strong></td><td><span class="badge vue">Vue 3</span> Vite · PrimeVue · TailwindCSS · Pinia · TypeScript</td></tr>
+                <tr><td><strong>Gateway</strong></td><td><span class="badge spring">Spring Cloud Gateway 4.x</span> filtro JWT + CORS</td></tr>
+                <tr><td><strong>Discovery</strong></td><td>Netflix Eureka Server</td></tr>
+                <tr><td><strong>Backend</strong></td><td><span class="badge spring">Java 21 · Spring Boot 3.4</span> Spring Data JPA · MapStruct · Feign</td></tr>
+                <tr><td><strong>Auth</strong></td><td>JWT HS512 (clave 512 bits) · HttpOnly cookies · bcrypt</td></tr>
+                <tr><td><strong>Base de datos</strong></td><td><span class="badge pg">PostgreSQL 15</span> 1 instancia · 9 schemas · Flyway</td></tr>
+                <tr><td><strong>Mensajería</strong></td><td><span class="badge rabbit">RabbitMQ 3.12</span> direct exchanges por dominio · idempotency store</td></tr>
+                <tr><td><strong>Storage</strong></td><td><span class="badge minio">MinIO</span> S3-compatible para docs de estudiantes y vehículos</td></tr>
+                <tr><td><strong>Cache</strong></td><td>Caffeine in-memory (por servicio, no distribuido)</td></tr>
+                <tr><td><strong>Monitoreo</strong></td><td>Prometheus + Micrometer + Grafana + cAdvisor + Node Exporter</td></tr>
+                <tr><td><strong>Contenedores</strong></td><td><span class="badge docker">Docker + Compose</span> (K8s planificado para v2)</td></tr>
+                <tr><td><strong>CI</strong></td><td>GitHub Actions (backend-ci · frontend-ci · docker-build · integration-tests · smoke-e2e)</td></tr>
+                <tr><td><strong>Deploy prod</strong></td><td>Oracle Cloud Free · ARM Ampere A1.Flex · Ubuntu 22.04</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="s5">
+        <h2><span class="num">5</span>Los 9 schemas de PostgreSQL</h2>
+        <p class="lead">Modelo consolidado: <strong>1 instancia PostgreSQL con 9 schemas separados</strong> (uno por microservicio + <code>shared_schema</code>). Ver <code>DECISIONES.md §4.1</code> para el ADR completo.</p>
+        <table>
+            <thead><tr><th>Schema</th><th>Dueño</th><th>Tablas principales</th></tr></thead>
+            <tbody>
+                <tr><td><code>auth_schema</code></td><td>ms-auth</td><td>usuarios, roles, permisos, sesiones, configuracion_escuela, plantillas_email</td></tr>
+                <tr><td><code>estudiantes_schema</code></td><td>ms-estudiantes</td><td>estudiantes, documentos, progreso_academico, tipos_curso</td></tr>
+                <tr><td><code>instructores_schema</code></td><td>ms-instructores</td><td>instructores, horarios_trabajo, excepciones (ausencias / horas extra)</td></tr>
+                <tr><td><code>vehiculos_schema</code></td><td>ms-vehiculos</td><td>vehiculos, mantenimientos, inspecciones, registros_combustible, categorias_licencia, tipos_combustible</td></tr>
+                <tr><td><code>asignaciones_schema</code></td><td>ms-asignaciones</td><td>asignaciones, historial_estados</td></tr>
+                <tr><td><code>cobros_schema</code></td><td>ms-cobros</td><td>facturas, factura_cuotas, pagos, plantillas_recibo</td></tr>
+                <tr><td><code>reportes_schema</code></td><td>ms-reportes</td><td>ejecuciones_reporte, cache_reporte</td></tr>
+                <tr><td><code>notificaciones_schema</code></td><td>ms-notificaciones</td><td>notificaciones, idempotency_store</td></tr>
+                <tr><td><code>shared_schema</code></td><td>compartido</td><td>catálogos comunes</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="s6" class="rules">
+        <h2><span class="num">6</span>Reglas arquitectónicas clave</h2>
+        <ul>
+            <li><strong>No hay FK cross-schema.</strong> Cada MS solo lee/escribe su propio schema. Las referencias son por ID lógico (<code>instructor_id</code>, <code>vehiculo_id</code>, etc.).</li>
+            <li><strong>Auth centralizado en el Gateway.</strong> El Gateway valida el JWT y propaga <code>X-User-Email/Roles/Id</code> a los MS. Los MS no validan JWT por sí mismos; solo confían en esos headers vía <code>AuthHeaderGuard</code>.</li>
+            <li><strong>Feign entre MS lleva headers de identidad</strong> propagados por un <code>RequestInterceptor</code>. Cuando no hay request padre (schedulers) se usa identidad <code>SYSTEM</code>.</li>
+            <li><strong>Idempotencia async.</strong> Todo listener de RabbitMQ pasa por <code>IdempotencyStore</code> — el mismo <code>eventId</code> nunca se procesa dos veces.</li>
+            <li><strong>Sync de km al finalizar clase.</strong> <code>ms-asignaciones.finalizar()</code> propaga <code>km_final</code> a <code>ms-vehiculos.kilometraje</code> vía Feign.</li>
+            <li><strong>Propagación SOAT/RTV.</strong> Al registrar/actualizar una inspección SOAT o TECNICA APROBADA/CONDICIONADA en <code>ms-vehiculos.InspeccionService</code>, la <code>proximaInspeccion</code> se propaga al campo del vehículo si es posterior a la actual.</li>
+            <li><strong>Circuit-breaker + retry</strong> para llamadas Feign críticas (Resilience4j en algunos MS).</li>
+            <li><strong>Single-tenant configurable.</strong> Cada escuela = 1 deploy independiente. La <code>configuracion_escuela</code> vive en <code>auth_schema</code>.</li>
+        </ul>
+    </section>
+
+    <section id="s7">
+        <h2><span class="num">7</span>Puertos y URLs públicas (producción)</h2>
+        <table>
+            <thead><tr><th>Servicio</th><th>URL</th><th>Auth</th></tr></thead>
+            <tbody>
+                <tr><td>Frontend</td><td><code>http://160.34.220.63/</code></td><td>admin@escuela.local / Admin123!</td></tr>
+                <tr><td>API Gateway</td><td><code>http://160.34.220.63/api/**</code></td><td>JWT en cookie</td></tr>
+                <tr><td>Actuator health</td><td><code>http://160.34.220.63/api/actuator/health</code></td><td>JWT</td></tr>
+                <tr><td>Grafana</td><td><code>http://160.34.220.63:3030/</code></td><td>admin / admin123</td></tr>
+                <tr><td>Prometheus</td><td><code>http://160.34.220.63:9090/</code></td><td>—</td></tr>
+                <tr><td>Eureka Dashboard</td><td><code>http://160.34.220.63:8761/</code></td><td>—</td></tr>
+                <tr><td>MinIO Console</td><td><code>http://160.34.220.63:9001/</code></td><td>minioadmin / minioadmin123</td></tr>
+                <tr><td>RabbitMQ Management</td><td><code>http://160.34.220.63:15672/</code></td><td>guest / guest</td></tr>
+            </tbody>
+        </table>
+        <div class="warn">
+            ⚠️ <strong>Credenciales por defecto</strong> en RabbitMQ / MinIO / Grafana — cambiar antes de exponer al público real.
+        </div>
+    </section>
+
+    <section id="s8">
+        <h2><span class="num">8</span>Referencias cruzadas</h2>
+        <ul class="refs">
+            <li>📋 <strong>Decisiones técnicas</strong> completas: <code>DECISIONES.md</code> (ADRs consolidados).</li>
+            <li>🗓️ <strong>Plan de sprints</strong>: <code>PLAN_FASES.md</code>.</li>
+            <li>🗄️ <strong>Modelo de datos detallado</strong>: <code>docs/database/schema.md</code> (monolítico) + <code>docs/database/secciones/*.md</code> (por dominio).</li>
+            <li>📐 <strong>ER importable a dbdiagram.io</strong>: <code>docs/database/er-diagram.dbml</code>.</li>
+            <li>📖 <strong>Runbook operativo</strong> (en la VM): <code>~/RUNBOOK.md</code>.</li>
+            <li>🎓 <strong>Guía de defensa</strong>: <code>docs/GUIA_DEFENSA.md</code> (Q&A, screenshots, arquitectura resumida).</li>
+            <li>📊 <strong>Versión Markdown de este mismo diagrama</strong>: <code>docs/architecture/DIAGRAMA.md</code>.</li>
+        </ul>
+    </section>
+
+    <footer>
+        Generado 2026-07-20 · Proyecto de Titulación UDLA · <a href="https://github.com/Kynsofttita-com/proyecto-titulacion-udla">GitHub</a>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'default',
+        themeVariables: {
+            primaryColor: '#eef2ff',
+            primaryTextColor: '#1f2937',
+            primaryBorderColor: '#6366f1',
+            lineColor: '#94a3b8',
+            secondaryColor: '#f5f3ff',
+            tertiaryColor: '#fef3c7',
+            fontFamily: 'Segoe UI, Tahoma, sans-serif'
+        },
+        flowchart: {
+            curve: 'basis',
+            padding: 20,
+            useMaxWidth: true
+        }
+    });
+</script>
+
+</body>
+</html>

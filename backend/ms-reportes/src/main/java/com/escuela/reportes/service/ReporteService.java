@@ -1,5 +1,6 @@
 package com.escuela.reportes.service;
 
+import com.escuela.reportes.client.AsignacionesClient;
 import com.escuela.reportes.client.CobrosClient;
 import com.escuela.reportes.client.EstudiantesClient;
 import com.escuela.reportes.client.InstructoresClient;
@@ -33,6 +34,7 @@ public class ReporteService {
     private final CobrosClient cobrosClient;
     private final InstructoresClient instructoresClient;
     private final VehiculosClient vehiculosClient;
+    private final AsignacionesClient asignacionesClient;
     private final EjecucionReporteRepository ejecucionReporteRepository;
 
     private String obtenerNombreEstudiante(Long estudianteId) {
@@ -127,11 +129,44 @@ public class ReporteService {
                 }
             }
 
+            // Enriquecemos cada instructor con las horas dictadas reales
+            // (clases COMPLETADA en el rango). Si el request no trae rango,
+            // usamos ultimo dia del mes actual - primer dia del mes actual.
+            java.time.LocalDate desde = request != null && request.desde() != null
+                    ? request.desde()
+                    : java.time.LocalDate.now().withDayOfMonth(1);
+            java.time.LocalDate hasta = request != null && request.hasta() != null
+                    ? request.hasta()
+                    : java.time.LocalDate.now().withDayOfMonth(
+                            java.time.LocalDate.now().lengthOfMonth());
+
+            for (Map<String, Object> inst : instructoresLista) {
+                Object idObj = inst.get("id");
+                if (!(idObj instanceof Number)) {
+                    inst.put("horasDictadas", 0);
+                    continue;
+                }
+                Long instructorId = ((Number) idObj).longValue();
+                try {
+                    JsonNode horas = asignacionesClient.horasCumplidasInstructor(instructorId, desde, hasta);
+                    double horasDictadas = horas != null && horas.has("horasCumplidas")
+                            ? horas.get("horasCumplidas").asDouble(0)
+                            : 0;
+                    inst.put("horasDictadas", horasDictadas);
+                } catch (Exception ex) {
+                    log.debug("No se pudo consultar horas del instructor {}: {}", instructorId, ex.getMessage());
+                    inst.put("horasDictadas", 0);
+                }
+            }
+
             datos.put("totalInstructores", totalInstructores);
             datos.put("instructores", instructoresLista);
+            datos.put("periodoDesde", desde);
+            datos.put("periodoHasta", hasta);
 
             long duracion = System.currentTimeMillis() - inicio;
-            log.info("Reporte instructores_horas generado en {}ms", duracion);
+            log.info("Reporte instructores_horas generado en {}ms (rango {} -> {})",
+                    duracion, desde, hasta);
 
             return new ReporteOperativoResponse(
                 "instructores_horas",
@@ -221,12 +256,19 @@ public class ReporteService {
         try {
             Map<String, Object> datos = new HashMap<>();
 
+            // Paso 1: agregar asignaciones por estudiante desde ms-asignaciones.
+            // Programadas = clases con fecha ya pasada (o del dia de hoy) que NO fueron canceladas.
+            // Asistidas   = clases COMPLETADA. NO_ASISTIO cuenta como programada pero no asistida.
+            // Si el request trae rango de fechas se filtra por él; si no, se toma todo el historial.
+            Map<Long, long[]> agregadoPorEstudiante = agregarAsistenciaPorEstudiante(
+                request.desde(), request.hasta());
+
             JsonNode estudiantesResponse = estudiantesClient.listarEstudiantes(0, 1000);
             List<Map<String, Object>> asistencias = new ArrayList<>();
             long totalAsistencias = 0;
 
             if (estudiantesResponse != null && estudiantesResponse.has("content")) {
-                estudiantesResponse.get("content").forEach(node -> {
+                for (JsonNode node : estudiantesResponse.get("content")) {
                     Map<String, Object> asistencia = new HashMap<>();
                     Long estId = node.has("id") ? node.get("id").asLong() : null;
                     // El listado paginado de ms-estudiantes devuelve nombreCompleto,
@@ -237,17 +279,25 @@ public class ReporteService {
                         : ((node.has("nombre") ? node.get("nombre").asText("") : "")
                             + " "
                             + (node.has("apellido") ? node.get("apellido").asText("") : "")).trim();
+
+                    long[] contadores = agregadoPorEstudiante.getOrDefault(estId, new long[]{0L, 0L});
+                    long programadas = contadores[0];
+                    long asistidas = contadores[1];
+                    double porcentaje = programadas > 0
+                        ? Math.round((asistidas * 1000.0 / programadas)) / 10.0
+                        : 0.0;
+
                     asistencia.put("estudianteId", estId);
                     asistencia.put("estudianteNombre", nombreCompleto);
                     asistencia.put("nombreCompleto", nombreCompleto);
                     asistencia.put("cedula", node.has("cedula") ? node.get("cedula").asText("") : "");
                     asistencia.put("telefono", node.has("telefono") ? node.get("telefono").asText("") : "");
                     asistencia.put("estado", node.has("estado") ? node.get("estado").asText("") : "");
-                    asistencia.put("clases_programadas", 10);
-                    asistencia.put("clases_asistidas", 9);
-                    asistencia.put("porcentaje_asistencia", 90.0);
+                    asistencia.put("clases_programadas", programadas);
+                    asistencia.put("clases_asistidas", asistidas);
+                    asistencia.put("porcentaje_asistencia", porcentaje);
                     asistencias.add(asistencia);
-                });
+                }
                 totalAsistencias = asistencias.size();
             }
 
@@ -271,6 +321,56 @@ public class ReporteService {
             log.error("Error generando reporte asistencia", ex);
             throw new RuntimeException("Error generando reporte: " + ex.getMessage());
         }
+    }
+
+    /**
+     * Recorre las asignaciones paginadas de ms-asignaciones y devuelve por
+     * estudianteId un par [programadas, asistidas]. "Programada" = clase
+     * agendada en el sistema (cualquier estado excepto CANCELADA), incluye
+     * futuras. "Asistida" = solo estado COMPLETADA. Si el request trae
+     * desde/hasta se filtra por rango; sin rango se cuenta todo el historial.
+     */
+    private Map<Long, long[]> agregarAsistenciaPorEstudiante(
+            java.time.LocalDate desde, java.time.LocalDate hasta) {
+        Map<Long, long[]> agregado = new HashMap<>();
+        int page = 0;
+        int size = 500;
+        int totalPages = 1;
+
+        while (page < totalPages) {
+            JsonNode response = asignacionesClient.listarAsignaciones(page, size);
+            if (response == null || !response.has("content")) break;
+            totalPages = response.has("totalPages") ? response.get("totalPages").asInt(1) : 1;
+
+            for (JsonNode node : response.get("content")) {
+                String estado = node.has("estado") ? node.get("estado").asText("") : "";
+                if ("CANCELADA".equals(estado)) continue;
+
+                if (desde != null || hasta != null) {
+                    String fechaStr = node.has("fecha") && !node.get("fecha").isNull()
+                        ? node.get("fecha").asText(null) : null;
+                    if (fechaStr == null) continue;
+                    java.time.LocalDate fecha;
+                    try {
+                        fecha = java.time.LocalDate.parse(fechaStr);
+                    } catch (Exception ex) {
+                        continue;
+                    }
+                    if (desde != null && fecha.isBefore(desde)) continue;
+                    if (hasta != null && fecha.isAfter(hasta)) continue;
+                }
+
+                Long estId = node.has("estudianteId") && !node.get("estudianteId").isNull()
+                    ? node.get("estudianteId").asLong() : null;
+                if (estId == null) continue;
+
+                long[] contadores = agregado.computeIfAbsent(estId, k -> new long[]{0L, 0L});
+                contadores[0]++;
+                if ("COMPLETADA".equals(estado)) contadores[1]++;
+            }
+            page++;
+        }
+        return agregado;
     }
 
     @Transactional(readOnly = true)

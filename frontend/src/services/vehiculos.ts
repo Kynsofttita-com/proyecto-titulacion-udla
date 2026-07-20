@@ -222,6 +222,20 @@ export interface AlertaSoatResponse {
   vencido: boolean
 }
 
+// --- Alertas unificadas de documentos (SOAT + RTV) ---
+export type TipoDocumentoAlerta = 'SOAT' | 'RTV'
+
+export interface AlertaDocumentoResponse {
+  vehiculoId: number
+  placa: string
+  marca: string
+  modelo: string
+  tipoDocumento: TipoDocumentoAlerta
+  fechaVencimiento: string
+  diasParaVencer: number
+  vencido: boolean
+}
+
 // ============================================================================
 // Servicio
 // ============================================================================
@@ -323,6 +337,11 @@ const vehiculosService = {
     return r.data
   },
 
+  async actualizarInspeccion(vehiculoId: number, inspeccionId: number, data: InspeccionRequest): Promise<InspeccionResponse> {
+    const r = await api.put<InspeccionResponse>(`/vehiculos/${vehiculoId}/inspecciones/${inspeccionId}`, data)
+    return r.data
+  },
+
   async eliminarInspeccion(vehiculoId: number, inspeccionId: number): Promise<void> {
     await api.delete(`/vehiculos/${vehiculoId}/inspecciones/${inspeccionId}`)
   },
@@ -363,6 +382,14 @@ const vehiculosService = {
   // -------- Alertas SOAT --------
   async alertasSoat(dias: number = 30): Promise<AlertaSoatResponse[]> {
     const r = await api.get<AlertaSoatResponse[]>('/vehiculos/alertas-soat', {
+      params: { dias }
+    })
+    return r.data
+  },
+
+  // Endpoint unificado que devuelve alertas de SOAT y RTV juntas.
+  async alertasDocumentos(dias: number = 30): Promise<AlertaDocumentoResponse[]> {
+    const r = await api.get<AlertaDocumentoResponse[]>('/vehiculos/alertas-documentos', {
       params: { dias }
     })
     return r.data

@@ -96,6 +96,7 @@ import ReporteExporter from '@/components/reportes/ReporteExporter.vue'
 import ReporteFiltros, { type CampoFiltro } from '@/components/reportes/ReporteFiltros.vue'
 import Button from 'primevue/button'
 import reportesService from '@/services/reportes'
+import { fmtFechaLocal } from '@/utils/fechas'
 
 const datos = ref<any[]>([])
 const datosFiltrados = ref<any[]>([])
@@ -111,8 +112,7 @@ const camposFiltrables: CampoFiltro[] = [
 ]
 
 function formatearFecha(fecha: string): string {
-  if (!fecha) return '--'
-  return new Date(fecha).toLocaleDateString('es-ES')
+  return fmtFechaLocal(fecha, {}, '--', 'es-ES')
 }
 
 async function cargar() {

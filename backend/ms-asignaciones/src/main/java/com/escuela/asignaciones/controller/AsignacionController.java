@@ -3,6 +3,7 @@ package com.escuela.asignaciones.controller;
 import com.escuela.common.security.headers.UserHeaders;
 import com.escuela.asignaciones.dto.CreateAsignacionRequest;
 import com.escuela.asignaciones.dto.FinalizarAsignacionRequest;
+import com.escuela.asignaciones.dto.HorasCumplidasResponse;
 import com.escuela.asignaciones.dto.IniciarAsignacionRequest;
 import com.escuela.asignaciones.dto.RecorridoResponse;
 import com.escuela.asignaciones.dto.UpdateAsignacionRequest;
@@ -16,11 +17,13 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -159,6 +162,18 @@ public class AsignacionController {
             @PathVariable Long id) {
         validarAutenticacion(userEmail);
         return ResponseEntity.ok(service.obtenerRecorrido(id));
+    }
+
+    @GetMapping("/instructor/{instructorId}/horas-cumplidas")
+    @Operation(summary = "Horas de clases COMPLETADA por instructor en un rango",
+            description = "Suma la duracion real (o programada si no hay real) de todas las clases COMPLETADA del instructor entre desde y hasta (inclusive).")
+    public ResponseEntity<HorasCumplidasResponse> horasCumplidasInstructor(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @PathVariable Long instructorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        validarAutenticacion(userEmail);
+        return ResponseEntity.ok(service.horasCumplidasInstructor(instructorId, desde, hasta));
     }
 
     private void validarAutenticacion(String userEmail) {

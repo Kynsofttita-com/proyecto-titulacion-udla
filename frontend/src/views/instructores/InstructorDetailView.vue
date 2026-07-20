@@ -61,7 +61,7 @@
             <div v-if="instructor.fechaContratacion" class="flex items-center justify-between">
               <span class="text-sm text-ink-600">Contratado:</span>
               <span class="text-xs font-medium text-ink-700">
-                {{ new Date(instructor.fechaContratacion).toLocaleDateString('es-EC') }}
+                {{ fmtFechaLocal(instructor.fechaContratacion) }}
               </span>
             </div>
             <div v-if="diasParaVencerLicencia !== null" class="flex items-center justify-between pt-2 border-t border-ink-100">
@@ -592,7 +592,7 @@
                               {{ e.tipo }}
                             </span>
                             <span class="text-sm font-semibold text-ink-900">
-                              {{ new Date(e.fecha).toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }}
+                              {{ fmtFechaLocal(e.fecha, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }}
                             </span>
                             <span v-if="e.horaInicio && e.horaFin" class="text-xs font-medium text-ink-600">
                               · {{ e.horaInicio.substring(0, 5) }} - {{ e.horaFin.substring(0, 5) }}
@@ -629,7 +629,7 @@
                           >
                             {{ e.tipo }}
                           </span>
-                          <span>{{ new Date(e.fecha).toLocaleDateString('es-EC') }}</span>
+                          <span>{{ fmtFechaLocal(e.fecha) }}</span>
                           <span v-if="e.horaInicio && e.horaFin">
                             {{ e.horaInicio.substring(0, 5) }} - {{ e.horaFin.substring(0, 5) }}
                           </span>
@@ -864,6 +864,7 @@ import instructoresService, {
   type HorarioTrabajoResponse,
   type TipoExcepcion
 } from '@/services/instructores'
+import { fmtFechaLocal } from '@/utils/fechas'
 
 const vTooltip = Tooltip
 const route = useRoute()
@@ -1251,7 +1252,7 @@ const guardarExcepcion = async () => {
 
 const confirmarEliminarExcepcion = (e: HorarioTrabajoResponse) => {
   confirm.require({
-    message: `¿Eliminar la excepción del ${new Date(e.fecha).toLocaleDateString('es-EC')} (${e.tipo})?`,
+    message: `¿Eliminar la excepción del ${fmtFechaLocal(e.fecha)} (${e.tipo})?`,
     header: 'Eliminar excepción',
     icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Cancelar',
