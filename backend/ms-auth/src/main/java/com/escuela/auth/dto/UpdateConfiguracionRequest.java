@@ -2,6 +2,7 @@ package com.escuela.auth.dto;
 
 import com.escuela.common.validation.annotation.RucEcuador;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -24,5 +25,14 @@ public record UpdateConfiguracionRequest(
         LocalTime horarioApertura,
         LocalTime horarioCierre,
         @Min(1) Short horasRecordatorioClase,
-        @Min(1) Short diasAlertaSoat
+        @Min(1) Short diasAlertaSoat,
+        @Min(value = 1, message = "Debe ser al menos 1")
+        @Max(value = 10, message = "No puede superar 10")
+        Short maxIntentosFallidos,
+        @Min(value = 1, message = "Debe ser al menos 1")
+        @Max(value = 1440, message = "No puede superar 1440 (24 horas)")
+        Short duracionBloqueoMinutos,
+        @Min(value = 5, message = "Debe ser al menos 5")
+        @Max(value = 1440, message = "No puede superar 1440 (24 horas)")
+        Short expiracionTokenResetMinutos
 ) {}

@@ -169,12 +169,32 @@ jobs:
           echo "OK: 401 correcto"
 
           echo ""
-          echo "=== 3. Endpoints autenticados (con retry por endpoint) ==="
-          # El LB cache del Spring Cloud Gateway resuelve instancias contra Eureka
-          # lazy: la primera llamada a un MS que aun no fue invocado en la sesion
-          # del gateway devuelve 503 mientras el cache se pobla. Retry hasta 4
-          # intentos con sleep 5s cubre el registry-fetch-interval default (30s)
-          # y evita falsos negativos en CI.
+          echo "=== 3a. Warmup — hit todos los MS una vez para poblar el LB cache del gateway ==="
+          # Cada MS necesita ser invocado al menos 1 vez para que el gateway
+          # populé su LB cache. Warmup ignora status codes (solo dispara la
+          # resolucion) para que el step 3b encuentre las rutas ya listas.
+          for path in \
+              "/estudiantes?page=0&size=1" \
+              "/instructores?page=0&size=1" \
+              "/vehiculos?page=0&size=1" \
+              "/asignaciones?page=0&size=1" \
+              "/facturas?page=0&size=1" \
+              "/pagos?page=0&size=1" \
+              "/categorias-licencia" \
+              "/tipos-combustible" \
+              "/tipos-curso" \
+              "/conceptos-facturacion" \
+              "/usuarios?page=0&size=1" \
+              "/configuracion"; do
+            curl -s -o /dev/null --max-time 10 \
+              -H "Authorization: Bearer $TOKEN" "http://localhost:8080$path" || true
+          done
+          sleep 15  # dar tiempo al gateway a estabilizar el LB cache
+
+          echo ""
+          echo "=== 3b. Endpoints autenticados (con retry por endpoint) ==="
+          # Retry hasta 6 intentos con sleep 10s cubre casos de MS que tardan
+          # mas en poblar el LB cache del gateway (Eureka registry fetch cada 30s).
           fails=0
           failed_list=""
           for path in \
@@ -192,11 +212,11 @@ jobs:
               "/configuracion"; do
             code="000"
             attempt=0
-            for attempt in 1 2 3 4; do
+            for attempt in 1 2 3 4 5 6; do
               code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
                 -H "Authorization: Bearer $TOKEN" "http://localhost:8080$path" || echo "000")
               [ "$code" = "200" ] && break
-              [ "$attempt" -lt 4 ] && sleep 5
+              [ "$attempt" -lt 6 ] && sleep 10
             done
             printf "  %-50s -> %s (intento %s)\n" "$path" "$code" "$attempt"
             if [ "$code" != "200" ]; then

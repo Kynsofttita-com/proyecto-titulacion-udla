@@ -228,10 +228,21 @@ public class ReporteService {
             if (estudiantesResponse != null && estudiantesResponse.has("content")) {
                 estudiantesResponse.get("content").forEach(node -> {
                     Map<String, Object> asistencia = new HashMap<>();
-                    asistencia.put("estudianteId", node.get("id"));
-                    asistencia.put("nombre", node.get("nombre"));
-                    asistencia.put("apellido", node.get("apellido"));
-                    asistencia.put("estado", node.get("estado"));
+                    Long estId = node.has("id") ? node.get("id").asLong() : null;
+                    // El listado paginado de ms-estudiantes devuelve nombreCompleto,
+                    // no nombre/apellido separados. Nos apoyamos en eso y damos
+                    // fallback a los campos separados por si el DTO cambia.
+                    String nombreCompleto = node.has("nombreCompleto") && !node.get("nombreCompleto").isNull()
+                        ? node.get("nombreCompleto").asText()
+                        : ((node.has("nombre") ? node.get("nombre").asText("") : "")
+                            + " "
+                            + (node.has("apellido") ? node.get("apellido").asText("") : "")).trim();
+                    asistencia.put("estudianteId", estId);
+                    asistencia.put("estudianteNombre", nombreCompleto);
+                    asistencia.put("nombreCompleto", nombreCompleto);
+                    asistencia.put("cedula", node.has("cedula") ? node.get("cedula").asText("") : "");
+                    asistencia.put("telefono", node.has("telefono") ? node.get("telefono").asText("") : "");
+                    asistencia.put("estado", node.has("estado") ? node.get("estado").asText("") : "");
                     asistencia.put("clases_programadas", 10);
                     asistencia.put("clases_asistidas", 9);
                     asistencia.put("porcentaje_asistencia", 90.0);
@@ -449,7 +460,10 @@ public class ReporteService {
                     String fechaVencStr = node.has("fechaVencimiento") ? node.get("fechaVencimiento").asText(null) : null;
                     if (fechaVencStr == null) continue;
                     java.time.LocalDate fechaVenc = java.time.LocalDate.parse(fechaVencStr);
-                    if (!fechaVenc.isBefore(hoy)) continue;
+                    // Se considera morosa desde el DIA de vencimiento inclusive: si vence
+                    // hoy y no se pago, aparece con 0 dias de atraso. Alinea el criterio
+                    // del reporte con el badge rojo "Pendiente de pago" en la ficha.
+                    if (fechaVenc.isAfter(hoy)) continue;
 
                     long diasAtraso = java.time.temporal.ChronoUnit.DAYS.between(fechaVenc, hoy);
                     Long estudianteId = node.has("estudianteId") ? node.get("estudianteId").asLong() : null;
