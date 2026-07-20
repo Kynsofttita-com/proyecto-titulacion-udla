@@ -1,0 +1,40 @@
+# Ingress con nginx-ingress-controller.
+# Requiere que instales nginx-ingress en el cluster (ver kubernetes/README.md).
+#
+# Rutas expuestas:
+#   /            -> frontend (Vue SPA)
+#   /api/*       -> api-gateway (rewrite: /api/foo -> /foo)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: escuela-conduccion
+  namespace: escuela-conduccion
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    # Descomentar cuando tengas TLS con cert-manager:
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  # tls:
+  #   - hosts:
+  #       - escuela.example.com
+  #     secretName: escuela-tls
+  rules:
+    - http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

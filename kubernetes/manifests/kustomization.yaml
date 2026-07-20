@@ -1,0 +1,67 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: escuela-conduccion
+
+# Se aplican en el orden listado (kubectl igualmente respeta dependencias por
+# retries de las probes, pero es mas claro asi).
+resources:
+  # Namespace primero.
+  - 00-namespace/namespace.yaml
+
+  # Config y secrets antes de todo lo que los consume.
+  - 10-config/configmap-app.yaml
+  - 10-config/secrets.yaml
+
+  # Infra: postgres, rabbitmq, minio (StatefulSets con PVC).
+  - 20-infra/postgres.yaml
+  - 20-infra/rabbitmq.yaml
+  - 20-infra/minio.yaml
+
+  # Plataforma: Eureka primero, despues Gateway.
+  - 30-platform/eureka.yaml
+  - 30-platform/gateway.yaml
+
+  # 8 microservicios + frontend.
+  - 40-apps/ms-auth.yaml
+  - 40-apps/ms-estudiantes.yaml
+  - 40-apps/ms-instructores.yaml
+  - 40-apps/ms-vehiculos.yaml
+  - 40-apps/ms-asignaciones.yaml
+  - 40-apps/ms-cobros.yaml
+  - 40-apps/ms-reportes.yaml
+  - 40-apps/ms-notificaciones.yaml
+  - 40-apps/frontend.yaml
+
+  # Ingress al final (nginx-ingress ya debe estar instalado en el cluster).
+  - 50-ingress/ingress.yaml
+
+commonLabels:
+  project: escuela-conduccion
+  managed-by: kustomize
+
+# Todas las imagenes apuntan a GHCR. Para cambiar de registry (Docker Hub,
+# OCIR, etc.) editar aca:
+images:
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/eureka
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/api-gateway
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-auth
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-estudiantes
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-instructores
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-vehiculos
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-asignaciones
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-cobros
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-reportes
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-notificaciones
+    newTag: latest
+  - name: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/frontend
+    newTag: latest

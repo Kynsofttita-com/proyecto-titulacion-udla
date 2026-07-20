@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-notificaciones
+  namespace: escuela-conduccion
+spec:
+  ports:
+    - port: 8088
+      targetPort: 8088
+  selector:
+    app: ms-notificaciones
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-notificaciones
+  namespace: escuela-conduccion
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: ms-notificaciones } }
+  template:
+    metadata:
+      labels: { app: ms-notificaciones }
+    spec:
+      containers:
+        - name: ms-notificaciones
+          image: ghcr.io/kynsofttita-com/proyecto-titulacion-udla/ms-notificaciones:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8088
+          envFrom:
+            - configMapRef: { name: app-config }
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { secretKeyRef: { name: db-secrets, key: SPRING_DATASOURCE_USERNAME } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: db-secrets, key: SPRING_DATASOURCE_PASSWORD } }
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: SPRING_RABBITMQ_USERNAME } }
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom: { secretKeyRef: { name: rabbitmq-secrets, key: SPRING_RABBITMQ_PASSWORD } }
+            - name: JWT_SECRET
+              valueFrom: { secretKeyRef: { name: app-secrets, key: JWT_SECRET } }
+            # Credenciales Mailtrap — solo aplican a ms-notificaciones
+            - name: MAIL_USERNAME
+              valueFrom: { secretKeyRef: { name: app-secrets, key: MAIL_USERNAME } }
+            - name: MAIL_PASSWORD
+              valueFrom: { secretKeyRef: { name: app-secrets, key: MAIL_PASSWORD } }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8088 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8088 }
+            initialDelaySeconds: 180
+            periodSeconds: 30
+          resources:
+            requests: { cpu: "150m", memory: "512Mi" }
+            limits:   { cpu: "1",    memory: "1Gi" }
