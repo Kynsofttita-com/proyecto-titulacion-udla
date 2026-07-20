@@ -37,6 +37,21 @@ public class ReporteService {
     private final AsignacionesClient asignacionesClient;
     private final EjecucionReporteRepository ejecucionReporteRepository;
 
+    /**
+     * Convierte cualquier representación numérica que venga del JSON (Number,
+     * String, null) a BigDecimal. Devuelve ZERO si es null o no parseable.
+     */
+    private static java.math.BigDecimal toBigDecimal(Object v) {
+        if (v == null) return java.math.BigDecimal.ZERO;
+        if (v instanceof java.math.BigDecimal bd) return bd;
+        if (v instanceof Number n) return new java.math.BigDecimal(n.toString());
+        try {
+            return new java.math.BigDecimal(v.toString());
+        } catch (Exception ex) {
+            return java.math.BigDecimal.ZERO;
+        }
+    }
+
     private String obtenerNombreEstudiante(Long estudianteId) {
         try {
             JsonNode estudianteNode = estudiantesClient.obtenerEstudiante(estudianteId);
@@ -449,7 +464,6 @@ public class ReporteService {
             JsonNode response = cobrosClient.listarPorRango(request.desde(), request.hasta(), 0, 1000);
 
             List<Map<String, Object>> cobrosList = new ArrayList<>();
-            long totalIngresos = 0;
             long totalTransacciones = 0;
 
             if (response != null && response.has("content")) {
@@ -457,35 +471,78 @@ public class ReporteService {
                     cobrosList.add(new ObjectMapper().convertValue(node, Map.class))
                 );
                 totalTransacciones = response.get("totalElements").asLong(0);
-                totalIngresos = cobrosList.stream()
-                    .mapToLong(c -> {
-                        Object monto = c.getOrDefault("montoOriginal", c.getOrDefault("monto", 0));
-                        if (monto instanceof Number) {
-                            return ((Number) monto).longValue();
-                        }
-                        return 0;
-                    })
-                    .sum();
             }
+
+            // Totales desglosados por lo que se facturó vs lo que realmente entró en caja.
+            java.math.BigDecimal totalFacturado = java.math.BigDecimal.ZERO;
+            java.math.BigDecimal totalCobrado   = java.math.BigDecimal.ZERO;
+            java.math.BigDecimal totalPorCobrar = java.math.BigDecimal.ZERO;
+            long facturasAnuladas = 0;
 
             List<Map<String, Object>> ingresos = new ArrayList<>();
             for (Map<String, Object> factura : cobrosList) {
                 Map<String, Object> ingreso = new HashMap<>();
                 ingreso.put("id", factura.get("id"));
+                ingreso.put("numeroFactura", factura.get("numeroFactura"));
                 Long estudianteId = ((Number) factura.get("estudianteId")).longValue();
+                ingreso.put("estudianteId", estudianteId);
                 ingreso.put("estudianteNombre", obtenerNombreEstudiante(estudianteId));
-                ingreso.put("concepto", factura.get("tipoPago") != null ? "Pago " + factura.get("tipoPago") : "Pago");
-                ingreso.put("monto", factura.get("montoOriginal"));
+
+                String tipoPago = factura.get("tipoPago") != null ? factura.get("tipoPago").toString() : "CONTADO";
+                ingreso.put("tipoPago", tipoPago);
+                // Se conserva "concepto" por compatibilidad con export/exporter, pero ya
+                // no es el eje principal — ahora usamos montoFacturado/cobrado/saldo.
+                ingreso.put("concepto", "Factura " + tipoPago);
+
+                java.math.BigDecimal montoOriginal = toBigDecimal(factura.get("montoOriginal"));
+                java.math.BigDecimal montoPagado   = toBigDecimal(factura.get("montoPagado"));
+                java.math.BigDecimal saldo         = toBigDecimal(factura.get("saldo"));
+                String estado = factura.get("estado") != null ? factura.get("estado").toString() : "";
+
+                ingreso.put("montoFacturado", montoOriginal);
+                ingreso.put("montoCobrado", montoPagado);
+                ingreso.put("saldo", saldo);
+                // Alias legacy: el frontend viejo espera "monto"; lo mantenemos = facturado.
+                ingreso.put("monto", montoOriginal);
                 ingreso.put("fecha", factura.get("fechaEmision"));
-                ingreso.put("estado", factura.get("estado"));
+                ingreso.put("fechaEmision", factura.get("fechaEmision"));
+                ingreso.put("fechaVencimiento", factura.get("fechaVencimiento"));
+                ingreso.put("estado", estado);
+                ingreso.put("numeroCuotas", factura.get("numeroCuotas"));
+                ingreso.put("cuotasPagadas", factura.get("cuotasPagadas"));
                 ingresos.add(ingreso);
+
+                if ("ANULADA".equals(estado)) {
+                    facturasAnuladas++;
+                    // ANULADA no cuenta en facturado ni en por cobrar (se descarta del ciclo).
+                    continue;
+                }
+                totalFacturado = totalFacturado.add(montoOriginal);
+                totalCobrado   = totalCobrado.add(montoPagado);
+                totalPorCobrar = totalPorCobrar.add(saldo);
             }
 
-            datos.put("totalIngresos", totalIngresos);
+            java.math.BigDecimal porcentajeCobrado = totalFacturado.signum() > 0
+                ? totalCobrado.multiply(java.math.BigDecimal.valueOf(100))
+                    .divide(totalFacturado, 2, java.math.RoundingMode.HALF_UP)
+                : java.math.BigDecimal.ZERO;
+
+            long facturasActivas = totalTransacciones - facturasAnuladas;
+
+            // Legacy: totalIngresos = totalFacturado (para no romper clientes viejos).
+            datos.put("totalIngresos", totalFacturado);
+            datos.put("totalFacturado", totalFacturado);
+            datos.put("totalCobrado", totalCobrado);
+            datos.put("totalPorCobrar", totalPorCobrar);
+            datos.put("porcentajeCobrado", porcentajeCobrado);
             datos.put("totalTransacciones", totalTransacciones);
+            datos.put("facturasActivas", facturasActivas);
+            datos.put("facturasAnuladas", facturasAnuladas);
             datos.put("periodoDesde", request.desde());
             datos.put("periodoHasta", request.hasta());
-            datos.put("promedioTransaccion", totalTransacciones > 0 ? totalIngresos / totalTransacciones : 0);
+            datos.put("promedioTransaccion", facturasActivas > 0
+                ? totalFacturado.divide(java.math.BigDecimal.valueOf(facturasActivas), 2, java.math.RoundingMode.HALF_UP)
+                : java.math.BigDecimal.ZERO);
             datos.put("ingresos", ingresos);
 
             long duracion = System.currentTimeMillis() - inicio;
