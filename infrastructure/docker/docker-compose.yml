@@ -393,6 +393,10 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-no-reply@escuela-conduccion.local}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Escuela de Conduccion}
+      # Activa el envio real por SMTP. Si esta false (default), los emails
+      # se persisten como PENDIENTE en log_envios_email pero NO se envian
+      # (modo dry-run para dev sin credenciales).
+      JAVA_MAIL_ENABLED: ${JAVA_MAIL_ENABLED:-false}
     ports:
       - "8088:8088"
     healthcheck:
