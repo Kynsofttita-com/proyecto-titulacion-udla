@@ -668,22 +668,33 @@
       <div class="space-y-4">
         <div class="rounded-lg bg-info-50 border border-info-200 p-3 text-xs text-ink-700">
           <p>Estado actual: <strong>{{ instructor.estado }}</strong></p>
+          <p class="mt-1 text-ink-600">
+            Los campos con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+          </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Nuevo estado *</label>
+          <label for="field-inst-estado" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Nuevo estado <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <Dropdown
             v-model="nuevoEstado"
+            inputId="field-inst-estado"
             :options="estadosOpciones"
             option-label="label"
             option-value="value"
             placeholder="Selecciona estado"
             class="w-full border border-ink-300 bg-ink-50"
+            :class="errorsInstEst.estado ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrInstEst('estado')"
           />
+          <p v-if="errorsInstEst.estado" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsInstEst.estado }}
+          </p>
         </div>
       </div>
       <template #footer>
         <Button label="Cancelar" severity="secondary" outlined @click="dialogEstadoVisible = false" :disabled="cambiandoEstado" />
-        <Button label="Cambiar estado" icon="pi pi-check" @click="cambiarEstado" :loading="cambiandoEstado" :disabled="!nuevoEstado" />
+        <Button label="Cambiar estado" icon="pi pi-check" @click="cambiarEstado" :loading="cambiandoEstado" />
       </template>
     </Dialog>
 
@@ -696,33 +707,63 @@
       :closable="!guardandoFranja"
     >
       <div class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          <p class="text-sm text-ink-700">
+            Los campos con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+          </p>
+        </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Día de la semana *</label>
+          <label for="field-franja-diaSemana" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Día de la semana <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <Dropdown
             v-model="formFranja.diaSemana"
+            inputId="field-franja-diaSemana"
             :options="DIAS_SEMANA"
             option-label="label"
             option-value="value"
             placeholder="Selecciona el día"
             class="w-full border border-ink-300 bg-ink-50"
+            :class="errorsFranja.diaSemana ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrFranja('diaSemana')"
           />
+          <p v-if="errorsFranja.diaSemana" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsFranja.diaSemana }}
+          </p>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Hora inicio *</label>
+            <label for="field-franja-horaInicio" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Hora inicio <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <input
+              id="field-franja-horaInicio"
               v-model="formFranja.horaInicio"
               type="time"
-              class="w-full px-3 py-2 border border-ink-300 rounded-lg bg-ink-50 text-sm"
+              :class="['w-full px-3 py-2 border rounded-lg text-sm',
+                errorsFranja.horaInicio ? 'border-danger-500 bg-danger-50' : 'border-ink-300 bg-ink-50']"
+              @input="clearErrFranja('horaInicio')"
             />
+            <p v-if="errorsFranja.horaInicio" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsFranja.horaInicio }}
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Hora fin *</label>
+            <label for="field-franja-horaFin" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Hora fin <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <input
+              id="field-franja-horaFin"
               v-model="formFranja.horaFin"
               type="time"
-              class="w-full px-3 py-2 border border-ink-300 rounded-lg bg-ink-50 text-sm"
+              :class="['w-full px-3 py-2 border rounded-lg text-sm',
+                errorsFranja.horaFin ? 'border-danger-500 bg-danger-50' : 'border-ink-300 bg-ink-50']"
+              @input="clearErrFranja('horaFin')"
             />
+            <p v-if="errorsFranja.horaFin" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsFranja.horaFin }}
+            </p>
           </div>
         </div>
         <div class="rounded-lg bg-info-50 border border-info-200 p-2 text-xs text-ink-700 flex items-start gap-2">
@@ -745,8 +786,16 @@
       :closable="!guardandoExcepcion"
     >
       <div class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          <p class="text-sm text-ink-700">
+            Los campos con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+          </p>
+        </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-2">Tipo de excepción *</label>
+          <label class="block text-sm font-medium text-ink-700 mb-2">
+            Tipo de excepción <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <div class="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -784,32 +833,56 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Fecha *</label>
+          <label for="field-exc-fecha" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Fecha <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <Calendar
             v-model="formExcepcion.fecha"
+            inputId="field-exc-fecha"
             dateFormat="yy-mm-dd"
             :showIcon="true"
             class="w-full"
             :minDate="new Date()"
+            :inputClass="errorsExc.fecha ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrExc('fecha')"
           />
+          <p v-if="errorsExc.fecha" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsExc.fecha }}
+          </p>
         </div>
 
         <div v-if="formExcepcion.tipo === 'EXTRA'" class="grid grid-cols-2 gap-3 animate-fade-up">
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Hora inicio *</label>
+            <label for="field-exc-horaInicio" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Hora inicio <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <input
+              id="field-exc-horaInicio"
               v-model="formExcepcion.horaInicio"
               type="time"
-              class="w-full px-3 py-2 border border-ink-300 rounded-lg bg-ink-50 text-sm"
+              :class="['w-full px-3 py-2 border rounded-lg text-sm',
+                errorsExc.horaInicio ? 'border-danger-500 bg-danger-50' : 'border-ink-300 bg-ink-50']"
+              @input="clearErrExc('horaInicio')"
             />
+            <p v-if="errorsExc.horaInicio" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsExc.horaInicio }}
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Hora fin *</label>
+            <label for="field-exc-horaFin" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Hora fin <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <input
+              id="field-exc-horaFin"
               v-model="formExcepcion.horaFin"
               type="time"
-              class="w-full px-3 py-2 border border-ink-300 rounded-lg bg-ink-50 text-sm"
+              :class="['w-full px-3 py-2 border rounded-lg text-sm',
+                errorsExc.horaFin ? 'border-danger-500 bg-danger-50' : 'border-ink-300 bg-ink-50']"
+              @input="clearErrExc('horaFin')"
             />
+            <p v-if="errorsExc.horaFin" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsExc.horaFin }}
+            </p>
           </div>
         </div>
 
@@ -1040,6 +1113,43 @@ const excepcionesPasadas = computed(() => {
   return excepcionesOrdenadas.value.filter(e => e.fecha < hoy).reverse() // más recientes primero
 })
 
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string, scroll = false) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => {
+      const el = document.getElementById(`field-${prefijo}-${p}`)
+      if (!el) return
+      if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      ;(el as HTMLElement).focus?.()
+    }, scroll ? 300 : 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
+const valInstEst = useValidation()
+const errorsInstEst = valInstEst.errors
+const setErrInstEst = valInstEst.setError
+const clearErrInstEst = valInstEst.clearError
+const clearAllInstEst = valInstEst.clearAll
+
+const valFranja = useValidation()
+const errorsFranja = valFranja.errors
+const setErrFranja = valFranja.setError
+const clearErrFranja = valFranja.clearError
+const clearAllFranja = valFranja.clearAll
+
+const valExc = useValidation()
+const errorsExc = valExc.errors
+const setErrExc = valExc.setError
+const clearErrExc = valExc.clearError
+const clearAllExc = valExc.clearAll
+
 // ----- Dialog cambiar estado -----
 const dialogEstadoVisible = ref(false)
 const cambiandoEstado = ref(false)
@@ -1116,6 +1226,7 @@ const abrirDialogFranja = (diaPrefill?: number) => {
   formFranja.diaSemana = diaPrefill ?? 1
   formFranja.horaInicio = '08:00'
   formFranja.horaFin = '12:00'
+  clearAllFranja()
   dialogFranjaVisible.value = true
 }
 
@@ -1124,18 +1235,34 @@ const abrirDialogEditarFranja = (f: DisponibilidadResponse) => {
   formFranja.diaSemana = f.diaSemana
   formFranja.horaInicio = f.horaInicio.substring(0, 5)
   formFranja.horaFin = f.horaFin.substring(0, 5)
+  clearAllFranja()
   dialogFranjaVisible.value = true
 }
 
+const validarFranja = (): boolean => {
+  clearAllFranja()
+  if (formFranja.diaSemana == null) setErrFranja('diaSemana', 'Selecciona el día')
+  if (!formFranja.horaInicio) setErrFranja('horaInicio', 'La hora de inicio es requerida')
+  if (!formFranja.horaFin) setErrFranja('horaFin', 'La hora de fin es requerida')
+  if (formFranja.horaInicio && formFranja.horaFin) {
+    if (formFranja.horaFin <= formFranja.horaInicio) {
+      setErrFranja('horaFin', 'La hora de fin debe ser posterior al inicio')
+    } else {
+      const [hi, mi] = formFranja.horaInicio.split(':').map(Number)
+      const [hf, mf] = formFranja.horaFin.split(':').map(Number)
+      const diff = (hf * 60 + mf) - (hi * 60 + mi)
+      if (diff < 30) setErrFranja('horaFin', 'La franja debe durar al menos 30 minutos')
+    }
+  }
+  if (Object.keys(errorsFranja).length > 0) {
+    valFranja.focusFirst(['diaSemana', 'horaInicio', 'horaFin'], 'franja', false)
+    return false
+  }
+  return true
+}
+
 const guardarFranja = async () => {
-  if (!formFranja.horaInicio || !formFranja.horaFin) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Hora de inicio y fin son requeridas', life: 3000 })
-    return
-  }
-  if (formFranja.horaFin <= formFranja.horaInicio) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'La hora de fin debe ser posterior al inicio', life: 3000 })
-    return
-  }
+  if (!validarFranja()) return
   guardandoFranja.value = true
   try {
     const payload = {
@@ -1208,24 +1335,29 @@ const abrirDialogExcepcion = () => {
   formExcepcion.horaInicio = ''
   formExcepcion.horaFin = ''
   formExcepcion.motivo = ''
+  clearAllExc()
   dialogExcepcionVisible.value = true
 }
 
-const guardarExcepcion = async () => {
-  if (!formExcepcion.fecha) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'La fecha es requerida', life: 3000 })
-    return
-  }
+const validarExcepcion = (): boolean => {
+  clearAllExc()
+  if (!formExcepcion.fecha) setErrExc('fecha', 'La fecha es requerida')
   if (formExcepcion.tipo === 'EXTRA') {
-    if (!formExcepcion.horaInicio || !formExcepcion.horaFin) {
-      toast.add({ severity: 'error', summary: 'Error', detail: 'Hora de inicio y fin son requeridas para EXTRA', life: 3000 })
-      return
-    }
-    if (formExcepcion.horaFin <= formExcepcion.horaInicio) {
-      toast.add({ severity: 'error', summary: 'Error', detail: 'La hora de fin debe ser posterior al inicio', life: 3000 })
-      return
+    if (!formExcepcion.horaInicio) setErrExc('horaInicio', 'La hora de inicio es requerida')
+    if (!formExcepcion.horaFin) setErrExc('horaFin', 'La hora de fin es requerida')
+    if (formExcepcion.horaInicio && formExcepcion.horaFin && formExcepcion.horaFin <= formExcepcion.horaInicio) {
+      setErrExc('horaFin', 'La hora de fin debe ser posterior al inicio')
     }
   }
+  if (Object.keys(errorsExc).length > 0) {
+    valExc.focusFirst(['fecha', 'horaInicio', 'horaFin'], 'exc', false)
+    return false
+  }
+  return true
+}
+
+const guardarExcepcion = async () => {
+  if (!validarExcepcion()) return
   guardandoExcepcion.value = true
   try {
     await instructoresService.agregarHorarioTrabajo(instructorId.value, {
@@ -1538,11 +1670,22 @@ const guardarObservaciones = async () => {
 // ----- Cambiar estado -----
 const abrirDialogEstado = () => {
   nuevoEstado.value = null
+  clearAllInstEst()
   dialogEstadoVisible.value = true
 }
 
+const validarInstEstado = (): boolean => {
+  clearAllInstEst()
+  if (!nuevoEstado.value) setErrInstEst('estado', 'Selecciona el nuevo estado')
+  if (Object.keys(errorsInstEst).length > 0) {
+    valInstEst.focusFirst(['estado'], 'inst', false)
+    return false
+  }
+  return true
+}
+
 const cambiarEstado = async () => {
-  if (!nuevoEstado.value) return
+  if (!validarInstEstado()) return
   cambiandoEstado.value = true
   try {
     await instructoresService.actualizarInstructor(instructorId.value, {
