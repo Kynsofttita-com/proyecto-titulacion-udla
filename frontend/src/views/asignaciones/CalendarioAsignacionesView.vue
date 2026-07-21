@@ -169,27 +169,35 @@
     <!-- Dialog Nueva Asignación -->
     <Dialog v-model:visible="mostrarForm" modal header="Nueva asignación" :style="{ width: '720px' }" :pt="{ root: { class: 'mx-4' } }">
       <div class="space-y-5">
-        <div v-if="formError" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
-          <i class="pi pi-exclamation-circle mt-0.5" />
-          <span>{{ formError }}</span>
+        <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          <p class="text-sm text-ink-700">
+            Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+            Podés escribir para buscar o hacer click en la flechita para ver los disponibles.
+          </p>
         </div>
 
         <!-- ESTUDIANTE -->
         <div>
-          <label class="label mb-1.5 block">
+          <label for="field-asig-estudiante" class="label mb-1.5 block">
             <span class="flex items-center gap-2">
               <i class="pi pi-user text-brand-600" />
-              Estudiante *
+              Estudiante <span class="text-danger-600 font-semibold">*</span>
             </span>
           </label>
           <AutoComplete
             v-model="selEstudiante"
+            inputId="field-asig-estudiante"
             :suggestions="estudiantesFiltered"
             @complete="filterEstudiantes"
+            @update:modelValue="clearErrAsig('estudiante')"
             optionLabel="nombreCompleto"
             placeholder="Buscar por nombre, cédula o email..."
+            :dropdown="true"
+            dropdownMode="blank"
+            forceSelection
             class="w-full"
-            :pt="{ input: { class: 'w-full' } }"
+            :pt="{ input: { class: errorsAsig.estudiante ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
           >
             <template #option="{ option }">
               <div class="flex items-center gap-3 py-1">
@@ -207,6 +215,9 @@
               <p class="px-3 py-2 text-sm text-ink-500">Sin estudiantes activos coincidentes</p>
             </template>
           </AutoComplete>
+          <p v-if="errorsAsig.estudiante" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsAsig.estudiante }}
+          </p>
 
           <!-- Card detalle estudiante -->
           <div v-if="selEstudiante" class="mt-3 rounded-lg border border-brand-200 bg-brand-50/40 p-3 animate-fade-up">
@@ -221,20 +232,25 @@
 
         <!-- INSTRUCTOR -->
         <div>
-          <label class="label mb-1.5 block">
+          <label for="field-asig-instructor" class="label mb-1.5 block">
             <span class="flex items-center gap-2">
               <i class="pi pi-id-card text-brand-600" />
-              Instructor *
+              Instructor <span class="text-danger-600 font-semibold">*</span>
             </span>
           </label>
           <AutoComplete
             v-model="selInstructor"
+            inputId="field-asig-instructor"
             :suggestions="instructoresFiltered"
             @complete="filterInstructores"
+            @update:modelValue="clearErrAsig('instructor')"
             optionLabel="nombreCompleto"
             placeholder="Buscar por nombre o cédula..."
+            :dropdown="true"
+            dropdownMode="blank"
+            forceSelection
             class="w-full"
-            :pt="{ input: { class: 'w-full' } }"
+            :pt="{ input: { class: errorsAsig.instructor ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
           >
             <template #option="{ option }">
               <div class="flex items-center gap-3 py-1">
@@ -252,6 +268,9 @@
               <p class="px-3 py-2 text-sm text-ink-500">Sin instructores activos coincidentes</p>
             </template>
           </AutoComplete>
+          <p v-if="errorsAsig.instructor" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsAsig.instructor }}
+          </p>
 
           <div v-if="selInstructor" class="mt-3 rounded-lg border border-brand-200 bg-brand-50/40 p-3 animate-fade-up">
             <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
@@ -265,20 +284,25 @@
 
         <!-- VEHÍCULO -->
         <div>
-          <label class="label mb-1.5 block">
+          <label for="field-asig-vehiculo" class="label mb-1.5 block">
             <span class="flex items-center gap-2">
               <i class="pi pi-car text-brand-600" />
-              Vehículo *
+              Vehículo <span class="text-danger-600 font-semibold">*</span>
             </span>
           </label>
           <AutoComplete
             v-model="selVehiculo"
+            inputId="field-asig-vehiculo"
             :suggestions="vehiculosFiltered"
             @complete="filterVehiculos"
+            @update:modelValue="clearErrAsig('vehiculo')"
             optionLabel="placa"
             placeholder="Buscar por placa, marca o modelo..."
+            :dropdown="true"
+            dropdownMode="blank"
+            forceSelection
             class="w-full"
-            :pt="{ input: { class: 'w-full' } }"
+            :pt="{ input: { class: errorsAsig.vehiculo ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
           >
             <template #option="{ option }">
               <div class="flex items-center gap-3 py-1">
@@ -299,6 +323,9 @@
               <p class="px-3 py-2 text-sm text-ink-500">Sin vehículos disponibles</p>
             </template>
           </AutoComplete>
+          <p v-if="errorsAsig.vehiculo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsAsig.vehiculo }}
+          </p>
 
           <div v-if="selVehiculo" class="mt-3 rounded-lg border border-brand-200 bg-brand-50/40 p-3 animate-fade-up">
             <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
@@ -315,28 +342,72 @@
         <!-- FECHA Y HORAS -->
         <div class="space-y-4">
           <div>
-            <label class="label mb-1.5 block">
+            <label for="field-asig-fecha" class="label mb-1.5 block">
               <span class="flex items-center gap-2">
                 <i class="pi pi-calendar text-brand-600" />
-                Fecha *
+                Fecha <span class="text-danger-600 font-semibold">*</span>
               </span>
             </label>
-            <Calendar v-model="formAsig.fecha" dateFormat="yy-mm-dd" :showIcon="true" class="w-full" :minDate="new Date()" />
+            <Calendar
+              v-model="formAsig.fecha"
+              inputId="field-asig-fecha"
+              dateFormat="yy-mm-dd"
+              :showIcon="true"
+              class="w-full"
+              :minDate="new Date()"
+              :inputClass="errorsAsig.fecha ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearErrAsig('fecha')"
+            />
+            <p v-if="errorsAsig.fecha" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsAsig.fecha }}
+            </p>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="label mb-1.5 block">Hora inicio *</label>
-              <Calendar v-model="formAsig.horaInicio" timeOnly :showIcon="true" class="w-full" />
+              <label for="field-asig-horaInicio" class="label mb-1.5 block">
+                Hora inicio <span class="text-danger-600 font-semibold">*</span>
+              </label>
+              <Calendar
+                v-model="formAsig.horaInicio"
+                inputId="field-asig-horaInicio"
+                timeOnly
+                :showIcon="true"
+                class="w-full"
+                :inputClass="errorsAsig.horaInicio ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearErrAsig('horaInicio')"
+              />
+              <p v-if="errorsAsig.horaInicio" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsAsig.horaInicio }}
+              </p>
             </div>
             <div>
-              <label class="label mb-1.5 block">Hora fin *</label>
-              <Calendar v-model="formAsig.horaFin" timeOnly :showIcon="true" class="w-full" />
+              <label for="field-asig-horaFin" class="label mb-1.5 block">
+                Hora fin <span class="text-danger-600 font-semibold">*</span>
+              </label>
+              <Calendar
+                v-model="formAsig.horaFin"
+                inputId="field-asig-horaFin"
+                timeOnly
+                :showIcon="true"
+                class="w-full"
+                :inputClass="errorsAsig.horaFin ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearErrAsig('horaFin')"
+              />
+              <p v-if="errorsAsig.horaFin" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsAsig.horaFin }}
+              </p>
             </div>
           </div>
           <div>
-            <label class="label mb-1.5 block">Observaciones</label>
-            <Textarea v-model="formAsig.observaciones" rows="2" class="w-full" placeholder="Notas opcionales sobre la clase..." />
+            <label class="label mb-1.5 block">Observaciones <span class="text-xs text-ink-500">(opcional)</span></label>
+            <Textarea v-model="formAsig.observaciones" rows="2" class="w-full" placeholder="Notas opcionales sobre la clase..." maxlength="500" />
           </div>
+        </div>
+
+        <!-- Error de servidor (409, red, etc.) -->
+        <div v-if="formError" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
+          <i class="pi pi-exclamation-circle mt-0.5" />
+          <span>{{ formError }}</span>
         </div>
       </div>
       <template #footer>
@@ -354,12 +425,40 @@
           <p class="mt-1">Registra el kilometraje del odómetro <strong>antes</strong> de empezar la clase. Si lo dejas vacío, usaremos el kilometraje actual del vehículo ({{ kmActualVehiculo ?? '—' }} km).</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Kilometraje inicial</label>
-          <InputNumber v-model="formIniciar.kmInicial" :min="0" suffix=" km" :placeholder="kmActualVehiculo ? `${kmActualVehiculo} km (actual del vehículo)` : 'km del odómetro'" class="w-full" />
+          <label for="field-ini-kmInicial" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Kilometraje inicial <span class="text-xs text-ink-500">(opcional)</span>
+          </label>
+          <InputNumber
+            v-model="formIniciar.kmInicial"
+            inputId="field-ini-kmInicial"
+            :min="0"
+            suffix=" km"
+            :placeholder="kmActualVehiculo ? `${kmActualVehiculo} km (actual del vehículo)` : 'km del odómetro'"
+            class="w-full"
+            :class="errorsIni.kmInicial ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+            @update:modelValue="clearErrIni('kmInicial')"
+          />
+          <p v-if="errorsIni.kmInicial" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsIni.kmInicial }}
+          </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Observaciones <span class="text-xs text-ink-500">(opcional)</span></label>
-          <Textarea v-model="formIniciar.observaciones" rows="2" placeholder="Estado del vehículo, condiciones, etc." class="w-full" />
+          <label for="field-ini-observaciones" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Observaciones <span class="text-xs text-ink-500">(opcional)</span>
+          </label>
+          <Textarea
+            id="field-ini-observaciones"
+            v-model="formIniciar.observaciones"
+            rows="2"
+            placeholder="Estado del vehículo, condiciones, etc."
+            class="w-full"
+            maxlength="500"
+            :class="errorsIni.observaciones ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrIni('observaciones')"
+          />
+          <p v-if="errorsIni.observaciones" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsIni.observaciones }}
+          </p>
         </div>
       </div>
       <template #footer>
@@ -383,22 +482,44 @@
           </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Kilometraje final *</label>
+          <label for="field-fin-kmFinal" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Kilometraje final <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <InputNumber
             v-model="formFinalizar.kmFinal"
+            inputId="field-fin-kmFinal"
             :min="asignacionActual.kmInicial ?? 0"
             suffix=" km"
             placeholder="km del odómetro al terminar"
             class="w-full"
+            :class="errorsFin.kmFinal ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+            @update:modelValue="clearErrFin('kmFinal')"
           />
-          <p v-if="kmRecorridosPreview != null" class="text-xs text-success-700 mt-1 font-medium">
+          <p v-if="errorsFin.kmFinal" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsFin.kmFinal }}
+          </p>
+          <p v-else-if="kmRecorridosPreview != null" class="text-xs text-success-700 mt-1 font-medium">
             <i class="pi pi-arrow-right text-xs mr-1" />
             Recorrido: {{ kmRecorridosPreview }} km
           </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Observaciones del recorrido <span class="text-xs text-ink-500">(opcional)</span></label>
-          <Textarea v-model="formFinalizar.observacionesRecorrido" rows="3" placeholder="Desempeño del estudiante, incidentes, etc." class="w-full" maxlength="500" />
+          <label for="field-fin-observacionesRecorrido" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Observaciones del recorrido <span class="text-xs text-ink-500">(opcional)</span>
+          </label>
+          <Textarea
+            id="field-fin-observacionesRecorrido"
+            v-model="formFinalizar.observacionesRecorrido"
+            rows="3"
+            placeholder="Desempeño del estudiante, incidentes, etc."
+            class="w-full"
+            maxlength="500"
+            :class="errorsFin.observacionesRecorrido ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrFin('observacionesRecorrido')"
+          />
+          <p v-if="errorsFin.observacionesRecorrido" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsFin.observacionesRecorrido }}
+          </p>
         </div>
       </div>
       <template #footer>
@@ -509,6 +630,46 @@ const estudiantesFiltered = ref<any[]>([])
 const instructoresFiltered = ref<any[]>([])
 const vehiculosFiltered = ref<any[]>([])
 
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string, scroll = false) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => {
+      const el = document.getElementById(`field-${prefijo}-${p}`)
+      if (!el) return
+      if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      ;(el as HTMLElement).focus?.()
+    }, scroll ? 300 : 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
+// Validación Nueva Asignación
+const valAsig = useValidation()
+const errorsAsig = valAsig.errors
+const setErrAsig = valAsig.setError
+const clearErrAsig = valAsig.clearError
+const clearAllAsig = valAsig.clearAll
+
+// Validación Iniciar clase
+const valIni = useValidation()
+const errorsIni = valIni.errors
+const setErrIni = valIni.setError
+const clearErrIni = valIni.clearError
+const clearAllIni = valIni.clearAll
+
+// Validación Finalizar clase
+const valFin = useValidation()
+const errorsFin = valFin.errors
+const setErrFin = valFin.setError
+const clearErrFin = valFin.clearError
+const clearAllFin = valFin.clearAll
+
 const filterEstudiantes = (e: any) => {
   const q = (e.query || '').toLowerCase().trim()
   if (!q) { estudiantesFiltered.value = estudiantesActivos.value.slice(0, 20); return }
@@ -539,7 +700,7 @@ const filterVehiculos = (e: any) => {
   }).slice(0, 20)
 }
 
-// Carga listas activas al abrir el dialog
+// Carga listas activas al abrir el dialog + precarga de sugerencias para dropdown
 const cargarListasParaForm = async () => {
   try {
     const [estRes, insRes, vehRes] = await Promise.all([
@@ -566,6 +727,11 @@ const cargarListasParaForm = async () => {
       }))
     vehiculosActivos.value = (vehRes.data.content || [])
       .filter((v: any) => !v.estado || v.estado === 'ACTIVO')
+    // Precargar sugerencias para que el dropdown (flechita) muestre las
+    // primeras opciones apenas se abra el AutoComplete, sin escribir nada.
+    estudiantesFiltered.value = estudiantesActivos.value.slice(0, 20)
+    instructoresFiltered.value = instructoresActivos.value.slice(0, 20)
+    vehiculosFiltered.value = vehiculosActivos.value.slice(0, 20)
   } catch (e) {
     formError.value = 'No se pudieron cargar las listas de selección'
   }
@@ -586,6 +752,44 @@ const cancelarForm = () => {
   formAsig.horaFin = null
   formAsig.observaciones = ''
   formError.value = ''
+  clearAllAsig()
+}
+
+const validarAsig = (): boolean => {
+  clearAllAsig()
+  if (!selEstudiante.value || typeof selEstudiante.value !== 'object') {
+    setErrAsig('estudiante', 'Selecciona un estudiante de la lista')
+  }
+  if (!selInstructor.value || typeof selInstructor.value !== 'object') {
+    setErrAsig('instructor', 'Selecciona un instructor de la lista')
+  }
+  if (!selVehiculo.value || typeof selVehiculo.value !== 'object') {
+    setErrAsig('vehiculo', 'Selecciona un vehículo de la lista')
+  }
+  if (!formAsig.fecha) {
+    setErrAsig('fecha', 'La fecha es requerida')
+  }
+  if (!formAsig.horaInicio) setErrAsig('horaInicio', 'La hora de inicio es requerida')
+  if (!formAsig.horaFin)    setErrAsig('horaFin', 'La hora de fin es requerida')
+  if (formAsig.horaInicio && formAsig.horaFin) {
+    const hi = formAsig.horaInicio as Date
+    const hf = formAsig.horaFin as Date
+    const minutosHi = hi.getHours() * 60 + hi.getMinutes()
+    const minutosHf = hf.getHours() * 60 + hf.getMinutes()
+    if (minutosHf <= minutosHi) {
+      setErrAsig('horaFin', 'La hora fin debe ser posterior a la hora inicio')
+    } else if (minutosHf - minutosHi < 15) {
+      setErrAsig('horaFin', 'La clase debe durar al menos 15 minutos')
+    } else if (minutosHf - minutosHi > 8 * 60) {
+      setErrAsig('horaFin', 'La clase no puede durar más de 8 horas')
+    }
+  }
+  if (Object.keys(errorsAsig).length > 0) {
+    const orden = ['estudiante', 'instructor', 'vehiculo', 'fecha', 'horaInicio', 'horaFin']
+    valAsig.focusFirst(orden, 'asig', true)
+    return false
+  }
+  return true
 }
 
 const fmtFecha = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -690,12 +894,7 @@ const cargar = async () => {
 
 const crear = async () => {
   formError.value = ''
-  // Validaciones del lado cliente
-  if (!selEstudiante.value) { formError.value = 'Selecciona un estudiante'; return }
-  if (!selInstructor.value) { formError.value = 'Selecciona un instructor'; return }
-  if (!selVehiculo.value)   { formError.value = 'Selecciona un vehículo'; return }
-  if (!formAsig.fecha)      { formError.value = 'Selecciona la fecha'; return }
-  if (!formAsig.horaInicio || !formAsig.horaFin) { formError.value = 'Indica hora inicio y hora fin'; return }
+  if (!validarAsig()) return
   try {
     creando.value = true
     const payload = {
@@ -763,6 +962,7 @@ const abrirDialogIniciar = async (a: any) => {
   formIniciar.kmInicial = null
   formIniciar.observaciones = ''
   kmActualVehiculo.value = null
+  clearAllIni()
   try {
     const v = await vehiculosService.obtenerVehiculo(a.vehiculoId)
     kmActualVehiculo.value = v.kilometraje ?? 0
@@ -774,6 +974,7 @@ const abrirDialogFinalizar = async (a: any) => {
   asignacionActual.value = a
   formFinalizar.kmFinal = null
   formFinalizar.observacionesRecorrido = ''
+  clearAllFin()
   if (a.kmInicial == null) {
     try {
       const v = await vehiculosService.obtenerVehiculo(a.vehiculoId)
@@ -783,8 +984,24 @@ const abrirDialogFinalizar = async (a: any) => {
   dialogFinalizarVisible.value = true
 }
 
+const validarIniciar = (): boolean => {
+  clearAllIni()
+  if (formIniciar.kmInicial != null && formIniciar.kmInicial < 0) {
+    setErrIni('kmInicial', 'El kilometraje no puede ser negativo')
+  }
+  if ((formIniciar.observaciones?.length ?? 0) > 500) {
+    setErrIni('observaciones', 'Las observaciones no pueden exceder 500 caracteres')
+  }
+  if (Object.keys(errorsIni).length > 0) {
+    valIni.focusFirst(['kmInicial', 'observaciones'], 'ini')
+    return false
+  }
+  return true
+}
+
 const confirmarIniciar = async () => {
   if (!asignacionActual.value) return
+  if (!validarIniciar()) return
   iniciando.value = true
   try {
     const r = await asignacionesService.iniciarAsignacion(asignacionActual.value.id, {
@@ -811,12 +1028,33 @@ const confirmarIniciar = async () => {
   }
 }
 
+const validarFinalizar = (): boolean => {
+  clearAllFin()
+  if (formFinalizar.kmFinal == null) {
+    setErrFin('kmFinal', 'El kilometraje final es requerido')
+  } else if (formFinalizar.kmFinal < 0) {
+    setErrFin('kmFinal', 'El kilometraje no puede ser negativo')
+  } else {
+    const kmI = asignacionActual.value?.kmInicial ?? kmActualVehiculo.value
+    if (kmI != null && formFinalizar.kmFinal < kmI) {
+      setErrFin('kmFinal', `El km final debe ser mayor o igual al inicial (${kmI.toLocaleString('es-EC')} km)`)
+    } else if (kmI != null && (formFinalizar.kmFinal - kmI) > 500) {
+      setErrFin('kmFinal', `El recorrido no puede superar 500 km (actual: ${(formFinalizar.kmFinal - kmI).toLocaleString('es-EC')})`)
+    }
+  }
+  if ((formFinalizar.observacionesRecorrido?.length ?? 0) > 500) {
+    setErrFin('observacionesRecorrido', 'Las observaciones no pueden exceder 500 caracteres')
+  }
+  if (Object.keys(errorsFin).length > 0) {
+    valFin.focusFirst(['kmFinal', 'observacionesRecorrido'], 'fin')
+    return false
+  }
+  return true
+}
+
 const confirmarFinalizar = async () => {
   if (!asignacionActual.value) return
-  if (formFinalizar.kmFinal == null || formFinalizar.kmFinal < 0) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Kilometraje final es requerido', life: 3000 })
-    return
-  }
+  if (!validarFinalizar()) return
   finalizando.value = true
   try {
     const r = await asignacionesService.finalizarAsignacion(asignacionActual.value.id, {
