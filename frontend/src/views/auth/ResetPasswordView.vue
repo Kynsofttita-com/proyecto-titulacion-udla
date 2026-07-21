@@ -3,7 +3,7 @@
     <div>
       <h1 class="text-3xl font-bold text-ink-900 tracking-tight">Nueva contraseña</h1>
       <p class="text-ink-500 mt-2">
-        Define una contraseña segura. Debe tener al menos 8 caracteres.
+        Define una contraseña segura. Debe tener al menos 8 caracteres con mayúscula, minúscula y dígito.
       </p>
     </div>
 
@@ -37,41 +37,47 @@
 
     <form v-if="token && !success" @submit.prevent="handleSubmit" class="space-y-5">
       <div>
-        <label class="label mb-1.5 block">Nueva contraseña</label>
+        <label for="field-reset-password" class="label mb-1.5 block">
+          Nueva contraseña <span class="text-danger-600 font-semibold">*</span>
+        </label>
         <Password
           v-model="password"
           class="w-full"
-          input-class="w-full"
+          :inputClass="errors.password ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full'"
           placeholder="••••••••"
           toggle-mask
           :feedback="true"
-          required
+          :inputProps="{ id: 'field-reset-password', autocomplete: 'new-password' }"
+          @update:modelValue="clearErr('password')"
         />
-        <p v-if="password && password.length < 8" class="text-xs text-danger-600 mt-1">
-          Mínimo 8 caracteres
+        <p v-if="errors.password" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+          <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.password }}
         </p>
+        <p v-else class="text-xs text-ink-500 mt-1">Mínimo 8 caracteres con mayúscula, minúscula y dígito.</p>
       </div>
 
       <div>
-        <label class="label mb-1.5 block">Confirmar contraseña</label>
+        <label for="field-reset-confirmPassword" class="label mb-1.5 block">
+          Confirmar contraseña <span class="text-danger-600 font-semibold">*</span>
+        </label>
         <Password
           v-model="confirmPassword"
           class="w-full"
-          input-class="w-full"
+          :inputClass="errors.confirmPassword ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full'"
           placeholder="••••••••"
           :feedback="false"
           toggle-mask
-          required
+          :inputProps="{ id: 'field-reset-confirmPassword', autocomplete: 'new-password' }"
+          @update:modelValue="clearErr('confirmPassword')"
         />
-        <p v-if="confirmPassword && password !== confirmPassword" class="text-xs text-danger-600 mt-1">
-          Las contraseñas no coinciden
+        <p v-if="errors.confirmPassword" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+          <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.confirmPassword }}
         </p>
       </div>
 
       <Button
         type="submit"
         :loading="isLoading"
-        :disabled="isLoading || password.length < 8 || password !== confirmPassword"
         class="w-full !py-3 !text-base !font-semibold"
       >
         <span class="flex items-center gap-2">
@@ -91,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
@@ -106,17 +112,52 @@ const error = ref('')
 const success = ref(false)
 const token = computed(() => (route.query.token as string) || '')
 
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => document.getElementById(`field-${prefijo}-${p}`)?.focus?.(), 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
+const val = useValidation()
+const errors = val.errors
+const setErr = val.setError
+const clearErr = val.clearError
+const clearAll = val.clearAll
+
+const validar = (): boolean => {
+  clearAll()
+  const pass = password.value ?? ''
+  if (!pass) {
+    setErr('password', 'La contraseña es requerida')
+  } else if (pass.length < 8) {
+    setErr('password', 'Mínimo 8 caracteres')
+  } else if (!/[A-Z]/.test(pass) || !/[a-z]/.test(pass) || !/\d/.test(pass)) {
+    setErr('password', 'Debe incluir mayúscula, minúscula y dígito')
+  }
+  if (!confirmPassword.value) {
+    setErr('confirmPassword', 'Confirma la contraseña')
+  } else if (password.value && confirmPassword.value !== password.value) {
+    setErr('confirmPassword', 'Las contraseñas no coinciden')
+  }
+  if (Object.keys(errors).length > 0) {
+    val.focusFirst(['password', 'confirmPassword'], 'reset')
+    return false
+  }
+  return true
+}
+
 const handleSubmit = async () => {
-  if (password.value.length < 8) {
-    error.value = 'La contraseña debe tener al menos 8 caracteres'
-    return
-  }
-  if (password.value !== confirmPassword.value) {
-    error.value = 'Las contraseñas no coinciden'
-    return
-  }
-  isLoading.value = true
   error.value = ''
+  if (!validar()) return
+  isLoading.value = true
   try {
     await api.post('/auth/reset-password', {
       token: token.value,

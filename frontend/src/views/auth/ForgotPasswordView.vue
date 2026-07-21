@@ -27,17 +27,25 @@
 
     <form v-if="!submitted" @submit.prevent="handleSubmit" class="space-y-5">
       <div>
-        <label class="label mb-1.5 block">Correo electrónico</label>
+        <label for="field-forgot-email" class="label mb-1.5 block">
+          Correo electrónico <span class="text-danger-600 font-semibold">*</span>
+        </label>
         <span class="p-input-icon-left w-full">
           <i class="pi pi-envelope text-ink-400" />
           <InputText
+            id="field-forgot-email"
             v-model="email"
             type="email"
             placeholder="tu@correo.com"
+            maxlength="120"
             class="w-full !pl-10"
-            required
+            :class="errors.email ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErr('email')"
           />
         </span>
+        <p v-if="errors.email" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+          <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.email }}
+        </p>
       </div>
 
       <Button
@@ -62,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import api from '@/services/api'
@@ -72,11 +80,46 @@ const isLoading = ref(false)
 const submitted = ref(false)
 const error = ref('')
 
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => document.getElementById(`field-${prefijo}-${p}`)?.focus?.(), 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
+const val = useValidation()
+const errors = val.errors
+const setErr = val.setError
+const clearErr = val.clearError
+const clearAll = val.clearAll
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const validar = (): boolean => {
+  clearAll()
+  const em = email.value?.trim() ?? ''
+  if (!em) setErr('email', 'El correo es requerido')
+  else if (!EMAIL_REGEX.test(em)) setErr('email', 'Formato de email inválido')
+  if (Object.keys(errors).length > 0) {
+    val.focusFirst(['email'], 'forgot')
+    return false
+  }
+  return true
+}
+
 const handleSubmit = async () => {
-  isLoading.value = true
   error.value = ''
+  if (!validar()) return
+  isLoading.value = true
   try {
-    await api.post('/auth/forgot-password', { email: email.value })
+    await api.post('/auth/forgot-password', { email: email.value.trim() })
     submitted.value = true
   } catch (err: any) {
     error.value = err.response?.data?.message || err.response?.data?.detail || 'Error al enviar el correo'
