@@ -556,7 +556,7 @@
           <QuickAction icon="pi-id-card"       label="Gestionar instructores" to="/instructores" />
           <QuickAction icon="pi-car"           label="Gestionar vehículos"    to="/vehiculos" />
           <QuickAction icon="pi-calendar-plus" label="Programar clase"        to="/asignaciones" />
-          <QuickAction icon="pi-file-edit"     label="Emitir factura"         to="/cobros/factura/nuevo" />
+          <QuickAction icon="pi-file-edit"     label="Emitir factura"         to="/cobros" />
           <QuickAction icon="pi-cog"           label="Configuración escuela"  to="/configuracion" v-if="esAdmin" />
         </div>
       </section>

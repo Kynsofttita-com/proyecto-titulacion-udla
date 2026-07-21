@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <PageHeader
-      title="Cobros y facturación"
+      title="Cobros"
       description="Gestión de facturas (contado / crédito) y pagos recibidos."
       icon="pi pi-wallet"
       :breadcrumbs="[{ label: 'Inicio', to: '/dashboard' }, { label: 'Cobros' }]"
@@ -215,23 +215,34 @@
       :pt="{ content: { class: '!pb-2' } }"
     >
       <div class="space-y-5">
-        <div v-if="errF" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 text-sm text-danger-600">{{ errF }}</div>
+        <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          <p class="text-sm text-ink-700">
+            Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+            Podés escribir para buscar el estudiante o hacer click en la flechita.
+          </p>
+        </div>
 
         <!-- ESTUDIANTE -->
         <div>
-          <label class="label mb-1.5 block">
+          <label for="field-fact-estudiante" class="label mb-1.5 block">
             <span class="flex items-center gap-2">
-              <i class="pi pi-user text-brand-600" /> Estudiante *
+              <i class="pi pi-user text-brand-600" /> Estudiante <span class="text-danger-600 font-semibold">*</span>
             </span>
           </label>
           <AutoComplete
             v-model="selEstudiante"
+            inputId="field-fact-estudiante"
             :suggestions="estudiantesFiltered"
             @complete="filterEstudiantes"
+            @update:modelValue="clearErrF('estudiante')"
             optionLabel="nombreCompleto"
             placeholder="Buscar por nombre, cédula o email..."
+            :dropdown="true"
+            dropdownMode="blank"
+            forceSelection
             class="w-full"
-            :pt="{ input: { class: 'w-full' } }"
+            :pt="{ input: { class: errorsF.estudiante ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
           >
             <template #option="{ option }">
               <div class="flex items-center gap-3 py-1">
@@ -249,6 +260,9 @@
               <p class="px-3 py-2 text-sm text-ink-500">Sin coincidencias</p>
             </template>
           </AutoComplete>
+          <p v-if="errorsF.estudiante" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsF.estudiante }}
+          </p>
 
           <div v-if="selEstudiante" class="mt-3 rounded-lg border border-brand-200 bg-brand-50/40 p-3 animate-fade-up">
             <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
@@ -320,19 +334,22 @@
         <!-- CONCEPTO + MONTO -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="md:col-span-2">
-            <label class="label mb-1.5 block">
+            <label for="field-fact-concepto" class="label mb-1.5 block">
               <span class="flex items-center gap-2">
-                <i class="pi pi-tag text-brand-600" /> Concepto *
+                <i class="pi pi-tag text-brand-600" /> Concepto <span class="text-danger-600 font-semibold">*</span>
               </span>
             </label>
             <Dropdown
               v-model="formF.conceptoFacturacionId"
+              inputId="field-fact-concepto"
               :options="conceptos"
               optionLabel="nombre"
               optionValue="id"
               placeholder="Selecciona un concepto"
               class="w-full"
+              :class="errorsF.concepto ? '!border-danger-500 !bg-danger-50' : ''"
               @change="onConceptoChange"
+              @update:modelValue="clearErrF('concepto')"
             >
               <template #option="{ option }">
                 <div class="flex items-center justify-between gap-3 w-full">
@@ -341,14 +358,25 @@
                 </div>
               </template>
             </Dropdown>
+            <p v-if="errorsF.concepto" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsF.concepto }}
+            </p>
           </div>
           <div>
-            <label class="label mb-1.5 block">Monto (USD) *</label>
+            <label for="field-fact-monto" class="label mb-1.5 block">
+              Monto (USD) <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <InputNumber
               v-model="formF.montoOriginal"
+              inputId="field-fact-monto"
               mode="currency" currency="USD" locale="en-US"
-              class="w-full" :min="0.01" :pt="{ input: { class: 'w-full' } }"
+              class="w-full" :min="0.01"
+              :pt="{ input: { class: errorsF.monto ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
+              @update:modelValue="clearErrF('monto')"
             />
+            <p v-if="errorsF.monto" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsF.monto }}
+            </p>
           </div>
         </div>
 
@@ -395,18 +423,29 @@
         <div v-if="formF.tipoPago === 'CREDITO'" class="rounded-xl border border-accent-200 bg-accent-50/30 p-4 space-y-4 animate-fade-up">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label class="label mb-1.5 block">Nº de cuotas *</label>
+              <label for="field-fact-numeroCuotas" class="label mb-1.5 block">
+                Nº de cuotas <span class="text-danger-600 font-semibold">*</span>
+              </label>
               <InputNumber
                 v-model="formF.numeroCuotas"
+                inputId="field-fact-numeroCuotas"
                 :min="2" :max="24"
                 showButtons buttonLayout="horizontal"
-                class="w-full" :pt="{ input: { class: 'w-full text-center' } }"
+                class="w-full"
+                :pt="{ input: { class: errorsF.numeroCuotas ? 'w-full text-center !border-danger-500 !bg-danger-50' : 'w-full text-center' } }"
+                @update:modelValue="clearErrF('numeroCuotas')"
               />
+              <p v-if="errorsF.numeroCuotas" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsF.numeroCuotas }}
+              </p>
             </div>
             <div>
-              <label class="label mb-1.5 block">Frecuencia *</label>
+              <label for="field-fact-frecuenciaCuota" class="label mb-1.5 block">
+                Frecuencia <span class="text-danger-600 font-semibold">*</span>
+              </label>
               <Dropdown
                 v-model="formF.frecuenciaCuota"
+                inputId="field-fact-frecuenciaCuota"
                 :options="[
                   { label: 'Mensual', value: 'MENSUAL' },
                   { label: 'Quincenal', value: 'QUINCENAL' },
@@ -414,11 +453,29 @@
                 ]"
                 optionLabel="label" optionValue="value"
                 class="w-full"
+                :class="errorsF.frecuenciaCuota ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearErrF('frecuenciaCuota')"
               />
+              <p v-if="errorsF.frecuenciaCuota" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsF.frecuenciaCuota }}
+              </p>
             </div>
             <div>
-              <label class="label mb-1.5 block">1ra cuota *</label>
-              <Calendar v-model="formF.fechaPrimeraCuota" dateFormat="yy-mm-dd" :showIcon="true" class="w-full" />
+              <label for="field-fact-fechaPrimeraCuota" class="label mb-1.5 block">
+                1ra cuota <span class="text-danger-600 font-semibold">*</span>
+              </label>
+              <Calendar
+                v-model="formF.fechaPrimeraCuota"
+                inputId="field-fact-fechaPrimeraCuota"
+                dateFormat="yy-mm-dd"
+                :showIcon="true"
+                class="w-full"
+                :inputClass="errorsF.fechaPrimeraCuota ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearErrF('fechaPrimeraCuota')"
+              />
+              <p v-if="errorsF.fechaPrimeraCuota" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsF.fechaPrimeraCuota }}
+              </p>
             </div>
           </div>
 
@@ -443,19 +500,38 @@
         <!-- FECHA VENCIMIENTO + DESCRIPCIÓN -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="label mb-1.5 block">Fecha vencimiento *</label>
-            <Calendar v-model="formF.fechaVencimiento" dateFormat="yy-mm-dd" :showIcon="true" class="w-full" />
+            <label for="field-fact-fechaVencimiento" class="label mb-1.5 block">
+              Fecha vencimiento <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Calendar
+              v-model="formF.fechaVencimiento"
+              inputId="field-fact-fechaVencimiento"
+              dateFormat="yy-mm-dd"
+              :showIcon="true"
+              class="w-full"
+              :inputClass="errorsF.fechaVencimiento ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearErrF('fechaVencimiento')"
+            />
+            <p v-if="errorsF.fechaVencimiento" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsF.fechaVencimiento }}
+            </p>
           </div>
           <div>
-            <label class="label mb-1.5 block">Descripción</label>
-            <InputText v-model="formF.descripcion" placeholder="Ej: Curso categoría B" class="w-full" />
+            <label class="label mb-1.5 block">Descripción <span class="text-xs text-ink-500">(opcional)</span></label>
+            <InputText v-model="formF.descripcion" placeholder="Ej: Curso categoría B" class="w-full" maxlength="200" />
           </div>
+        </div>
+
+        <!-- Error de servidor (409, red, etc.) -->
+        <div v-if="errF" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
+          <i class="pi pi-exclamation-circle mt-0.5" />
+          <span>{{ errF }}</span>
         </div>
       </div>
 
       <template #footer>
         <Button label="Cancelar" outlined @click="mostrarFormFactura = false" />
-        <Button label="Crear factura" icon="pi pi-check" :loading="creandoF" :disabled="!puedeCrearFactura" @click="crearFactura" />
+        <Button label="Crear factura" icon="pi pi-check" :loading="creandoF" @click="crearFactura" />
       </template>
     </Dialog>
 
@@ -466,22 +542,33 @@
       :style="{ width: '560px' }"
     >
       <div class="space-y-5">
-        <div v-if="errP" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 text-sm text-danger-600">{{ errP }}</div>
+        <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          <p class="text-sm text-ink-700">
+            Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+            Podés escribir para buscar el estudiante o hacer click en la flechita.
+          </p>
+        </div>
 
         <!-- ESTUDIANTE -->
         <div>
-          <label class="label mb-1.5 block">
-            <span class="flex items-center gap-2"><i class="pi pi-user text-brand-600" /> Estudiante *</span>
+          <label for="field-pago-estudiante" class="label mb-1.5 block">
+            <span class="flex items-center gap-2"><i class="pi pi-user text-brand-600" /> Estudiante <span class="text-danger-600 font-semibold">*</span></span>
           </label>
           <AutoComplete
             v-model="selEstudiantePago"
+            inputId="field-pago-estudiante"
             :suggestions="estudiantesFiltered"
             @complete="filterEstudiantes"
             @item-select="onEstudiantePagoSelect"
+            @update:modelValue="clearErrP('estudiante')"
             optionLabel="nombreCompleto"
             placeholder="Buscar por nombre, cédula o email..."
+            :dropdown="true"
+            dropdownMode="blank"
+            forceSelection
             class="w-full"
-            :pt="{ input: { class: 'w-full' } }"
+            :pt="{ input: { class: errorsP.estudiante ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
           >
             <template #option="{ option }">
               <div class="flex items-center gap-3 py-1">
@@ -496,21 +583,27 @@
               </div>
             </template>
           </AutoComplete>
+          <p v-if="errorsP.estudiante" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsP.estudiante }}
+          </p>
         </div>
 
         <!-- FACTURA DEL ESTUDIANTE -->
         <div v-if="selEstudiantePago">
-          <label class="label mb-1.5 block">
-            <span class="flex items-center gap-2"><i class="pi pi-receipt text-brand-600" /> Factura pendiente *</span>
+          <label for="field-pago-factura" class="label mb-1.5 block">
+            <span class="flex items-center gap-2"><i class="pi pi-receipt text-brand-600" /> Factura pendiente <span class="text-danger-600 font-semibold">*</span></span>
           </label>
           <Dropdown
             v-model="formP.facturaId"
+            inputId="field-pago-factura"
             :options="facturasEstudiante"
             optionValue="id"
             optionLabel="numeroFactura"
             placeholder="Selecciona una factura con saldo"
             class="w-full"
+            :class="errorsP.factura ? '!border-danger-500 !bg-danger-50' : ''"
             @change="onFacturaPagoChange"
+            @update:modelValue="clearErrP('factura')"
           >
             <template #value="{ value, placeholder }">
               <span v-if="!value" class="text-ink-500">{{ placeholder }}</span>
@@ -538,6 +631,9 @@
               <p class="px-3 py-2 text-sm text-ink-500">Este estudiante no tiene facturas con saldo pendiente.</p>
             </template>
           </Dropdown>
+          <p v-if="errorsP.factura" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsP.factura }}
+          </p>
 
           <!-- Detalle de la factura seleccionada (crédito → cuota siguiente) -->
           <div v-if="facturaSeleccionadaPago" class="mt-3 rounded-lg border border-brand-200 bg-brand-50/40 p-3 text-xs space-y-1.5 animate-fade-up">
@@ -564,36 +660,58 @@
         <!-- MONTO + MÉTODO -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="label mb-1.5 block">Monto (USD) *</label>
+            <label for="field-pago-monto" class="label mb-1.5 block">
+              Monto (USD) <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <InputNumber
               v-model="formP.monto"
+              inputId="field-pago-monto"
               mode="currency" currency="USD" locale="en-US"
-              :min="0.01" class="w-full" :pt="{ input: { class: 'w-full' } }"
+              :min="0.01" class="w-full"
+              :pt="{ input: { class: errorsP.monto ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
+              @update:modelValue="clearErrP('monto')"
             />
+            <p v-if="errorsP.monto" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsP.monto }}
+            </p>
           </div>
           <div>
-            <label class="label mb-1.5 block">Método de pago *</label>
+            <label for="field-pago-metodoPago" class="label mb-1.5 block">
+              Método de pago <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <Dropdown
               v-model="formP.metodoPago"
+              inputId="field-pago-metodoPago"
               :options="[
                 { label: 'Efectivo', value: 'EFECTIVO' },
                 { label: 'Transferencia', value: 'TRANSFERENCIA' },
                 { label: 'Tarjeta', value: 'TARJETA' }
               ]"
               optionLabel="label" optionValue="value" class="w-full"
+              :class="errorsP.metodoPago ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearErrP('metodoPago')"
             />
+            <p v-if="errorsP.metodoPago" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsP.metodoPago }}
+            </p>
           </div>
         </div>
 
         <div>
-          <label class="label mb-1.5 block">Referencia / Observaciones</label>
-          <InputText v-model="formP.observaciones" placeholder="Comprobante, nº transacción..." class="w-full" />
+          <label class="label mb-1.5 block">Referencia / Observaciones <span class="text-xs text-ink-500">(opcional)</span></label>
+          <InputText v-model="formP.observaciones" placeholder="Comprobante, nº transacción..." class="w-full" maxlength="200" />
+        </div>
+
+        <!-- Error de servidor (409, red, etc.) -->
+        <div v-if="errP" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
+          <i class="pi pi-exclamation-circle mt-0.5" />
+          <span>{{ errP }}</span>
         </div>
       </div>
 
       <template #footer>
         <Button label="Cancelar" outlined @click="mostrarFormPago = false" />
-        <Button label="Registrar pago" icon="pi pi-check" :loading="creandoP" :disabled="!puedeCrearPago" @click="crearPago" />
+        <Button label="Registrar pago" icon="pi pi-check" :loading="creandoP" @click="crearPago" />
       </template>
     </Dialog>
 
@@ -709,10 +827,35 @@ const nombreEstudiante = (id: number) => {
 }
 const numFactura = (id: number) => facturasPorId.value[id]?.numeroFactura || `#${id}`
 
+// ============ Helper factory de validación por campo ============
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string, scroll = true) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => {
+      const el = document.getElementById(`field-${prefijo}-${p}`)
+      if (!el) return
+      if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      ;(el as HTMLElement).focus?.()
+    }, scroll ? 300 : 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
 // ============ Diálogo Nueva Factura ============
 const mostrarFormFactura = ref(false)
 const creandoF = ref(false)
 const errF = ref('')
+
+const valF = useValidation()
+const errorsF = valF.errors
+const setErrF = valF.setError
+const clearErrF = valF.clearError
+const clearAllF = valF.clearAll
 
 const selEstudiante = ref<any>(null)
 const estudiantesFiltered = ref<any[]>([])
@@ -731,6 +874,7 @@ const formF = reactive<any>({
 
 const abrirFormFactura = () => {
   errF.value = ''
+  clearAllF()
   selEstudiante.value = null
   resumenAcad.value = null
   Object.assign(formF, {
@@ -738,6 +882,8 @@ const abrirFormFactura = () => {
     fechaVencimiento: null, descripcion: '', tipoPago: 'CONTADO',
     numeroCuotas: 3, frecuenciaCuota: 'MENSUAL', fechaPrimeraCuota: null
   })
+  // Precargar sugerencias para que el dropdown funcione al primer click
+  estudiantesFiltered.value = estudiantes.value.slice(0, 20)
   mostrarFormFactura.value = true
 }
 
@@ -775,21 +921,50 @@ const cronogramaPreview = computed(() => {
   return list
 })
 
-const puedeCrearFactura = computed(() => {
-  if (!selEstudiante.value) return false
-  if (!formF.conceptoFacturacionId) return false
-  if (!formF.montoOriginal || formF.montoOriginal <= 0) return false
-  if (!formF.fechaVencimiento) return false
+const validarFactura = (): boolean => {
+  clearAllF()
+  if (!selEstudiante.value || typeof selEstudiante.value !== 'object') {
+    setErrF('estudiante', 'Selecciona un estudiante de la lista')
+  }
+  if (!formF.conceptoFacturacionId) {
+    setErrF('concepto', 'Selecciona un concepto de facturación')
+  }
+  if (!formF.montoOriginal || formF.montoOriginal <= 0) {
+    setErrF('monto', 'El monto debe ser mayor a $0')
+  }
+  if (!formF.fechaVencimiento) {
+    setErrF('fechaVencimiento', 'La fecha de vencimiento es requerida')
+  } else {
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+    const fv = new Date(formF.fechaVencimiento); fv.setHours(0, 0, 0, 0)
+    if (fv < hoy) setErrF('fechaVencimiento', 'La fecha de vencimiento no puede ser anterior a hoy')
+  }
   if (formF.tipoPago === 'CREDITO') {
-    if (!formF.numeroCuotas || formF.numeroCuotas < 2) return false
-    if (!formF.frecuenciaCuota) return false
-    if (!formF.fechaPrimeraCuota) return false
+    if (!formF.numeroCuotas || formF.numeroCuotas < 2) {
+      setErrF('numeroCuotas', 'Mínimo 2 cuotas')
+    } else if (formF.numeroCuotas > 24) {
+      setErrF('numeroCuotas', 'Máximo 24 cuotas')
+    }
+    if (!formF.frecuenciaCuota) setErrF('frecuenciaCuota', 'Selecciona la frecuencia')
+    if (!formF.fechaPrimeraCuota) {
+      setErrF('fechaPrimeraCuota', 'La fecha de la 1ra cuota es requerida')
+    } else if (formF.fechaVencimiento) {
+      const fpc = new Date(formF.fechaPrimeraCuota); fpc.setHours(0, 0, 0, 0)
+      const fv = new Date(formF.fechaVencimiento); fv.setHours(0, 0, 0, 0)
+      if (fpc > fv) setErrF('fechaPrimeraCuota', 'Debe ser anterior o igual al vencimiento')
+    }
+  }
+  if (Object.keys(errorsF).length > 0) {
+    const orden = ['estudiante', 'concepto', 'monto', 'numeroCuotas', 'frecuenciaCuota', 'fechaPrimeraCuota', 'fechaVencimiento']
+    valF.focusFirst(orden, 'fact', true)
+    return false
   }
   return true
-})
+}
 
 const crearFactura = async () => {
   errF.value = ''
+  if (!validarFactura()) return
   try {
     creandoF.value = true
     const payload: any = {
@@ -819,6 +994,12 @@ const mostrarFormPago = ref(false)
 const creandoP = ref(false)
 const errP = ref('')
 
+const valP = useValidation()
+const errorsP = valP.errors
+const setErrP = valP.setError
+const clearErrP = valP.clearError
+const clearAllP = valP.clearAll
+
 const selEstudiantePago = ref<any>(null)
 const facturasEstudiante = ref<any[]>([])
 const cuotasFactura = ref<any[]>([])
@@ -842,10 +1023,13 @@ const proximaCuota = computed(() => {
 
 const abrirFormPago = () => {
   errP.value = ''
+  clearAllP()
   selEstudiantePago.value = null
   facturasEstudiante.value = []
   cuotasFactura.value = []
   Object.assign(formP, { facturaId: null, monto: 0, metodoPago: 'EFECTIVO', observaciones: '' })
+  // Precargar sugerencias para que el dropdown funcione al primer click
+  estudiantesFiltered.value = estudiantes.value.slice(0, 20)
   mostrarFormPago.value = true
 }
 
@@ -874,12 +1058,33 @@ const onFacturaPagoChange = async (e: any) => {
   } catch { cuotasFactura.value = [] }
 }
 
-const puedeCrearPago = computed(() =>
-  !!formP.facturaId && formP.monto > 0 && !!formP.metodoPago
-)
+const validarPago = (): boolean => {
+  clearAllP()
+  if (!selEstudiantePago.value || typeof selEstudiantePago.value !== 'object') {
+    setErrP('estudiante', 'Selecciona un estudiante de la lista')
+  }
+  if (!formP.facturaId) {
+    setErrP('factura', 'Selecciona una factura con saldo pendiente')
+  }
+  if (!formP.monto || formP.monto <= 0) {
+    setErrP('monto', 'El monto debe ser mayor a $0')
+  } else if (formP.facturaId && saldoFacturaPago.value > 0 && formP.monto > saldoFacturaPago.value) {
+    setErrP('monto', `El monto no puede superar el saldo de la factura (${formatMoney(saldoFacturaPago.value)})`)
+  }
+  if (!formP.metodoPago) {
+    setErrP('metodoPago', 'Selecciona el método de pago')
+  }
+  if (Object.keys(errorsP).length > 0) {
+    const orden = ['estudiante', 'factura', 'monto', 'metodoPago']
+    valP.focusFirst(orden, 'pago', true)
+    return false
+  }
+  return true
+}
 
 const crearPago = async () => {
   errP.value = ''
+  if (!validarPago()) return
   try {
     creandoP.value = true
     await api.post('/pagos', { ...formP })
