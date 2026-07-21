@@ -308,16 +308,22 @@ const route = useRoute()
 const toast = useToast()
 
 const Field = defineComponent({
-  props: ['label', 'required', 'hint', 'error', 'for'],
+  props: {
+    label: { type: String, required: true },
+    required: { type: Boolean, default: false },
+    hint: { type: String, default: '' },
+    error: { type: String, default: '' },
+    for: { type: String, default: '' }
+  },
   setup(props, { slots, attrs }) {
     return () =>
       h('div', { ...attrs }, [
         h('label', {
           class: 'block text-sm font-medium text-ink-700 mb-1.5',
-          for: props.for
+          for: props.for || undefined
         }, [
           props.label,
-          props.required && h('span', { class: 'text-danger-600 ml-0.5 font-semibold' }, '*')
+          props.required ? h('span', { class: 'text-danger-600 ml-0.5 font-semibold' }, ' *') : null
         ]),
         slots.default?.(),
         props.error
@@ -325,7 +331,7 @@ const Field = defineComponent({
               h('i', { class: 'pi pi-exclamation-circle text-[10px]' }),
               props.error
             ])
-          : (props.hint && h('p', { class: 'text-xs text-ink-500 mt-1' }, props.hint))
+          : (props.hint ? h('p', { class: 'text-xs text-ink-500 mt-1' }, props.hint) : null)
       ])
   }
 })
