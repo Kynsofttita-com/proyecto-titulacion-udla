@@ -345,19 +345,51 @@
           <!-- DIALOG: Concepto -->
           <Dialog v-model:visible="dlgConcepto" modal :header="formConcepto.id ? 'Editar concepto' : 'Nuevo concepto'" :style="{ width: '480px' }">
             <div class="space-y-4">
-              <div v-if="errConcepto" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 text-sm text-danger-600">{{ errConcepto }}</div>
-              <Field label="Nombre" required>
-                <InputText v-model="formConcepto.nombre" placeholder="Ej: Curso Básico" class="w-full" />
+              <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+                <i class="pi pi-info-circle text-info-600" />
+                <p class="text-sm text-ink-700">
+                  Los campos con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+                </p>
+              </div>
+              <Field label="Nombre" required :error="errorsC.nombre" for="field-cpt-nombre">
+                <InputText
+                  id="field-cpt-nombre"
+                  v-model="formConcepto.nombre"
+                  placeholder="Ej: Curso Básico"
+                  maxlength="100"
+                  class="w-full"
+                  :class="errorsC.nombre ? '!border-danger-500 !bg-danger-50' : ''"
+                  @update:modelValue="clearErrC('nombre')"
+                />
               </Field>
-              <Field label="Monto base (USD)" required>
-                <InputNumber v-model="formConcepto.montoBase" mode="currency" currency="USD" locale="en-US" :min="0" class="w-full" :pt="{ input: { class: 'w-full' } }" />
+              <Field label="Monto base (USD)" required :error="errorsC.montoBase" for="field-cpt-montoBase">
+                <InputNumber
+                  v-model="formConcepto.montoBase"
+                  inputId="field-cpt-montoBase"
+                  mode="currency" currency="USD" locale="en-US"
+                  :min="0" class="w-full"
+                  :pt="{ input: { class: errorsC.montoBase ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
+                  @update:modelValue="clearErrC('montoBase')"
+                />
               </Field>
-              <Field label="Descripción">
-                <Textarea v-model="formConcepto.descripcion" rows="2" class="w-full" />
+              <Field label="Descripción" :error="errorsC.descripcion" hint="Opcional (máx. 500 caracteres)">
+                <Textarea
+                  v-model="formConcepto.descripcion"
+                  rows="2"
+                  class="w-full"
+                  maxlength="500"
+                  :class="errorsC.descripcion ? '!border-danger-500 !bg-danger-50' : ''"
+                  @update:modelValue="clearErrC('descripcion')"
+                />
               </Field>
               <div class="flex items-center gap-2">
                 <Checkbox v-model="formConcepto.activo" :binary="true" inputId="cpt-activo" />
                 <label for="cpt-activo" class="text-sm text-ink-700">Activo (aparece como opción al facturar)</label>
+              </div>
+              <!-- Error de servidor -->
+              <div v-if="errConcepto" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
+                <i class="pi pi-exclamation-circle mt-0.5" />
+                <span>{{ errConcepto }}</span>
               </div>
             </div>
             <template #footer>
@@ -369,18 +401,34 @@
           <!-- DIALOG: Tipo de curso -->
           <Dialog v-model:visible="dlgCurso" modal :header="formCurso.id ? 'Editar tipo de curso' : 'Nuevo tipo de curso'" :style="{ width: '560px' }">
             <div class="space-y-4">
-              <div v-if="errCurso" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 text-sm text-danger-600">{{ errCurso }}</div>
-              <Field label="Nombre" required>
-                <InputText v-model="formCurso.nombre" placeholder="Ej: Curso Básico Auto" class="w-full" />
+              <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+                <i class="pi pi-info-circle text-info-600" />
+                <p class="text-sm text-ink-700">
+                  Los campos con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+                </p>
+              </div>
+              <Field label="Nombre" required :error="errorsCu.nombre" for="field-curso-nombre">
+                <InputText
+                  id="field-curso-nombre"
+                  v-model="formCurso.nombre"
+                  placeholder="Ej: Curso Básico Auto"
+                  maxlength="100"
+                  class="w-full"
+                  :class="errorsCu.nombre ? '!border-danger-500 !bg-danger-50' : ''"
+                  @update:modelValue="clearErrCu('nombre')"
+                />
               </Field>
               <div class="grid grid-cols-2 gap-3">
-                <Field label="Categoría de licencia" required>
+                <Field label="Categoría de licencia" required :error="errorsCu.categoriaLicenciaId" for="field-curso-categoriaLicenciaId">
                   <Dropdown
                     v-model="formCurso.categoriaLicenciaId"
+                    inputId="field-curso-categoriaLicenciaId"
                     :options="categorias"
                     optionValue="id" optionLabel="codigo"
                     placeholder="Categoría"
                     class="w-full"
+                    :class="errorsCu.categoriaLicenciaId ? '!border-danger-500 !bg-danger-50' : ''"
+                    @update:modelValue="clearErrCu('categoriaLicenciaId')"
                   >
                     <template #option="{ option }">
                       <div class="flex items-center gap-2">
@@ -390,19 +438,45 @@
                     </template>
                   </Dropdown>
                 </Field>
-                <Field label="Duración (horas)" required>
-                  <InputNumber v-model="formCurso.duracionTotalHoras" :min="1" :max="500" class="w-full" :pt="{ input: { class: 'w-full' } }" />
+                <Field label="Duración (horas)" required :error="errorsCu.duracionTotalHoras" for="field-curso-duracionTotalHoras">
+                  <InputNumber
+                    v-model="formCurso.duracionTotalHoras"
+                    inputId="field-curso-duracionTotalHoras"
+                    :min="1" :max="500"
+                    class="w-full"
+                    :pt="{ input: { class: errorsCu.duracionTotalHoras ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
+                    @update:modelValue="clearErrCu('duracionTotalHoras')"
+                  />
                 </Field>
               </div>
-              <Field label="Precio base (USD)" required>
-                <InputNumber v-model="formCurso.precioBase" mode="currency" currency="USD" locale="en-US" :min="0" class="w-full" :pt="{ input: { class: 'w-full' } }" />
+              <Field label="Precio base (USD)" required :error="errorsCu.precioBase" for="field-curso-precioBase">
+                <InputNumber
+                  v-model="formCurso.precioBase"
+                  inputId="field-curso-precioBase"
+                  mode="currency" currency="USD" locale="en-US"
+                  :min="0" class="w-full"
+                  :pt="{ input: { class: errorsCu.precioBase ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full' } }"
+                  @update:modelValue="clearErrCu('precioBase')"
+                />
               </Field>
-              <Field label="Descripción">
-                <Textarea v-model="formCurso.descripcion" rows="2" class="w-full" />
+              <Field label="Descripción" :error="errorsCu.descripcion" hint="Opcional (máx. 500 caracteres)">
+                <Textarea
+                  v-model="formCurso.descripcion"
+                  rows="2"
+                  class="w-full"
+                  maxlength="500"
+                  :class="errorsCu.descripcion ? '!border-danger-500 !bg-danger-50' : ''"
+                  @update:modelValue="clearErrCu('descripcion')"
+                />
               </Field>
               <div class="flex items-center gap-2">
                 <Checkbox v-model="formCurso.activo" :binary="true" inputId="curso-activo" />
                 <label for="curso-activo" class="text-sm text-ink-700">Activo</label>
+              </div>
+              <!-- Error de servidor -->
+              <div v-if="errCurso" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
+                <i class="pi pi-exclamation-circle mt-0.5" />
+                <span>{{ errCurso }}</span>
               </div>
             </div>
             <template #footer>
@@ -531,16 +605,27 @@ const toast = useToast()
 const vTooltip = Tooltip
 
 const Field = defineComponent({
-  props: ['label', 'required', 'hint'],
+  props: {
+    label: { type: String, required: true },
+    required: { type: Boolean, default: false },
+    hint: { type: String, default: '' },
+    error: { type: String, default: '' },
+    for: { type: String, default: '' }
+  },
   setup(props, { slots, attrs }) {
     return () =>
       h('div', { ...attrs }, [
-        h('label', { class: 'block text-sm font-medium text-ink-700 mb-1.5' }, [
+        h('label', { class: 'block text-sm font-medium text-ink-700 mb-1.5', for: props.for || undefined }, [
           props.label,
-          props.required && h('span', { class: 'text-danger-500 ml-0.5' }, '*')
+          props.required ? h('span', { class: 'text-danger-600 ml-0.5 font-semibold' }, '*') : null
         ]),
         slots.default?.(),
-        props.hint && h('p', { class: 'text-xs text-ink-500 mt-1.5 leading-relaxed' }, props.hint)
+        props.error
+          ? h('p', { class: 'text-xs text-danger-600 mt-1 flex items-center gap-1' }, [
+              h('i', { class: 'pi pi-exclamation-circle text-[10px]' }),
+              props.error
+            ])
+          : (props.hint ? h('p', { class: 'text-xs text-ink-500 mt-1.5 leading-relaxed' }, props.hint) : null)
       ])
   }
 })
@@ -654,14 +739,40 @@ const categorias = ref<any[]>([])
 const formatMoney = (n: any) =>
   `$${(parseFloat(n) || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string, scroll = true) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => {
+      const el = document.getElementById(`field-${prefijo}-${p}`)
+      if (!el) return
+      if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      ;(el as HTMLElement).focus?.()
+    }, scroll ? 300 : 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
 // --- Conceptos ---
 const dlgConcepto = ref(false)
 const guardandoConcepto = ref(false)
 const errConcepto = ref('')
 const formConcepto = reactive<any>({ id: null, nombre: '', montoBase: 0, descripcion: '', activo: true })
 
+const valC = useValidation()
+const errorsC = valC.errors
+const setErrC = valC.setError
+const clearErrC = valC.clearError
+const clearAllC = valC.clearAll
+
 const abrirFormConcepto = (c?: any) => {
   errConcepto.value = ''
+  clearAllC()
   if (c) {
     Object.assign(formConcepto, {
       id: c.id, nombre: c.nombre, montoBase: Number(c.montoBase),
@@ -673,10 +784,31 @@ const abrirFormConcepto = (c?: any) => {
   dlgConcepto.value = true
 }
 
+const validarConcepto = (): boolean => {
+  clearAllC()
+  const nombre = formConcepto.nombre?.trim() ?? ''
+  if (!nombre) setErrC('nombre', 'El nombre es requerido')
+  else if (nombre.length < 2) setErrC('nombre', 'Mínimo 2 caracteres')
+  else if (nombre.length > 100) setErrC('nombre', 'Máximo 100 caracteres')
+
+  if (formConcepto.montoBase == null || formConcepto.montoBase <= 0) {
+    setErrC('montoBase', 'El monto debe ser mayor a $0')
+  }
+
+  if ((formConcepto.descripcion?.length ?? 0) > 500) {
+    setErrC('descripcion', 'La descripción no puede exceder 500 caracteres')
+  }
+
+  if (Object.keys(errorsC).length > 0) {
+    valC.focusFirst(['nombre', 'montoBase', 'descripcion'], 'cpt', true)
+    return false
+  }
+  return true
+}
+
 const guardarConcepto = async () => {
   errConcepto.value = ''
-  if (!formConcepto.nombre?.trim()) { errConcepto.value = 'El nombre es obligatorio'; return }
-  if (formConcepto.montoBase == null || formConcepto.montoBase < 0) { errConcepto.value = 'Monto inválido'; return }
+  if (!validarConcepto()) return
   guardandoConcepto.value = true
   try {
     const payload = {
@@ -714,8 +846,15 @@ const formCurso = reactive<any>({
   categoriaLicenciaId: null, activo: true
 })
 
+const valCu = useValidation()
+const errorsCu = valCu.errors
+const setErrCu = valCu.setError
+const clearErrCu = valCu.clearError
+const clearAllCu = valCu.clearAll
+
 const abrirFormCurso = (c?: any) => {
   errCurso.value = ''
+  clearAllCu()
   if (c) {
     Object.assign(formCurso, {
       id: c.id, nombre: c.nombre, descripcion: c.descripcion || '',
@@ -732,11 +871,41 @@ const abrirFormCurso = (c?: any) => {
   dlgCurso.value = true
 }
 
+const validarCurso = (): boolean => {
+  clearAllCu()
+  const nombre = formCurso.nombre?.trim() ?? ''
+  if (!nombre) setErrCu('nombre', 'El nombre es requerido')
+  else if (nombre.length < 2) setErrCu('nombre', 'Mínimo 2 caracteres')
+  else if (nombre.length > 100) setErrCu('nombre', 'Máximo 100 caracteres')
+
+  if (!formCurso.categoriaLicenciaId) {
+    setErrCu('categoriaLicenciaId', 'Selecciona una categoría de licencia')
+  }
+
+  if (!formCurso.duracionTotalHoras || formCurso.duracionTotalHoras < 1) {
+    setErrCu('duracionTotalHoras', 'La duración debe ser al menos 1 hora')
+  } else if (formCurso.duracionTotalHoras > 500) {
+    setErrCu('duracionTotalHoras', 'La duración no puede exceder 500 horas')
+  }
+
+  if (formCurso.precioBase == null || formCurso.precioBase < 0) {
+    setErrCu('precioBase', 'El precio no puede ser negativo')
+  }
+
+  if ((formCurso.descripcion?.length ?? 0) > 500) {
+    setErrCu('descripcion', 'La descripción no puede exceder 500 caracteres')
+  }
+
+  if (Object.keys(errorsCu).length > 0) {
+    valCu.focusFirst(['nombre', 'categoriaLicenciaId', 'duracionTotalHoras', 'precioBase', 'descripcion'], 'curso', true)
+    return false
+  }
+  return true
+}
+
 const guardarCurso = async () => {
   errCurso.value = ''
-  if (!formCurso.nombre?.trim()) { errCurso.value = 'El nombre es obligatorio'; return }
-  if (!formCurso.duracionTotalHoras || formCurso.duracionTotalHoras < 1) { errCurso.value = 'Duración inválida'; return }
-  if (formCurso.precioBase == null || formCurso.precioBase < 0) { errCurso.value = 'Precio inválido'; return }
+  if (!validarCurso()) return
   guardandoCurso.value = true
   try {
     const payload = {

@@ -95,16 +95,42 @@
           <div v-if="editando.info" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-sm font-medium text-ink-700 mb-1.5">Nombre *</label>
-                <InputText v-model="formInfo.nombre" placeholder="Juan" class="w-full" />
+                <label for="field-info-nombre" class="block text-sm font-medium text-ink-700 mb-1.5">
+                  Nombre <span class="text-danger-600 font-semibold">*</span>
+                </label>
+                <InputText
+                  id="field-info-nombre"
+                  v-model="formInfo.nombre"
+                  placeholder="Juan"
+                  maxlength="50"
+                  class="w-full"
+                  :class="errorsInfo.nombre ? '!border-danger-500 !bg-danger-50' : ''"
+                  @update:modelValue="clearErrInfo('nombre')"
+                />
+                <p v-if="errorsInfo.nombre" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                  <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsInfo.nombre }}
+                </p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-ink-700 mb-1.5">Apellido *</label>
-                <InputText v-model="formInfo.apellido" placeholder="Pérez" class="w-full" />
+                <label for="field-info-apellido" class="block text-sm font-medium text-ink-700 mb-1.5">
+                  Apellido <span class="text-danger-600 font-semibold">*</span>
+                </label>
+                <InputText
+                  id="field-info-apellido"
+                  v-model="formInfo.apellido"
+                  placeholder="Pérez"
+                  maxlength="50"
+                  class="w-full"
+                  :class="errorsInfo.apellido ? '!border-danger-500 !bg-danger-50' : ''"
+                  @update:modelValue="clearErrInfo('apellido')"
+                />
+                <p v-if="errorsInfo.apellido" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                  <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsInfo.apellido }}
+                </p>
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-ink-700 mb-1.5">Email (no editable)</label>
+              <label class="block text-sm font-medium text-ink-700 mb-1.5">Email <span class="text-xs text-ink-500">(no editable)</span></label>
               <InputText v-model="formInfo.email" disabled class="w-full" />
             </div>
             <div class="flex gap-2">
@@ -129,17 +155,25 @@
 
           <div v-if="editando.roles" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-ink-700 mb-1.5">Roles asignados *</label>
+              <label for="field-rolinline-roles" class="block text-sm font-medium text-ink-700 mb-1.5">
+                Roles asignados <span class="text-danger-600 font-semibold">*</span>
+              </label>
               <MultiSelect
                 v-model="formRoles.roles"
+                inputId="field-rolinline-roles"
                 :options="rolesDisponibles"
                 optionLabel="label"
                 optionValue="value"
                 placeholder="Selecciona uno o más roles"
                 class="w-full"
+                :class="errorsRolInline.roles ? '!border-danger-500 !bg-danger-50' : ''"
                 display="chip"
+                @update:modelValue="clearErrRolInline('roles')"
               />
-              <p class="text-xs text-ink-500 mt-1.5">Un usuario puede tener múltiples roles para acceder a diferentes módulos.</p>
+              <p v-if="errorsRolInline.roles" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsRolInline.roles }}
+              </p>
+              <p v-else class="text-xs text-ink-500 mt-1.5">Un usuario puede tener múltiples roles para acceder a diferentes módulos.</p>
             </div>
             <div class="flex gap-2">
               <Button label="Guardar" icon="pi pi-check" @click="guardarRoles()" :loading="guardando.roles" />
@@ -176,16 +210,41 @@
               <h4 class="text-sm font-semibold text-ink-900">Información Personal</h4>
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Cédula</label>
-                  <InputText v-model="formPersonalInfo.cedula" placeholder="1234567890" class="w-full" />
+                  <label for="field-per-cedula" class="block text-sm font-medium text-ink-700 mb-1.5">
+                    Cédula <span class="text-xs text-ink-500">(opcional)</span>
+                  </label>
+                  <InputText
+                    id="field-per-cedula"
+                    v-model="formPersonalInfo.cedula"
+                    placeholder="1234567890"
+                    maxlength="10"
+                    class="w-full"
+                    :class="errorsPer.cedula ? '!border-danger-500 !bg-danger-50' : ''"
+                    @update:modelValue="clearErrPer('cedula')"
+                  />
+                  <p v-if="errorsPer.cedula" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                    <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsPer.cedula }}
+                  </p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Género</label>
-                  <InputText v-model="formPersonalInfo.genero" placeholder="M/F" class="w-full" />
+                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Género <span class="text-xs text-ink-500">(opcional)</span></label>
+                  <InputText v-model="formPersonalInfo.genero" placeholder="M/F/O" maxlength="1" class="w-full" />
                 </div>
                 <div class="col-span-2">
-                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Fecha de nacimiento</label>
-                  <InputText v-model="formPersonalInfo.fechaNacimiento" type="date" class="w-full" />
+                  <label for="field-per-fechaNacimiento" class="block text-sm font-medium text-ink-700 mb-1.5">
+                    Fecha de nacimiento <span class="text-xs text-ink-500">(opcional)</span>
+                  </label>
+                  <InputText
+                    id="field-per-fechaNacimiento"
+                    v-model="formPersonalInfo.fechaNacimiento"
+                    type="date"
+                    class="w-full"
+                    :class="errorsPer.fechaNacimiento ? '!border-danger-500 !bg-danger-50' : ''"
+                    @update:modelValue="clearErrPer('fechaNacimiento')"
+                  />
+                  <p v-if="errorsPer.fechaNacimiento" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                    <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsPer.fechaNacimiento }}
+                  </p>
                 </div>
               </div>
               <div class="flex gap-2">
@@ -209,20 +268,33 @@
               <h4 class="text-sm font-semibold text-ink-900">Información de Contacto</h4>
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Teléfono</label>
-                  <InputText v-model="formContactInfo.telefono" placeholder="0987654321" class="w-full" />
+                  <label for="field-con-telefono" class="block text-sm font-medium text-ink-700 mb-1.5">
+                    Teléfono <span class="text-xs text-ink-500">(opcional)</span>
+                  </label>
+                  <InputText
+                    id="field-con-telefono"
+                    v-model="formContactInfo.telefono"
+                    placeholder="0987654321"
+                    maxlength="10"
+                    class="w-full"
+                    :class="errorsCon.telefono ? '!border-danger-500 !bg-danger-50' : ''"
+                    @update:modelValue="clearErrCon('telefono')"
+                  />
+                  <p v-if="errorsCon.telefono" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                    <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCon.telefono }}
+                  </p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Ciudad</label>
-                  <InputText v-model="formContactInfo.ciudad" placeholder="Quito" class="w-full" />
+                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Ciudad <span class="text-xs text-ink-500">(opcional)</span></label>
+                  <InputText v-model="formContactInfo.ciudad" placeholder="Quito" maxlength="80" class="w-full" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Provincia</label>
-                  <InputText v-model="formContactInfo.provincia" placeholder="Pichincha" class="w-full" />
+                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Provincia <span class="text-xs text-ink-500">(opcional)</span></label>
+                  <InputText v-model="formContactInfo.provincia" placeholder="Pichincha" maxlength="80" class="w-full" />
                 </div>
                 <div class="col-span-2">
-                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Dirección</label>
-                  <InputText v-model="formContactInfo.direccion" placeholder="Calle Principal 123" class="w-full" />
+                  <label class="block text-sm font-medium text-ink-700 mb-1.5">Dirección <span class="text-xs text-ink-500">(opcional)</span></label>
+                  <InputText v-model="formContactInfo.direccion" placeholder="Calle Principal 123" maxlength="200" class="w-full" />
                 </div>
               </div>
               <div class="flex gap-2">
@@ -315,17 +387,23 @@
       <div class="space-y-4">
         <div class="rounded-lg bg-info-50 border border-info-200 p-3 flex items-start gap-2 text-sm text-info-700">
           <i class="pi pi-info-circle mt-0.5" />
-          <span>Se generará una nueva contraseña temporal para <strong>{{ usuario.email }}</strong>. El usuario deberá cambiarla en el próximo login.</span>
+          <span>Se generará una nueva contraseña temporal para <strong>{{ usuario.email }}</strong>. El usuario deberá cambiarla en el próximo login. Los campos con <span class="text-danger-600 font-semibold">*</span> son obligatorios.</span>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Nueva contraseña temporal *</label>
+          <label for="field-pwd-nueva" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Nueva contraseña temporal <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <div class="flex gap-2">
             <InputText
+              id="field-pwd-nueva"
               v-model="formPassword.nueva"
-              placeholder="Ingresa nueva contraseña"
+              placeholder="Al menos 8 caracteres"
               :type="mostrarPasswordDialog ? 'text' : 'password'"
+              maxlength="100"
               class="w-full"
+              :class="errorsPwd.nueva ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearErrPwd('nueva')"
             />
             <Button
               :icon="mostrarPasswordDialog ? 'pi pi-eye-slash' : 'pi pi-eye'"
@@ -335,6 +413,10 @@
               @click="mostrarPasswordDialog = !mostrarPasswordDialog"
             />
           </div>
+          <p v-if="errorsPwd.nueva" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsPwd.nueva }}
+          </p>
+          <p v-else class="text-xs text-ink-500 mt-1">Mínimo 8 caracteres.</p>
         </div>
 
         <div class="flex items-center gap-2 p-3 rounded-lg bg-success-50 border border-success-200">
@@ -427,6 +509,55 @@ const formRoles = reactive<any>({ roles: [] })
 const formPersonalInfo = reactive<any>({ cedula: '', fechaNacimiento: '', genero: '' })
 const formContactInfo = reactive<any>({ telefono: '', direccion: '', ciudad: '', provincia: '' })
 
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string, scroll = false) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => {
+      const el = document.getElementById(`field-${prefijo}-${p}`)
+      if (!el) return
+      if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      ;(el as HTMLElement).focus?.()
+    }, scroll ? 300 : 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
+const valInfo = useValidation()
+const errorsInfo = valInfo.errors
+const setErrInfo = valInfo.setError
+const clearErrInfo = valInfo.clearError
+const clearAllInfo = valInfo.clearAll
+
+const valRolInline = useValidation()
+const errorsRolInline = valRolInline.errors
+const setErrRolInline = valRolInline.setError
+const clearErrRolInline = valRolInline.clearError
+const clearAllRolInline = valRolInline.clearAll
+
+const valPer = useValidation()
+const errorsPer = valPer.errors
+const setErrPer = valPer.setError
+const clearErrPer = valPer.clearError
+const clearAllPer = valPer.clearAll
+
+const valCon = useValidation()
+const errorsCon = valCon.errors
+const setErrCon = valCon.setError
+const clearErrCon = valCon.clearError
+const clearAllCon = valCon.clearAll
+
+const valPwd = useValidation()
+const errorsPwd = valPwd.errors
+const setErrPwd = valPwd.setError
+const clearErrPwd = valPwd.clearError
+const clearAllPwd = valPwd.clearAll
+
 const cargar = async () => {
   try {
     const { data } = await api.get(`/usuarios/${usuarioId}`)
@@ -448,19 +579,27 @@ const editarInfo = () => {
     apellido: usuario.apellido,
     email: usuario.email
   })
+  clearAllInfo()
   editando.info = true
 }
 
-const guardarInfo = async () => {
-  if (!formInfo.nombre?.trim()) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'El nombre es obligatorio', life: 3000 })
-    return
+const validarInfo = (): boolean => {
+  clearAllInfo()
+  const nombre = formInfo.nombre?.trim() ?? ''
+  if (!nombre) setErrInfo('nombre', 'El nombre es requerido')
+  else if (nombre.length < 2) setErrInfo('nombre', 'Mínimo 2 caracteres')
+  const apellido = formInfo.apellido?.trim() ?? ''
+  if (!apellido) setErrInfo('apellido', 'El apellido es requerido')
+  else if (apellido.length < 2) setErrInfo('apellido', 'Mínimo 2 caracteres')
+  if (Object.keys(errorsInfo).length > 0) {
+    valInfo.focusFirst(['nombre', 'apellido'], 'info', false)
+    return false
   }
-  if (!formInfo.apellido?.trim()) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'El apellido es obligatorio', life: 3000 })
-    return
-  }
+  return true
+}
 
+const guardarInfo = async () => {
+  if (!validarInfo()) return
   guardando.info = true
   try {
     await api.put(`/usuarios/${usuarioId}`, {
@@ -490,15 +629,22 @@ const guardarInfo = async () => {
 
 const editarRoles = () => {
   formRoles.roles = [...usuario.roles]
+  clearAllRolInline()
   editando.roles = true
 }
 
-const guardarRoles = async () => {
+const validarRolesInline = (): boolean => {
+  clearAllRolInline()
   if (!formRoles.roles || formRoles.roles.length === 0) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Debe asignar al menos un rol', life: 3000 })
-    return
+    setErrRolInline('roles', 'Debe asignar al menos un rol')
+    valRolInline.focusFirst(['roles'], 'rolinline', false)
+    return false
   }
+  return true
+}
 
+const guardarRoles = async () => {
+  if (!validarRolesInline()) return
   guardando.roles = true
   try {
     await api.put(`/usuarios/${usuarioId}`, {
@@ -532,10 +678,30 @@ const editarPersonalInfo = () => {
     fechaNacimiento: usuario.fechaNacimiento || '',
     genero: usuario.genero || ''
   })
+  clearAllPer()
   editando.personalInfo = true
 }
 
+const validarPersonal = (): boolean => {
+  clearAllPer()
+  const cedula = formPersonalInfo.cedula?.trim() ?? ''
+  if (cedula && (cedula.length !== 10 || !/^\d+$/.test(cedula))) {
+    setErrPer('cedula', 'La cédula debe tener 10 dígitos numéricos')
+  }
+  if (formPersonalInfo.fechaNacimiento) {
+    const fn = new Date(formPersonalInfo.fechaNacimiento)
+    const hoy = new Date()
+    if (fn > hoy) setErrPer('fechaNacimiento', 'No puede ser una fecha futura')
+  }
+  if (Object.keys(errorsPer).length > 0) {
+    valPer.focusFirst(['cedula', 'fechaNacimiento'], 'per', false)
+    return false
+  }
+  return true
+}
+
 const guardarPersonalInfo = async () => {
+  if (!validarPersonal()) return
   guardando.personalInfo = true
   try {
     await api.put(`/usuarios/${usuarioId}`, {
@@ -573,10 +739,25 @@ const editarContactInfo = () => {
     ciudad: usuario.ciudad || '',
     provincia: usuario.provincia || ''
   })
+  clearAllCon()
   editando.contactInfo = true
 }
 
+const validarContacto = (): boolean => {
+  clearAllCon()
+  const tel = formContactInfo.telefono?.trim() ?? ''
+  if (tel && (tel.length !== 10 || !/^\d+$/.test(tel))) {
+    setErrCon('telefono', 'El teléfono debe tener 10 dígitos numéricos')
+  }
+  if (Object.keys(errorsCon).length > 0) {
+    valCon.focusFirst(['telefono'], 'con', false)
+    return false
+  }
+  return true
+}
+
 const guardarContactInfo = async () => {
+  if (!validarContacto()) return
   guardando.contactInfo = true
   try {
     await api.put(`/usuarios/${usuarioId}`, {
@@ -718,15 +899,24 @@ const abrirCambiarPassword = () => {
   mostrarPasswordDialog.value = false
   formPassword.nueva = ''
   formPassword.changeRequired = true
+  clearAllPwd()
   dlgCambiarPassword.value = true
 }
 
-const guardarCambioPassword = async () => {
-  if (!formPassword.nueva?.trim()) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Ingresa una contraseña', life: 3000 })
-    return
+const validarPwd = (): boolean => {
+  clearAllPwd()
+  const pass = formPassword.nueva ?? ''
+  if (!pass.trim()) setErrPwd('nueva', 'La contraseña es requerida')
+  else if (pass.length < 8) setErrPwd('nueva', 'Mínimo 8 caracteres')
+  if (Object.keys(errorsPwd).length > 0) {
+    valPwd.focusFirst(['nueva'], 'pwd', false)
+    return false
   }
+  return true
+}
 
+const guardarCambioPassword = async () => {
+  if (!validarPwd()) return
   cambiandoPassword.value = true
   try {
     await api.post(`/usuarios/${usuarioId}/cambiar-password`, {
