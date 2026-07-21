@@ -26,6 +26,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByCedulaAndDeletedAtIsNull(String cedula);
 
+    /** Incluye soft-deleted (para detectar colision con UNIQUE global). */
+    Optional<Usuario> findByCedula(String cedula);
+
     Page<Usuario> findByDeletedAtIsNull(Pageable pageable);
 
     /** Filtro por activo/locked. */

@@ -7,6 +7,9 @@ import com.escuela.auth.exception.SinPermisoException;
 import com.escuela.auth.service.AuthService.AccountLockedException;
 import com.escuela.auth.service.AuthService.InvalidCredentialsException;
 import com.escuela.auth.service.AuthService.InvalidTokenException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -29,6 +32,8 @@ import java.util.Map;
  */
 @RestControllerAdvice
 public class AuthExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthExceptionHandler.class);
 
     // --------- Auth ---------
 
@@ -104,6 +109,25 @@ public class AuthExceptionHandler {
     public ProblemDetail handleIllegalArg(IllegalArgumentException ex) {
         return problem(HttpStatus.BAD_REQUEST, "argumento-invalido",
                 "Argumento invalido", ex.getMessage());
+    }
+
+    /**
+     * Red de seguridad: convierte cualquier violacion de UNIQUE que se escape
+     * del service (ej. usuario duplicado por email/cedula) en 409 con detail util.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
+        String raw = ex.getMostSpecificCause().getMessage();
+        String detail;
+        if (raw != null && raw.contains("uq_usuarios_email")) {
+            detail = "El email ya esta registrado (posiblemente en un usuario dado de baja).";
+        } else if (raw != null && raw.contains("uq_usuarios_cedula")) {
+            detail = "La cedula ya esta registrada (posiblemente en un usuario dado de baja).";
+        } else {
+            detail = "Conflicto de integridad de datos.";
+        }
+        log.warn("DataIntegrityViolation atrapada por red de seguridad: {}", raw);
+        return problem(HttpStatus.CONFLICT, "data-integrity", "Conflicto de datos", detail);
     }
 
     // --------- Helper ---------

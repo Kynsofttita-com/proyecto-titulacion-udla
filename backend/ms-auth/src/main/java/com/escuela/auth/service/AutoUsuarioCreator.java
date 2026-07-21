@@ -47,9 +47,16 @@ public class AutoUsuarioCreator {
     }
 
     /**
-     * Crea (o devuelve) el Usuario para el email dado y publica el evento.
-     * Idempotente: si ya existe Usuario activo con ese email, solo publica el
-     * evento con el id existente.
+     * Crea, reactiva o devuelve el Usuario para el email dado y publica el evento.
+     * Idempotente:
+     * <ul>
+     *   <li>Si existe Usuario activo con ese email: se reusa.</li>
+     *   <li>Si existe Usuario soft-deleted (baja previa por eliminar estudiante/instructor):
+     *       se REACTIVA con los nuevos datos y el rol especificado. Esto evita chocar con
+     *       el UNIQUE global de email y da UX natural: recrear un estudiante con el mismo
+     *       email reactiva su usuario del sistema.</li>
+     *   <li>Si no existe: se crea uno nuevo.</li>
+     * </ul>
      */
     @Transactional
     public void crearYNotificar(String email, String nombre, String apellido, String rolNombre) {
@@ -58,7 +65,10 @@ public class AutoUsuarioCreator {
             return;
         }
 
-        Usuario usuario = usuarioRepository.findByEmailAndDeletedAtIsNull(email)
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .map(existente -> existente.getDeletedAt() != null
+                        ? reactivar(existente, nombre, apellido, rolNombre)
+                        : existente)
                 .orElseGet(() -> crearNuevo(email, nombre, apellido, rolNombre));
 
         eventDispatcher.publishUsuarioCreado(UsuarioCreadoEvent.builder()
@@ -67,6 +77,29 @@ public class AutoUsuarioCreator {
                 .nombre(usuario.getNombre())
                 .apellido(usuario.getApellido())
                 .build());
+    }
+
+    private Usuario reactivar(Usuario u, String nombre, String apellido, String rolNombre) {
+        Rol rol = rolRepository.findByNombre(rolNombre)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Rol " + rolNombre + " no existe; revisar seed_data."));
+        u.setActivo(Boolean.TRUE);
+        u.setDeletedAt(null);
+        u.setLocked(Boolean.FALSE);
+        u.setLockUntil(null);
+        u.setFailedAttempts((short) 0);
+        u.setNombre(nullSafe(nombre));
+        u.setApellido(nullSafe(apellido));
+        // Password reset requerido para que el usuario reactivado defina uno nuevo.
+        u.setPassword(passwordEncoder.encode(generarPasswordRandom()));
+        u.setPasswordChangeRequired(Boolean.TRUE);
+        // Sumamos el rol si no lo tenia; conservamos los otros roles previos.
+        if (u.getRoles().stream().noneMatch(r -> r.getNombre().equalsIgnoreCase(rolNombre))) {
+            u.getRoles().add(rol);
+        }
+        Usuario saved = usuarioRepository.save(u);
+        log.info("Usuario reactivado id={} email={} rol={}", saved.getId(), saved.getEmail(), rolNombre);
+        return saved;
     }
 
     private Usuario crearNuevo(String email, String nombre, String apellido, String rolNombre) {

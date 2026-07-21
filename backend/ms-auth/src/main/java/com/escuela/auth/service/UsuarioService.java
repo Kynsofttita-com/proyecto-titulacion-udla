@@ -62,8 +62,15 @@ public class UsuarioService {
     }
 
     public UsuarioResponse crear(CreateUsuarioRequest request) {
-        usuarioRepository.findByEmailAndDeletedAtIsNull(request.email()).ifPresent(u -> {
-            throw new DuplicateResourceException("Ya existe usuario con email " + request.email());
+        // Chequeamos toda la tabla (incluyendo soft-deleted): la UNIQUE de email
+        // es global y sin este check el INSERT reventaria en 500 opaco.
+        usuarioRepository.findByEmail(request.email()).ifPresent(u -> {
+            if (u.getDeletedAt() == null) {
+                throw new DuplicateResourceException("Ya existe usuario con email " + request.email());
+            }
+            throw new DuplicateResourceException("El email " + request.email()
+                    + " pertenece a un usuario dado de baja el " + u.getDeletedAt().toLocalDate()
+                    + ". Contacte al administrador para liberarlo o usa otro email.");
         });
 
         Set<Rol> roles = resolverRoles(request.roles());
