@@ -3,6 +3,7 @@ package com.escuela.cobros.service;
 import com.escuela.cobros.dto.PagoListResponse;
 import com.escuela.cobros.dto.PagoRequest;
 import com.escuela.cobros.dto.PagoResponse;
+import com.escuela.cobros.entity.CuentaContable;
 import com.escuela.cobros.entity.Factura;
 import com.escuela.cobros.entity.FacturaCuota;
 import com.escuela.cobros.entity.Pago;
@@ -10,9 +11,12 @@ import com.escuela.cobros.exception.FacturaNotFoundException;
 import com.escuela.cobros.exception.PagoNotFoundException;
 import com.escuela.cobros.exception.SaldoInsuficienteException;
 import com.escuela.cobros.mapper.PagoMapper;
+import com.escuela.cobros.repository.CuentaContableRepository;
 import com.escuela.cobros.repository.FacturaCuotaRepository;
 import com.escuela.cobros.repository.FacturaRepository;
 import com.escuela.cobros.repository.PagoRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,6 +40,8 @@ public class PagoServiceImpl implements PagoService {
     private final PagoRepository pagoRepository;
     private final FacturaRepository facturaRepository;
     private final FacturaCuotaRepository facturaCuotaRepository;
+    private final CuentaContableRepository cuentaContableRepository;
+    private final MovimientoContableService movimientoContableService;
     private final PagoMapper pagoMapper;
     private final PagoEventDispatcher eventDispatcher;
 
@@ -71,7 +77,7 @@ public class PagoServiceImpl implements PagoService {
     @Override
     @Transactional
     public PagoResponse create(PagoRequest request) {
-        log.info("Registrando pago para factura: {}", request.facturaId());
+        log.info("Registrando pago para factura: {} cuenta: {}", request.facturaId(), request.cuentaId());
 
         Factura factura = facturaRepository.findByIdAndDeletedAtIsNull(request.facturaId())
             .orElseThrow(() -> new FacturaNotFoundException(request.facturaId()));
@@ -79,9 +85,19 @@ public class PagoServiceImpl implements PagoService {
         validarFacturaEstadoValido(factura);
         validarSaldoSuficiente(request.monto(), factura);
 
+        // Validar cuenta contable (activa)
+        CuentaContable cuenta = cuentaContableRepository.findById(request.cuentaId()).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Cuenta contable no encontrada: " + request.cuentaId()));
+        if (Boolean.FALSE.equals(cuenta.getActivo())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La cuenta '" + cuenta.getNombre() + "' esta desactivada");
+        }
+
         Pago pago = pagoMapper.toEntity(request);
         pago.setFactura(factura);
         pago.setFechaPago(LocalDateTime.now());
+        pago.setCuentaId(cuenta.getId());
         if (pago.getUsuarioRegistroId() == null) {
             Long uid = getUsuarioActualId();
             pago.setUsuarioRegistroId(uid != null ? uid : 1L);
@@ -98,8 +114,12 @@ public class PagoServiceImpl implements PagoService {
 
         actualizarFacturaYEstado(factura, request.monto());
 
+        // Generar el movimiento contable INGRESO asociado (misma transaccion)
+        movimientoContableService.crearDesdePago(pagGuardado, cuenta);
+
         eventDispatcher.publishRegistrado(pagGuardado, factura);
-        log.info("Pago registrado con ID: {} para factura: {}", pagGuardado.getId(), factura.getId());
+        log.info("Pago registrado con ID: {} para factura: {} cuenta: {}",
+                pagGuardado.getId(), factura.getId(), cuenta.getNombre());
 
         return pagoMapper.toResponse(pagGuardado);
     }

@@ -134,6 +134,18 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/finanzas/gastos',
+    name: 'Gastos',
+    component: () => import('@/views/finanzas/GastosView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
+    path: '/finanzas/saldo',
+    name: 'Saldo',
+    component: () => import('@/views/finanzas/SaldoView.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN', 'STAFF'] }
+  },
+  {
     path: '/configuracion',
     name: 'Configuracion',
     component: () => import('@/views/configuracion/ConfiguracionView.vue'),

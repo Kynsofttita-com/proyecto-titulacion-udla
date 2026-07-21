@@ -16,6 +16,7 @@ public interface PagoMapper {
     @Mapping(target = "usuarioRegistroId", ignore = true)
     @Mapping(target = "numeroCuota", ignore = true)
     @Mapping(target = "facturaCuotaId", ignore = true)
+    @Mapping(target = "cuentaId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     Pago toEntity(PagoRequest request);

@@ -698,6 +698,43 @@
         </div>
 
         <div>
+          <label for="field-pago-cuentaId" class="label mb-1.5 block">
+            <span class="flex items-center gap-2">
+              <i class="pi pi-briefcase text-brand-600" />
+              Cuenta destino <span class="text-danger-600 font-semibold">*</span>
+            </span>
+          </label>
+          <Dropdown
+            v-model="formP.cuentaId"
+            inputId="field-pago-cuentaId"
+            :options="cuentasActivasPago"
+            optionLabel="nombre" optionValue="id"
+            placeholder="¿A qué cuenta entra este pago?"
+            class="w-full"
+            :class="errorsP.cuentaId ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrP('cuentaId')"
+          >
+            <template #option="{ option }">
+              <div class="flex items-center justify-between w-full gap-3">
+                <div class="flex items-center gap-2 min-w-0">
+                  <i :class="iconoCuentaPago(option.tipo)" class="text-brand-600 text-xs" />
+                  <span class="text-sm truncate">{{ option.nombre }}</span>
+                </div>
+                <span class="text-xs text-ink-500 font-mono">{{ formatMoney(option.saldoActual) }}</span>
+              </div>
+            </template>
+          </Dropdown>
+          <p v-if="errorsP.cuentaId" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsP.cuentaId }}
+          </p>
+          <p v-else-if="cuentasActivasPago.length === 0" class="text-xs text-warning-700 mt-1">
+            <i class="pi pi-exclamation-triangle mr-1" />
+            No hay cuentas activas.
+            <router-link to="/finanzas/saldo" class="underline font-medium">Crea una primero</router-link>.
+          </p>
+        </div>
+
+        <div>
           <label class="label mb-1.5 block">Referencia / Observaciones <span class="text-xs text-ink-500">(opcional)</span></label>
           <InputText v-model="formP.observaciones" placeholder="Comprobante, nº transacción..." class="w-full" maxlength="200" />
         </div>
@@ -1004,7 +1041,26 @@ const selEstudiantePago = ref<any>(null)
 const facturasEstudiante = ref<any[]>([])
 const cuotasFactura = ref<any[]>([])
 
-const formP = reactive<any>({ facturaId: null, monto: 0, metodoPago: 'EFECTIVO', observaciones: '' })
+const formP = reactive<any>({ facturaId: null, monto: 0, metodoPago: 'EFECTIVO', cuentaId: null, observaciones: '' })
+
+// ============ Cuentas contables (para pago) ============
+const cuentasContables = ref<any[]>([])
+const cuentasActivasPago = computed(() => cuentasContables.value.filter(c => c.activo))
+const iconoCuentaPago = (t: string) => ({
+  EFECTIVO: 'pi pi-money-bill',
+  BANCO: 'pi pi-building',
+  TARJETA: 'pi pi-credit-card'
+}[t] || 'pi pi-briefcase')
+
+const cargarCuentasContables = async () => {
+  try {
+    const { data } = await api.get('/cuentas', { params: { soloActivas: false } })
+    cuentasContables.value = data || []
+  } catch (e) {
+    console.warn('No se pudieron cargar las cuentas contables', e)
+    cuentasContables.value = []
+  }
+}
 
 const facturaSeleccionadaPago = computed(() =>
   facturasEstudiante.value.find(f => f.id === formP.facturaId) || null
@@ -1027,7 +1083,8 @@ const abrirFormPago = () => {
   selEstudiantePago.value = null
   facturasEstudiante.value = []
   cuotasFactura.value = []
-  Object.assign(formP, { facturaId: null, monto: 0, metodoPago: 'EFECTIVO', observaciones: '' })
+  Object.assign(formP, { facturaId: null, monto: 0, metodoPago: 'EFECTIVO', cuentaId: null, observaciones: '' })
+  cargarCuentasContables()
   // Precargar sugerencias para que el dropdown funcione al primer click
   estudiantesFiltered.value = estudiantes.value.slice(0, 20)
   mostrarFormPago.value = true
@@ -1074,8 +1131,11 @@ const validarPago = (): boolean => {
   if (!formP.metodoPago) {
     setErrP('metodoPago', 'Selecciona el método de pago')
   }
+  if (!formP.cuentaId) {
+    setErrP('cuentaId', 'Selecciona la cuenta a la que ingresa el pago')
+  }
   if (Object.keys(errorsP).length > 0) {
-    const orden = ['estudiante', 'factura', 'monto', 'metodoPago']
+    const orden = ['estudiante', 'factura', 'monto', 'metodoPago', 'cuentaId']
     valP.focusFirst(orden, 'pago', true)
     return false
   }

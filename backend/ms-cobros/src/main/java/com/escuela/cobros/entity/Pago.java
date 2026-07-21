@@ -64,6 +64,13 @@ public class Pago implements Serializable {
     @Column(name = "factura_cuota_id")
     private Long facturaCuotaId;
 
+    /**
+     * FK a {@code contabilidad_schema.cuentas.id} — cuenta a la que ingreso el
+     * pago. Nullable para no romper pagos historicos. Requerido en pagos nuevos.
+     */
+    @Column(name = "cuenta_id")
+    private Long cuentaId;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
