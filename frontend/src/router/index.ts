@@ -134,24 +134,6 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/cobros/factura/nuevo',
-    name: 'NuevaFactura',
-    component: () => import('@/views/cobros/FacturaFormView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/cobros/factura/:id',
-    name: 'EditarFactura',
-    component: () => import('@/views/cobros/FacturaFormView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/cobros/pago/nueva',
-    name: 'NuevoPago',
-    component: () => import('@/views/cobros/PagoFormView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/configuracion',
     name: 'Configuracion',
     component: () => import('@/views/configuracion/ConfiguracionView.vue'),

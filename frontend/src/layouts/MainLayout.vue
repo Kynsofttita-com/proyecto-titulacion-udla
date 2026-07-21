@@ -49,7 +49,7 @@
           <NavItem to="/asignaciones"  icon="pi-calendar"  label="Asignaciones" />
 
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Finanzas</p>
-          <NavItem to="/cobros"        icon="pi-wallet"    label="Cobros y Pagos" />
+          <NavItem to="/cobros"        icon="pi-wallet"    label="Cobros" />
 
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Reportes Operativos</p>
           <NavItem to="/reportes/operativos/estudiantes" icon="pi-chart-bar" label="Estudiantes" />
