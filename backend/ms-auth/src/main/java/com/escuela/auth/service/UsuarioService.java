@@ -151,6 +151,48 @@ public class UsuarioService {
         log.info("Usuario soft-deleted id={}", id);
     }
 
+    /**
+     * Soft-delete del usuario asociado a la cedula dada, invocado desde el
+     * listener de eventos {@code estudiantes.eliminado} / {@code instructores.eliminado}.
+     *
+     * <p>Guardas:</p>
+     * <ul>
+     *   <li>Si no existe usuario con esa cedula, se ignora (no falla) — puede haber
+     *       sido borrado manualmente antes o nunca creado.</li>
+     *   <li>Si el usuario tiene rol {@code ADMIN} o {@code STAFF} ademas del rol
+     *       esperado, NO se desactiva para no bloquear accesos administrativos por
+     *       accidente (un admin que ademas era estudiante conserva su cuenta).</li>
+     * </ul>
+     *
+     * @param cedula        cedula reportada por el evento de dominio
+     * @param rolEsperado   rol que se espera encontrar (ESTUDIANTE o INSTRUCTOR); usado solo para logs
+     */
+    public void desactivarPorCedula(String cedula, String rolEsperado) {
+        if (cedula == null || cedula.isBlank()) {
+            log.warn("desactivarPorCedula: cedula vacia (rol={}); skip", rolEsperado);
+            return;
+        }
+        Usuario u = usuarioRepository.findByCedulaAndDeletedAtIsNull(cedula).orElse(null);
+        if (u == null) {
+            log.info("desactivarPorCedula: no existe usuario con cedula={} (rol={}); skip",
+                    cedula, rolEsperado);
+            return;
+        }
+        boolean esAdmin = u.getRoles().stream()
+                .map(Rol::getNombre)
+                .anyMatch(n -> "ADMIN".equalsIgnoreCase(n) || "STAFF".equalsIgnoreCase(n));
+        if (esAdmin) {
+            log.warn("desactivarPorCedula: usuario id={} cedula={} tiene rol admin/staff; " +
+                    "NO se desactiva pese a eliminacion de {}", u.getId(), cedula, rolEsperado);
+            return;
+        }
+        u.setActivo(Boolean.FALSE);
+        u.setDeletedAt(LocalDateTime.now());
+        usuarioRepository.save(u);
+        log.info("Usuario id={} cedula={} soft-deleted por eliminacion de {}",
+                u.getId(), cedula, rolEsperado);
+    }
+
     public UsuarioResponse cambiarPasswordAdmin(Long id, String nuevaPassword, Boolean passwordChangeRequired) {
         Usuario u = usuarioRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", id));

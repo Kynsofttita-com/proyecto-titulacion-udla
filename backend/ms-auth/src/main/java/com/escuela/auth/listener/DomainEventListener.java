@@ -2,9 +2,12 @@ package com.escuela.auth.listener;
 
 import com.escuela.auth.config.RabbitConfig;
 import com.escuela.auth.service.AutoUsuarioCreator;
+import com.escuela.auth.service.UsuarioService;
 import com.escuela.common.events.estudiantes.EstudianteCreadoEvent;
+import com.escuela.common.events.estudiantes.EstudianteEliminadoEvent;
 import com.escuela.common.events.idempotency.IdempotencyStore;
 import com.escuela.common.events.instructores.InstructorCreadoEvent;
+import com.escuela.common.events.instructores.InstructorEliminadoEvent;
 import com.escuela.common.events.listener.AbstractEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,13 +35,21 @@ public class DomainEventListener {
     private static final String MICROSERVICIO = "ms-auth";
 
     private final AutoUsuarioCreator autoCreator;
+    private final UsuarioService usuarioService;
     private final EstudianteCreadoHandler estudianteHandler;
     private final InstructorCreadoHandler instructorHandler;
+    private final EstudianteEliminadoHandler estudianteEliminadoHandler;
+    private final InstructorEliminadoHandler instructorEliminadoHandler;
 
-    public DomainEventListener(AutoUsuarioCreator autoCreator, IdempotencyStore idempotencyStore) {
+    public DomainEventListener(AutoUsuarioCreator autoCreator,
+                               UsuarioService usuarioService,
+                               IdempotencyStore idempotencyStore) {
         this.autoCreator = autoCreator;
+        this.usuarioService = usuarioService;
         this.estudianteHandler = new EstudianteCreadoHandler(idempotencyStore);
         this.instructorHandler = new InstructorCreadoHandler(idempotencyStore);
+        this.estudianteEliminadoHandler = new EstudianteEliminadoHandler(idempotencyStore);
+        this.instructorEliminadoHandler = new InstructorEliminadoHandler(idempotencyStore);
     }
 
     @RabbitHandler
@@ -49,6 +60,16 @@ public class DomainEventListener {
     @RabbitHandler
     public void onInstructorCreado(InstructorCreadoEvent event) {
         instructorHandler.process(event);
+    }
+
+    @RabbitHandler
+    public void onEstudianteEliminado(EstudianteEliminadoEvent event) {
+        estudianteEliminadoHandler.process(event);
+    }
+
+    @RabbitHandler
+    public void onInstructorEliminado(InstructorEliminadoEvent event) {
+        instructorEliminadoHandler.process(event);
     }
 
     @RabbitHandler(isDefault = true)
@@ -87,6 +108,36 @@ public class DomainEventListener {
         protected void handle(InstructorCreadoEvent event) {
             autoCreator.crearYNotificar(event.getEmail(),
                     event.getNombre(), event.getApellido(), "INSTRUCTOR");
+        }
+    }
+
+    private class EstudianteEliminadoHandler extends AbstractEventListener<EstudianteEliminadoEvent> {
+        EstudianteEliminadoHandler(IdempotencyStore store) {
+            super(store, MICROSERVICIO);
+        }
+
+        public void process(EstudianteEliminadoEvent event) {
+            processWithIdempotency(event, EstudianteEliminadoEvent.ROUTING_KEY);
+        }
+
+        @Override
+        protected void handle(EstudianteEliminadoEvent event) {
+            usuarioService.desactivarPorCedula(event.getCedula(), "ESTUDIANTE");
+        }
+    }
+
+    private class InstructorEliminadoHandler extends AbstractEventListener<InstructorEliminadoEvent> {
+        InstructorEliminadoHandler(IdempotencyStore store) {
+            super(store, MICROSERVICIO);
+        }
+
+        public void process(InstructorEliminadoEvent event) {
+            processWithIdempotency(event, InstructorEliminadoEvent.ROUTING_KEY);
+        }
+
+        @Override
+        protected void handle(InstructorEliminadoEvent event) {
+            usuarioService.desactivarPorCedula(event.getCedula(), "INSTRUCTOR");
         }
     }
 

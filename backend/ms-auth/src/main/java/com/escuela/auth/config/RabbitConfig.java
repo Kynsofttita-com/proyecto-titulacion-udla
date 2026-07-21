@@ -35,6 +35,8 @@ public class RabbitConfig extends AbstractRabbitConfig {
     public static final String FROM_DOMAINS_QUEUE_NAME = "auth.from-domains.queue";
     public static final String ESTUDIANTES_CREADO_ROUTING = "estudiantes.creado";
     public static final String INSTRUCTORES_CREADO_ROUTING = "instructores.creado";
+    public static final String ESTUDIANTES_ELIMINADO_ROUTING = "estudiantes.eliminado";
+    public static final String INSTRUCTORES_ELIMINADO_ROUTING = "instructores.eliminado";
 
     @Bean
     public TopicExchange authExchange() {
@@ -99,5 +101,19 @@ public class RabbitConfig extends AbstractRabbitConfig {
         return BindingBuilder.bind(authFromDomainsQueue())
                 .to(instructoresExchangeRef())
                 .with(INSTRUCTORES_CREADO_ROUTING);
+    }
+
+    @Bean
+    public Binding authFromEstudianteEliminadoBinding() {
+        return BindingBuilder.bind(authFromDomainsQueue())
+                .to(estudiantesExchangeRef())
+                .with(ESTUDIANTES_ELIMINADO_ROUTING);
+    }
+
+    @Bean
+    public Binding authFromInstructorEliminadoBinding() {
+        return BindingBuilder.bind(authFromDomainsQueue())
+                .to(instructoresExchangeRef())
+                .with(INSTRUCTORES_ELIMINADO_ROUTING);
     }
 }
