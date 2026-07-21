@@ -56,7 +56,7 @@ class UsuarioServiceTest {
                 "nuevo@escuela.local", "Admin123!", "Juan", "Perez", "0991234567",
                 List.of("ADMIN", "STAFF"), null, null, null, null, null, null, true);
 
-        when(usuarioRepository.findByEmailAndDeletedAtIsNull("nuevo@escuela.local"))
+        when(usuarioRepository.findByEmail("nuevo@escuela.local"))
                 .thenReturn(Optional.empty());
         when(rolRepository.findByNombreIn(List.of("ADMIN", "STAFF")))
                 .thenReturn(List.of(rolAdmin, rolStaff));
@@ -82,7 +82,7 @@ class UsuarioServiceTest {
         CreateUsuarioRequest req = new CreateUsuarioRequest(
                 "admin@escuela.local", "Admin123!", "X", "Y", null, List.of("ADMIN"), null, null, null, null, null, null, true);
 
-        when(usuarioRepository.findByEmailAndDeletedAtIsNull(anyString()))
+        when(usuarioRepository.findByEmail(anyString()))
                 .thenReturn(Optional.of(Usuario.builder().id(1L).build()));
 
         assertThrows(DuplicateResourceException.class, () -> service.crear(req));
@@ -94,7 +94,7 @@ class UsuarioServiceTest {
         CreateUsuarioRequest req = new CreateUsuarioRequest(
                 "x@y.com", "Admin123!", "X", "Y", null, List.of("ADMIN", "INEXISTENTE"), null, null, null, null, null, null, true);
 
-        when(usuarioRepository.findByEmailAndDeletedAtIsNull(anyString())).thenReturn(Optional.empty());
+        when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(rolRepository.findByNombreIn(any())).thenReturn(List.of(rolAdmin));
 
         assertThrows(ResourceNotFoundException.class, () -> service.crear(req));
