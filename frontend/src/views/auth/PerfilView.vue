@@ -21,10 +21,6 @@
         </div>
       </div>
 
-      <div v-if="error" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
-        <i class="pi pi-exclamation-circle mt-0.5" />
-        <span>{{ error }}</span>
-      </div>
       <div v-if="success" class="rounded-lg bg-success-50 border border-success-500/20 p-3 flex items-start gap-2 text-sm text-success-700">
         <i class="pi pi-check-circle mt-0.5" />
         <span>¡Contraseña actualizada! Te redirigiremos al inicio de sesión para que ingreses con tu nueva contraseña...</span>
@@ -32,51 +28,68 @@
 
       <form @submit.prevent="cambiar" class="space-y-5" autocomplete="off">
         <div>
-          <label class="label mb-1.5 block">Contraseña temporal *</label>
+          <label for="field-pwd-currentPassword" class="label mb-1.5 block">
+            Contraseña temporal <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <Password
             v-model="form.currentPassword"
             :feedback="false"
             toggleMask
             class="w-full"
-            inputClass="w-full"
+            :inputClass="errorsPwd.currentPassword ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full'"
             placeholder="La que te dieron"
-            :inputProps="{ autocomplete: 'new-password' }"
-            required
+            :inputProps="{ id: 'field-pwd-currentPassword', autocomplete: 'new-password' }"
+            @update:modelValue="clearErrPwd('currentPassword')"
           />
+          <p v-if="errorsPwd.currentPassword" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsPwd.currentPassword }}
+          </p>
         </div>
         <div>
-          <label class="label mb-1.5 block">Nueva contraseña *</label>
+          <label for="field-pwd-newPassword" class="label mb-1.5 block">
+            Nueva contraseña <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <Password
             v-model="form.newPassword"
             toggleMask
             class="w-full"
-            inputClass="w-full"
+            :inputClass="errorsPwd.newPassword ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full'"
             placeholder="Mínimo 8 caracteres"
-            :inputProps="{ autocomplete: 'new-password' }"
-            required
+            :inputProps="{ id: 'field-pwd-newPassword', autocomplete: 'new-password' }"
+            @update:modelValue="clearErrPwd('newPassword')"
           />
-          <p class="text-xs text-ink-500 mt-1.5">Mínimo 8 caracteres con mayúscula, minúscula y dígito.</p>
+          <p v-if="errorsPwd.newPassword" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsPwd.newPassword }}
+          </p>
+          <p v-else class="text-xs text-ink-500 mt-1.5">Mínimo 8 caracteres con mayúscula, minúscula y dígito.</p>
         </div>
         <div>
-          <label class="label mb-1.5 block">Confirmar nueva contraseña *</label>
+          <label for="field-pwd-confirmPassword" class="label mb-1.5 block">
+            Confirmar nueva contraseña <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <Password
             v-model="form.confirmPassword"
             :feedback="false"
             toggleMask
             class="w-full"
-            inputClass="w-full"
+            :inputClass="errorsPwd.confirmPassword ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full'"
             placeholder="Repítela"
-            :inputProps="{ autocomplete: 'new-password' }"
-            required
+            :inputProps="{ id: 'field-pwd-confirmPassword', autocomplete: 'new-password' }"
+            @update:modelValue="clearErrPwd('confirmPassword')"
           />
-          <p v-if="form.confirmPassword && form.newPassword !== form.confirmPassword" class="text-xs text-danger-600 mt-1.5">
-            Las contraseñas no coinciden
+          <p v-if="errorsPwd.confirmPassword" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsPwd.confirmPassword }}
           </p>
         </div>
+
+        <div v-if="error" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
+          <i class="pi pi-exclamation-circle mt-0.5" />
+          <span>{{ error }}</span>
+        </div>
+
         <Button
           type="submit"
           :loading="isLoading"
-          :disabled="!puedeEnviar"
           class="w-full !py-3 !text-base !font-semibold"
         >
           <span class="flex items-center gap-2">
@@ -227,59 +240,79 @@
       description="Necesitas tu contraseña actual para cambiarla. Se cerrarán las demás sesiones."
       icon="pi pi-lock"
     >
-      <div v-if="error" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 mb-5 flex items-start gap-2 text-sm text-danger-600">
-        <i class="pi pi-exclamation-circle mt-0.5" />
-        <span>{{ error }}</span>
-      </div>
       <div v-if="success" class="rounded-lg bg-success-50 border border-success-500/20 p-3 mb-5 flex items-start gap-2 text-sm text-success-700">
         <i class="pi pi-check-circle mt-0.5" />
         <span>Contraseña actualizada correctamente. Vuelve a iniciar sesión.</span>
       </div>
 
+      <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 mb-5 flex items-center gap-2">
+        <i class="pi pi-info-circle text-info-600" />
+        <p class="text-sm text-ink-700">
+          Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+        </p>
+      </div>
+
       <form @submit.prevent="cambiar" class="space-y-5" autocomplete="off">
         <div>
-          <label class="label mb-1.5 block">Contraseña actual *</label>
+          <label for="field-pwd-currentPassword" class="label mb-1.5 block">
+            Contraseña actual <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <Password
             v-model="form.currentPassword"
             :feedback="false"
             toggleMask
             class="w-full"
-            inputClass="w-full"
+            :inputClass="errorsPwd.currentPassword ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full'"
             placeholder="••••••••"
-            :inputProps="{ autocomplete: 'new-password' }"
-            required
+            :inputProps="{ id: 'field-pwd-currentPassword', autocomplete: 'new-password' }"
+            @update:modelValue="clearErrPwd('currentPassword')"
           />
+          <p v-if="errorsPwd.currentPassword" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsPwd.currentPassword }}
+          </p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label class="label mb-1.5 block">Nueva contraseña *</label>
+            <label for="field-pwd-newPassword" class="label mb-1.5 block">
+              Nueva contraseña <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <Password
               v-model="form.newPassword"
               toggleMask
               class="w-full"
-              inputClass="w-full"
+              :inputClass="errorsPwd.newPassword ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full'"
               placeholder="••••••••"
-              :inputProps="{ autocomplete: 'new-password' }"
-              required
+              :inputProps="{ id: 'field-pwd-newPassword', autocomplete: 'new-password' }"
+              @update:modelValue="clearErrPwd('newPassword')"
             />
-            <p class="text-xs text-ink-500 mt-1.5">Mínimo 8 caracteres con mayúscula, minúscula y dígito.</p>
+            <p v-if="errorsPwd.newPassword" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsPwd.newPassword }}
+            </p>
+            <p v-else class="text-xs text-ink-500 mt-1.5">Mínimo 8 caracteres con mayúscula, minúscula y dígito.</p>
           </div>
           <div>
-            <label class="label mb-1.5 block">Confirmar nueva *</label>
+            <label for="field-pwd-confirmPassword" class="label mb-1.5 block">
+              Confirmar nueva <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <Password
               v-model="form.confirmPassword"
               :feedback="false"
               toggleMask
               class="w-full"
-              inputClass="w-full"
+              :inputClass="errorsPwd.confirmPassword ? 'w-full !border-danger-500 !bg-danger-50' : 'w-full'"
               placeholder="••••••••"
-              :inputProps="{ autocomplete: 'new-password' }"
-              required
+              :inputProps="{ id: 'field-pwd-confirmPassword', autocomplete: 'new-password' }"
+              @update:modelValue="clearErrPwd('confirmPassword')"
             />
-            <p v-if="form.confirmPassword && form.newPassword !== form.confirmPassword" class="text-xs text-danger-600 mt-1.5">
-              Las contraseñas no coinciden
+            <p v-if="errorsPwd.confirmPassword" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsPwd.confirmPassword }}
             </p>
           </div>
+        </div>
+
+        <div v-if="error" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
+          <i class="pi pi-exclamation-circle mt-0.5" />
+          <span>{{ error }}</span>
         </div>
       </form>
 
@@ -289,7 +322,6 @@
           label="Cambiar contraseña"
           icon="pi pi-check"
           :loading="isLoading"
-          :disabled="!puedeEnviar"
           @click="cambiar"
         />
       </template>
@@ -380,24 +412,70 @@ const isLoading = ref(false)
 const error = ref('')
 const success = ref(false)
 
-const puedeEnviar = computed(() =>
-  form.currentPassword &&
-  form.newPassword &&
-  form.newPassword.length >= 8 &&
-  form.newPassword === form.confirmPassword &&
-  !isLoading.value
-)
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string, scroll = false) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => {
+      const el = document.getElementById(`field-${prefijo}-${p}`)
+      if (!el) return
+      if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      ;(el as HTMLElement).focus?.()
+    }, scroll ? 300 : 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
+const valPwd = useValidation()
+const errorsPwd = valPwd.errors
+const setErrPwd = valPwd.setError
+const clearErrPwd = valPwd.clearError
+const clearAllPwd = valPwd.clearAll
+
+const validarPwd = (): boolean => {
+  clearAllPwd()
+  if (!form.currentPassword) setErrPwd('currentPassword', 'La contraseña actual es requerida')
+
+  const pass = form.newPassword ?? ''
+  if (!pass) {
+    setErrPwd('newPassword', 'La nueva contraseña es requerida')
+  } else if (pass.length < 8) {
+    setErrPwd('newPassword', 'Mínimo 8 caracteres')
+  } else if (!/[A-Z]/.test(pass) || !/[a-z]/.test(pass) || !/\d/.test(pass)) {
+    setErrPwd('newPassword', 'Debe incluir mayúscula, minúscula y dígito')
+  } else if (pass === form.currentPassword) {
+    setErrPwd('newPassword', 'La nueva contraseña debe ser diferente a la actual')
+  }
+
+  if (!form.confirmPassword) {
+    setErrPwd('confirmPassword', 'Confirma la nueva contraseña')
+  } else if (form.newPassword && form.confirmPassword !== form.newPassword) {
+    setErrPwd('confirmPassword', 'Las contraseñas no coinciden')
+  }
+
+  if (Object.keys(errorsPwd).length > 0) {
+    valPwd.focusFirst(['currentPassword', 'newPassword', 'confirmPassword'], 'pwd', false)
+    return false
+  }
+  return true
+}
 
 const resetForm = () => {
   form.currentPassword = ''
   form.newPassword = ''
   form.confirmPassword = ''
   error.value = ''
+  clearAllPwd()
 }
 
 const cambiar = async () => {
-  if (!puedeEnviar.value) return
   error.value = ''
+  if (!validarPwd()) return
   success.value = false
   isLoading.value = true
   try {

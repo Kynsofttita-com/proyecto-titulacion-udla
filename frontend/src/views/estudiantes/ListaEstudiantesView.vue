@@ -276,10 +276,6 @@
             <StatusBadge :status="estudianteEstado.estado" />
           </div>
 
-          <div v-if="estadoError" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 text-sm text-danger-600">
-            {{ estadoError }}
-          </div>
-
           <div class="rounded-lg bg-info-50 border border-info-500/20 p-3 text-xs text-info-700 flex items-start gap-2">
             <i class="pi pi-info-circle mt-0.5" />
             <span>
@@ -291,14 +287,19 @@
           </div>
 
           <div>
-            <p class="label mb-2">Selecciona el nuevo estado:</p>
-            <div class="space-y-2">
+            <p class="label mb-2" id="field-liste-estado">
+              Selecciona el nuevo estado <span class="text-danger-600 font-semibold">*</span>
+            </p>
+            <div
+              :class="['space-y-2 rounded-lg',
+                errorsListaEst.estado ? 'p-2 -m-2 border-2 border-danger-500 bg-danger-50' : '']"
+            >
               <button
                 v-for="opcion in estadosDisponibles(estudianteEstado.estado)"
                 :key="opcion.value"
                 type="button"
-                @click="nuevoEstado = opcion.value"
-                :class="['w-full flex items-start gap-3 p-3 rounded-lg border-2 text-left transition',
+                @click="nuevoEstado = opcion.value; clearErrListaEst('estado')"
+                :class="['w-full flex items-start gap-3 p-3 rounded-lg border-2 text-left transition bg-white',
                   nuevoEstado === opcion.value
                     ? 'border-brand-600 bg-brand-50/50'
                     : 'border-ink-200 hover:border-brand-300']"
@@ -317,14 +318,23 @@
                 <i v-if="nuevoEstado === opcion.value" class="pi pi-check-circle text-brand-700 text-lg" />
               </button>
             </div>
+            <p v-if="errorsListaEst.estado" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsListaEst.estado }}
+            </p>
             <p v-if="estadosDisponibles(estudianteEstado.estado).length === 0" class="text-xs text-ink-500 mt-2">
               Este estudiante ya completó o se retiró. No hay transiciones disponibles.
             </p>
           </div>
+
+          <!-- Error de servidor -->
+          <div v-if="estadoError" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
+            <i class="pi pi-exclamation-circle mt-0.5" />
+            <span>{{ estadoError }}</span>
+          </div>
         </div>
         <template #footer>
           <Button label="Cancelar" outlined @click="mostrarEstado = false" />
-          <Button label="Aplicar cambio" icon="pi pi-check" :loading="cambiandoEstado" :disabled="!nuevoEstado" @click="confirmarCambioEstado" />
+          <Button label="Aplicar cambio" icon="pi pi-check" :loading="cambiandoEstado" @click="confirmarCambioEstado" />
         </template>
       </Dialog>
 
@@ -550,6 +560,21 @@ const nuevoEstado = ref<string>('')
 const cambiandoEstado = ref(false)
 const estadoError = ref('')
 
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  return { errors, setError, clearError, clearAll }
+}
+
+const valListaEst = useValidation()
+const errorsListaEst = valListaEst.errors
+const setErrListaEst = valListaEst.setError
+const clearErrListaEst = valListaEst.clearError
+const clearAllListaEst = valListaEst.clearAll
+
 interface EstadoOpcion {
   value: string
   label: string
@@ -591,12 +616,18 @@ const abrirCambioEstado = (est: any) => {
   estudianteEstado.value = est
   nuevoEstado.value = ''
   estadoError.value = ''
+  clearAllListaEst()
   mostrarEstado.value = true
 }
 
 const confirmarCambioEstado = async () => {
-  if (!estudianteEstado.value || !nuevoEstado.value) return
+  if (!estudianteEstado.value) return
   estadoError.value = ''
+  clearAllListaEst()
+  if (!nuevoEstado.value) {
+    setErrListaEst('estado', 'Selecciona el nuevo estado antes de aplicar')
+    return
+  }
   try {
     cambiandoEstado.value = true
     await api.put(`/estudiantes/${estudianteEstado.value.id}`, { estado: nuevoEstado.value })
