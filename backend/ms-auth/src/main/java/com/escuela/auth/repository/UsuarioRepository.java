@@ -24,6 +24,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByEmailAndDeletedAtIsNull(String email);
 
+    Optional<Usuario> findByCedulaAndDeletedAtIsNull(String cedula);
+
     Page<Usuario> findByDeletedAtIsNull(Pageable pageable);
 
     /** Filtro por activo/locked. */

@@ -2,6 +2,7 @@ package com.escuela.instructores.service;
 
 import com.escuela.common.events.BaseEvent;
 import com.escuela.common.events.instructores.InstructorCreadoEvent;
+import com.escuela.common.events.instructores.InstructorEliminadoEvent;
 import com.escuela.common.events.instructores.LicenciaVencimientoProximoEvent;
 import com.escuela.common.events.publisher.EventPublisher;
 import com.escuela.instructores.config.RabbitConfig;
@@ -33,6 +34,10 @@ public class InstructorEventDispatcher {
 
     public void publishCreado(InstructorCreadoEvent event) {
         publish(InstructorCreadoEvent.ROUTING_KEY, event);
+    }
+
+    public void publishEliminado(InstructorEliminadoEvent event) {
+        publish(InstructorEliminadoEvent.ROUTING_KEY, event);
     }
 
     public void publishLicenciaVencimientoProximo(LicenciaVencimientoProximoEvent event) {

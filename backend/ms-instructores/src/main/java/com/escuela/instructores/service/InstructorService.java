@@ -1,6 +1,7 @@
 package com.escuela.instructores.service;
 
 import com.escuela.common.events.instructores.InstructorCreadoEvent;
+import com.escuela.common.events.instructores.InstructorEliminadoEvent;
 import com.escuela.common.validation.core.CedulaEcuadorValidator;
 import com.escuela.instructores.dto.CreateInstructorRequest;
 import com.escuela.instructores.dto.InstructorListResponse;
@@ -164,6 +165,11 @@ public class InstructorService {
         i.setDeletedAt(LocalDateTime.now());
         repository.save(i);
         log.info("Instructor soft-deleted id={}", id);
+
+        eventDispatcher.publishEliminado(InstructorEliminadoEvent.builder()
+                .instructorId(i.getId())
+                .cedula(i.getCedula())
+                .build());
     }
 
     /** Helper publico para los sub-services. */
