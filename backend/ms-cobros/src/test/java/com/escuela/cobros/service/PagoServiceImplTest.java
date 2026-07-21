@@ -3,11 +3,15 @@ package com.escuela.cobros.service;
 import com.escuela.cobros.dto.PagoListResponse;
 import com.escuela.cobros.dto.PagoRequest;
 import com.escuela.cobros.dto.PagoResponse;
+import com.escuela.cobros.entity.CuentaContable;
 import com.escuela.cobros.entity.Factura;
+import com.escuela.cobros.entity.MovimientoContable;
 import com.escuela.cobros.entity.Pago;
 import com.escuela.cobros.exception.FacturaNotFoundException;
 import com.escuela.cobros.exception.SaldoInsuficienteException;
 import com.escuela.cobros.mapper.PagoMapper;
+import com.escuela.cobros.repository.CuentaContableRepository;
+import com.escuela.cobros.repository.FacturaCuotaRepository;
 import com.escuela.cobros.repository.FacturaRepository;
 import com.escuela.cobros.repository.PagoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +45,15 @@ class PagoServiceImplTest {
     private FacturaRepository facturaRepository;
 
     @Mock
+    private FacturaCuotaRepository facturaCuotaRepository;
+
+    @Mock
+    private CuentaContableRepository cuentaContableRepository;
+
+    @Mock
+    private MovimientoContableService movimientoContableService;
+
+    @Mock
     private PagoMapper pagoMapper;
 
     @Mock
@@ -51,6 +64,7 @@ class PagoServiceImplTest {
 
     private Factura facturaMock;
     private Pago pagoMock;
+    private CuentaContable cuentaMock;
     private PagoRequest pagoRequest;
     private PagoResponse pagoResponse;
 
@@ -71,11 +85,20 @@ class PagoServiceImplTest {
         pagoMock.setMonto(BigDecimal.valueOf(500));
         pagoMock.setMetodoPago("EFECTIVO");
         pagoMock.setFechaPago(LocalDateTime.now());
+        pagoMock.setCuentaId(1L);
+
+        cuentaMock = new CuentaContable();
+        cuentaMock.setId(1L);
+        cuentaMock.setNombre("Caja");
+        cuentaMock.setTipo("EFECTIVO");
+        cuentaMock.setActivo(true);
+        cuentaMock.setSaldoInicial(BigDecimal.ZERO);
 
         pagoRequest = new PagoRequest(
             1L,
             BigDecimal.valueOf(500),
             "EFECTIVO",
+            1L,
             null,
             null
         );
@@ -86,6 +109,7 @@ class PagoServiceImplTest {
             BigDecimal.valueOf(500),
             LocalDateTime.now(),
             "EFECTIVO",
+            1L,
             null,
             null,
             1L,
@@ -120,12 +144,16 @@ class PagoServiceImplTest {
     void testCreate_Success() {
         when(facturaRepository.findByIdAndDeletedAtIsNull(1L))
             .thenReturn(Optional.of(facturaMock));
+        when(cuentaContableRepository.findById(1L))
+            .thenReturn(Optional.of(cuentaMock));
         when(pagoMapper.toEntity(pagoRequest))
             .thenReturn(pagoMock);
         when(pagoRepository.save(any(Pago.class)))
             .thenReturn(pagoMock);
         when(facturaRepository.save(any(Factura.class)))
             .thenReturn(facturaMock);
+        when(movimientoContableService.crearDesdePago(any(Pago.class), any(CuentaContable.class)))
+            .thenReturn(new MovimientoContable());
         when(pagoMapper.toResponse(pagoMock))
             .thenReturn(pagoResponse);
 
@@ -133,8 +161,10 @@ class PagoServiceImplTest {
 
         assertNotNull(result);
         verify(facturaRepository, times(1)).findByIdAndDeletedAtIsNull(1L);
+        verify(cuentaContableRepository, times(1)).findById(1L);
         verify(pagoRepository, times(1)).save(any(Pago.class));
         verify(facturaRepository, times(1)).save(any(Factura.class));
+        verify(movimientoContableService, times(1)).crearDesdePago(any(Pago.class), any(CuentaContable.class));
         verify(eventDispatcher, times(1)).publishRegistrado(any(Pago.class), any(Factura.class));
     }
 
@@ -147,6 +177,7 @@ class PagoServiceImplTest {
             999L,
             BigDecimal.valueOf(500),
             "EFECTIVO",
+            1L,
             null,
             null
         );
@@ -163,6 +194,7 @@ class PagoServiceImplTest {
             1L,
             BigDecimal.valueOf(2000),
             "EFECTIVO",
+            1L,
             null,
             null
         );
