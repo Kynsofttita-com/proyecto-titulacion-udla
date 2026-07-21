@@ -50,7 +50,7 @@ spring:
         - id: ms-cobros
           uri: lb://ms-cobros
           predicates:
-            - Path=/cobros/**, /facturas/**, /pagos/**, /estado-cuenta/**, /reconciliaciones/**
+            - Path=/cobros/**, /facturas/**, /pagos/**, /estado-cuenta/**, /reconciliaciones/**, /cuentas/**, /categorias-movimiento/**, /movimientos/**
 
         - id: ms-reportes
           uri: lb://ms-reportes
