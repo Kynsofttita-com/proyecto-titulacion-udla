@@ -15,24 +15,32 @@
 
     <form @submit.prevent="handleLogin" class="space-y-5">
       <div>
-        <label class="label mb-1.5 block">Correo electrónico</label>
+        <label for="field-login-email" class="label mb-1.5 block">
+          Correo electrónico <span class="text-danger-600 font-semibold">*</span>
+        </label>
         <span class="p-input-icon-left w-full">
           <i class="pi pi-envelope text-ink-400" />
           <InputText
+            id="field-login-email"
             v-model="email"
             type="email"
             placeholder="tu@correo.com"
+            maxlength="120"
             class="w-full !pl-10"
-            :class="{ 'p-invalid': errors.email }"
-            required
+            :class="errors.email ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErr('email')"
           />
         </span>
-        <p v-if="errors.email" class="text-xs text-danger-600 mt-1.5">{{ errors.email }}</p>
+        <p v-if="errors.email" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+          <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.email }}
+        </p>
       </div>
 
       <div>
         <div class="flex items-center justify-between mb-1.5">
-          <label class="label">Contraseña</label>
+          <label for="field-login-password" class="label">
+            Contraseña <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <router-link to="/forgot-password" class="text-xs text-brand-700 font-medium hover:text-brand-800">
             ¿Olvidaste tu contraseña?
           </router-link>
@@ -40,15 +48,19 @@
         <span class="p-input-icon-left w-full">
           <i class="pi pi-lock text-ink-400" />
           <InputText
+            id="field-login-password"
             v-model="password"
             type="password"
             placeholder="••••••••"
+            maxlength="100"
             class="w-full !pl-10"
-            :class="{ 'p-invalid': errors.password }"
-            required
+            :class="errors.password ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErr('password')"
           />
         </span>
-        <p v-if="errors.password" class="text-xs text-danger-600 mt-1.5">{{ errors.password }}</p>
+        <p v-if="errors.password" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+          <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.password }}
+        </p>
       </div>
 
       <Button
@@ -89,18 +101,44 @@ const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
-const errors = reactive({ email: '', password: '' })
 
-const validateForm = () => {
-  errors.email = ''
-  errors.password = ''
-  if (!email.value) errors.email = 'El correo es requerido'
-  if (!password.value) errors.password = 'La contraseña es requerida'
-  return !errors.email && !errors.password
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => document.getElementById(`field-${prefijo}-${p}`)?.focus?.(), 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
+const val = useValidation()
+const errors = val.errors
+const setErr = val.setError
+const clearErr = val.clearError
+const clearAll = val.clearAll
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const validar = (): boolean => {
+  clearAll()
+  const em = email.value?.trim() ?? ''
+  if (!em) setErr('email', 'El correo es requerido')
+  else if (!EMAIL_REGEX.test(em)) setErr('email', 'Formato de email inválido')
+  if (!password.value) setErr('password', 'La contraseña es requerida')
+  if (Object.keys(errors).length > 0) {
+    val.focusFirst(['email', 'password'], 'login')
+    return false
+  }
+  return true
 }
 
 const handleLogin = async () => {
-  if (!validateForm()) return
+  if (!validar()) return
   authStore.error = null
   try {
     await authStore.login(email.value, password.value)
