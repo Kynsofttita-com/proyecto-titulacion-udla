@@ -23,26 +23,72 @@
       </div>
     </div>
 
-    <form @submit.prevent="guardar" class="space-y-6">
+    <form @submit.prevent="guardar" class="space-y-6" novalidate>
+      <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+        <i class="pi pi-info-circle text-info-600" />
+        <p class="text-sm text-ink-700">
+          Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+        </p>
+      </div>
+
       <FormCard title="Datos personales" icon="pi pi-user">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Field label="Nombre" required>
-            <InputText v-model="form.nombre" placeholder="Juan" class="w-full" required />
+          <Field label="Nombre" required :error="errors.nombre" for="field-nombre">
+            <InputText
+              id="field-nombre"
+              v-model="form.nombre"
+              placeholder="Juan"
+              class="w-full"
+              :class="errors.nombre ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearError('nombre')"
+            />
           </Field>
-          <Field label="Apellido" required>
-            <InputText v-model="form.apellido" placeholder="Pérez" class="w-full" required />
+          <Field label="Apellido" required :error="errors.apellido" for="field-apellido">
+            <InputText
+              id="field-apellido"
+              v-model="form.apellido"
+              placeholder="Pérez"
+              class="w-full"
+              :class="errors.apellido ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearError('apellido')"
+            />
           </Field>
-          <Field label="Cédula" required hint="10 dígitos, validación Ecuador">
-            <InputText v-model="form.cedula" maxlength="10" placeholder="1234567890" class="w-full" :disabled="isEditing" required />
+          <Field label="Cédula" required :error="errors.cedula" for="field-cedula" hint="10 dígitos, validación Ecuador">
+            <InputText
+              id="field-cedula"
+              v-model="form.cedula"
+              maxlength="10"
+              placeholder="1234567890"
+              class="w-full"
+              :class="errors.cedula ? '!border-danger-500 !bg-danger-50' : ''"
+              :disabled="isEditing"
+              @update:modelValue="clearError('cedula')"
+            />
           </Field>
           <Field label="Fecha de nacimiento">
             <Calendar v-model="form.fechaNacimiento" dateFormat="yy-mm-dd" :showIcon="true" class="w-full" :maxDate="new Date()" />
           </Field>
-          <Field label="Email" required>
-            <InputText v-model="form.email" type="email" placeholder="instructor@correo.com" class="w-full" required />
+          <Field label="Email" required :error="errors.email" for="field-email">
+            <InputText
+              id="field-email"
+              v-model="form.email"
+              type="email"
+              placeholder="instructor@correo.com"
+              class="w-full"
+              :class="errors.email ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearError('email')"
+            />
           </Field>
-          <Field label="Teléfono" required hint="10 dígitos, formato 09xxxxxxxx">
-            <InputText v-model="form.telefono" maxlength="10" placeholder="0987654321" class="w-full" required />
+          <Field label="Teléfono" required :error="errors.telefono" for="field-telefono" hint="10 dígitos, formato 09xxxxxxxx">
+            <InputText
+              id="field-telefono"
+              v-model="form.telefono"
+              maxlength="10"
+              placeholder="0987654321"
+              class="w-full"
+              :class="errors.telefono ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearError('telefono')"
+            />
           </Field>
           <Field label="Dirección" class="md:col-span-2">
             <Textarea v-model="form.direccion" rows="2" placeholder="Calle, número, sector, ciudad" class="w-full" />
@@ -84,13 +130,16 @@
           </Field>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Field label="Horas contratadas por semana" required hint="Máximo 60 horas">
+            <Field label="Horas contratadas por semana" required :error="errors.horasContratoSemanales" for="field-horasContratoSemanales" hint="Máximo 60 horas">
               <InputNumber
+                inputId="field-horasContratoSemanales"
                 v-model="form.horasContratoSemanales"
                 :min="1"
                 :max="60"
                 suffix=" h"
                 class="w-full"
+                :class="errors.horasContratoSemanales ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+                @update:modelValue="clearError('horasContratoSemanales')"
               />
             </Field>
 
@@ -98,14 +147,19 @@
               v-if="form.tipoContrato !== 'POR_HORAS'"
               label="Salario mensual (USD)"
               required
+              :error="errors.salarioMensual"
+              for="field-salarioMensual"
             >
               <InputNumber
+                inputId="field-salarioMensual"
                 v-model="form.salarioMensual"
                 mode="currency"
                 currency="USD"
                 locale="en-US"
                 :minFractionDigits="2"
                 class="w-full"
+                :class="errors.salarioMensual ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+                @update:modelValue="clearError('salarioMensual')"
               />
             </Field>
 
@@ -113,21 +167,27 @@
               v-if="form.tipoContrato === 'POR_HORAS'"
               label="Tarifa por hora (USD)"
               required
+              :error="errors.tarifaHora"
+              for="field-tarifaHora"
               hint="Pago por cada hora trabajada"
             >
               <InputNumber
+                inputId="field-tarifaHora"
                 v-model="form.tarifaHora"
                 mode="currency"
                 currency="USD"
                 locale="en-US"
                 :minFractionDigits="2"
                 class="w-full"
+                :class="errors.tarifaHora ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+                @update:modelValue="clearError('tarifaHora')"
               />
             </Field>
 
             <Field
               v-if="form.tipoContrato !== 'POR_HORAS'"
               label="Tarifa por hora extra (USD)"
+              :error="errors.tarifaHora"
               hint="Opcional, para horas adicionales fuera del contrato"
             >
               <InputNumber
@@ -137,6 +197,8 @@
                 locale="en-US"
                 :minFractionDigits="2"
                 class="w-full"
+                :class="errors.tarifaHora ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+                @update:modelValue="clearError('tarifaHora')"
               />
             </Field>
           </div>
@@ -165,13 +227,18 @@
             <Field label="Número de licencia" hint="Igual a la cédula del instructor">
               <InputText :value="form.cedula || '—'" class="w-full" disabled />
             </Field>
-            <Field label="Categoría" required>
-              <div class="grid grid-cols-6 gap-2">
+            <Field label="Categoría" required :error="errors.licenciaCategoria" for="field-licenciaCategoria">
+              <div
+                id="field-licenciaCategoria"
+                tabindex="-1"
+                class="grid grid-cols-6 gap-2 rounded-lg"
+                :class="errors.licenciaCategoria ? 'ring-2 ring-danger-500 p-1' : ''"
+              >
                 <button
                   v-for="cat in ['A', 'B', 'C', 'D', 'E', 'F']"
                   :key="cat"
                   type="button"
-                  @click="form.licenciaCategoria = cat"
+                  @click="form.licenciaCategoria = cat; clearError('licenciaCategoria')"
                   :class="['h-11 rounded-lg border-2 font-bold transition-all',
                     form.licenciaCategoria === cat
                       ? 'border-brand-600 bg-brand-50 text-brand-700'
@@ -179,11 +246,28 @@
                 >{{ cat }}</button>
               </div>
             </Field>
-            <Field label="Fecha de emisión" required>
-              <Calendar v-model="form.licenciaEmision" dateFormat="yy-mm-dd" :showIcon="true" class="w-full" required />
+            <Field label="Fecha de emisión" required :error="errors.licenciaEmision" for="field-licenciaEmision">
+              <Calendar
+                inputId="field-licenciaEmision"
+                v-model="form.licenciaEmision"
+                dateFormat="yy-mm-dd"
+                :showIcon="true"
+                class="w-full"
+                :inputClass="errors.licenciaEmision ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearError('licenciaEmision')"
+              />
             </Field>
-            <Field label="Fecha de caducidad" required>
-              <Calendar v-model="form.licenciaCaducidad" dateFormat="yy-mm-dd" :showIcon="true" class="w-full" :minDate="form.licenciaEmision || undefined" required />
+            <Field label="Fecha de caducidad" required :error="errors.licenciaCaducidad" for="field-licenciaCaducidad">
+              <Calendar
+                inputId="field-licenciaCaducidad"
+                v-model="form.licenciaCaducidad"
+                dateFormat="yy-mm-dd"
+                :showIcon="true"
+                class="w-full"
+                :inputClass="errors.licenciaCaducidad ? '!border-danger-500 !bg-danger-50' : ''"
+                :minDate="form.licenciaEmision || undefined"
+                @update:modelValue="clearError('licenciaCaducidad')"
+              />
             </Field>
           </div>
         </div>
@@ -224,21 +308,49 @@ const route = useRoute()
 const toast = useToast()
 
 const Field = defineComponent({
-  props: ['label', 'required', 'hint'],
+  props: ['label', 'required', 'hint', 'error', 'for'],
   setup(props, { slots, attrs }) {
     return () =>
       h('div', { ...attrs }, [
-        h('label', { class: 'block text-sm font-medium text-ink-700 mb-1.5' }, [
-          props.label, props.required && h('span', { class: 'text-danger-500 ml-0.5' }, '*')
+        h('label', {
+          class: 'block text-sm font-medium text-ink-700 mb-1.5',
+          for: props.for
+        }, [
+          props.label,
+          props.required && h('span', { class: 'text-danger-600 ml-0.5 font-semibold' }, '*')
         ]),
         slots.default?.(),
-        props.hint && h('p', { class: 'text-xs text-ink-500 mt-1' }, props.hint)
+        props.error
+          ? h('p', { class: 'text-xs text-danger-600 mt-1 flex items-center gap-1' }, [
+              h('i', { class: 'pi pi-exclamation-circle text-[10px]' }),
+              props.error
+            ])
+          : (props.hint && h('p', { class: 'text-xs text-ink-500 mt-1' }, props.hint))
       ])
   }
 })
 
 const isLoading = ref(false)
 const errorMessage = ref('')
+const errors = reactive<Record<string, string>>({})
+const setError = (campo: string, mensaje: string) => { errors[campo] = mensaje }
+const clearError = (campo: string) => { if (errors[campo]) delete errors[campo] }
+const clearAllErrors = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+
+const ORDEN_CAMPOS = [
+  'nombre','apellido','cedula','email','telefono',
+  'licenciaCategoria','licenciaEmision','licenciaCaducidad',
+  'horasContratoSemanales','salarioMensual','tarifaHora'
+]
+const focusFirstError = () => {
+  const primero = ORDEN_CAMPOS.find(k => errors[k])
+  if (!primero) return
+  const el = document.getElementById(`field-${primero}`)
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  setTimeout(() => (el as HTMLElement).focus?.(), 300)
+}
+
 const id = computed(() => {
   const v = route.params.id
   return typeof v === 'string' ? parseInt(v) : (v as number | undefined)
@@ -365,46 +477,58 @@ const cargar = async () => {
   }
 }
 
-const validar = (): string | null => {
-  if (!form.nombre.trim()) return 'El nombre es requerido'
-  if (!form.apellido.trim()) return 'El apellido es requerido'
-  if (!form.cedula.trim()) return 'La cédula es requerida'
-  if (form.cedula.length !== 10) return 'La cédula debe tener 10 dígitos'
-  if (!form.email.trim()) return 'El email es requerido'
-  if (!form.telefono.trim()) return 'El teléfono es requerido'
-  if (form.telefono.length < 7 || form.telefono.length > 10) return 'Teléfono debe tener entre 7 y 10 dígitos'
-  if (!form.licenciaCategoria) return 'La categoría de licencia es requerida'
-  if (!form.licenciaEmision) return 'La fecha de emisión de licencia es requerida'
-  if (!form.licenciaCaducidad) return 'La fecha de caducidad de licencia es requerida'
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const soloDigitos = (v: string) => /^\d+$/.test(v)
+
+const validar = (): boolean => {
+  errorMessage.value = ''
+  clearAllErrors()
+
+  if (!form.nombre.trim()) setError('nombre', 'El nombre es requerido')
+  if (!form.apellido.trim()) setError('apellido', 'El apellido es requerido')
+
+  if (!form.cedula.trim()) setError('cedula', 'La cédula es requerida')
+  else if (form.cedula.length !== 10 || !soloDigitos(form.cedula)) setError('cedula', 'La cédula debe tener 10 dígitos numéricos')
+
+  if (!form.email.trim()) setError('email', 'El email es requerido')
+  else if (!emailRegex.test(form.email.trim())) setError('email', 'El email no tiene un formato válido')
+
+  if (!form.telefono.trim()) setError('telefono', 'El teléfono es requerido')
+  else if (form.telefono.length !== 10 || !soloDigitos(form.telefono)) setError('telefono', 'El teléfono debe tener 10 dígitos numéricos')
+
+  if (!form.licenciaCategoria) setError('licenciaCategoria', 'La categoría de licencia es requerida')
+  if (!form.licenciaEmision) setError('licenciaEmision', 'La fecha de emisión es requerida')
+  if (!form.licenciaCaducidad) setError('licenciaCaducidad', 'La fecha de caducidad es requerida')
   if (form.licenciaEmision && form.licenciaCaducidad && form.licenciaCaducidad <= form.licenciaEmision) {
-    return 'La fecha de caducidad debe ser posterior a la emisión'
+    setError('licenciaCaducidad', 'La caducidad debe ser posterior a la emisión')
   }
-  if (!form.tipoContrato) return 'El tipo de contrato es requerido'
+
   if (!form.horasContratoSemanales || form.horasContratoSemanales < 1 || form.horasContratoSemanales > 60) {
-    return 'Las horas semanales deben estar entre 1 y 60'
+    setError('horasContratoSemanales', 'Las horas semanales deben estar entre 1 y 60')
   }
+
   if (form.tipoContrato === 'POR_HORAS') {
     if (!form.tarifaHora || form.tarifaHora <= 0) {
-      return 'Para contratos POR_HORAS la tarifa por hora es obligatoria y > 0'
+      setError('tarifaHora', 'La tarifa por hora es obligatoria y mayor a 0')
     }
   } else {
     if (!form.salarioMensual || form.salarioMensual <= 0) {
-      return 'Para contratos TIEMPO_COMPLETO o MEDIO_TIEMPO el salario mensual es obligatorio'
+      setError('salarioMensual', 'El salario mensual es obligatorio y mayor a 0')
+    }
+    if (form.tarifaHora !== null && form.tarifaHora !== undefined && form.tarifaHora <= 0) {
+      setError('tarifaHora', 'La tarifa por hora debe ser mayor a 0')
     }
   }
-  if (form.tarifaHora !== null && form.tarifaHora !== undefined && form.tarifaHora <= 0) {
-    return 'La tarifa por hora debe ser mayor a 0'
+
+  if (Object.keys(errors).length > 0) {
+    focusFirstError()
+    return false
   }
-  return null
+  return true
 }
 
 const guardar = async () => {
-  errorMessage.value = ''
-  const err = validar()
-  if (err) {
-    errorMessage.value = err
-    return
-  }
+  if (!validar()) return
   try {
     isLoading.value = true
     if (isEditing.value && id.value) {
