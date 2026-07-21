@@ -26,35 +26,96 @@
       </button>
     </div>
 
-    <form @submit.prevent="guardar" class="space-y-6">
+    <form @submit.prevent="guardar" class="space-y-6" novalidate>
+      <!-- Leyenda global de campos obligatorios -->
+      <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+        <i class="pi pi-info-circle text-info-600" />
+        <p class="text-sm text-ink-700">
+          Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+        </p>
+      </div>
+
       <!-- Información Personal -->
       <div class="card p-6">
         <h3 class="heading-3 mb-4 flex items-center gap-2">
           <i class="pi pi-user text-brand-600" />
           Información personal
         </h3>
-        <p class="text-sm text-ink-600 mb-4">Datos básicos del estudiante. Los campos con * son requeridos.</p>
+        <p class="text-sm text-ink-600 mb-4">Datos básicos del estudiante.</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Nombre *</label>
-            <InputText v-model="form.nombre" placeholder="Ej: Juan" class="w-full border border-ink-300 bg-ink-50" required />
+            <label for="field-nombre" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Nombre <span class="text-danger-600">*</span>
+            </label>
+            <InputText
+              id="field-nombre"
+              v-model="form.nombre"
+              placeholder="Ej: Juan"
+              class="w-full bg-ink-50"
+              :class="errors.nombre ? 'border border-danger-500 !bg-danger-50' : 'border border-ink-300'"
+              @update:modelValue="clearError('nombre')"
+            />
+            <p v-if="errors.nombre" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.nombre }}
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Apellido *</label>
-            <InputText v-model="form.apellido" placeholder="Ej: Pérez" class="w-full border border-ink-300 bg-ink-50" required />
+            <label for="field-apellido" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Apellido <span class="text-danger-600">*</span>
+            </label>
+            <InputText
+              id="field-apellido"
+              v-model="form.apellido"
+              placeholder="Ej: Pérez"
+              class="w-full bg-ink-50"
+              :class="errors.apellido ? 'border border-danger-500 !bg-danger-50' : 'border border-ink-300'"
+              @update:modelValue="clearError('apellido')"
+            />
+            <p v-if="errors.apellido" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.apellido }}
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Cédula * <span class="text-xs text-ink-500">(10 dígitos)</span></label>
-            <InputText v-model="form.cedula" placeholder="1234567890" maxlength="10" class="w-full border border-ink-300 bg-ink-50" required />
+            <label for="field-cedula" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Cédula <span class="text-danger-600">*</span> <span class="text-xs text-ink-500">(10 dígitos)</span>
+            </label>
+            <InputText
+              id="field-cedula"
+              v-model="form.cedula"
+              placeholder="1234567890"
+              maxlength="10"
+              class="w-full bg-ink-50"
+              :class="errors.cedula ? 'border border-danger-500 !bg-danger-50' : 'border border-ink-300'"
+              @update:modelValue="clearError('cedula')"
+            />
+            <p v-if="errors.cedula" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.cedula }}
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Fecha de nacimiento *</label>
-            <Calendar v-model="form.fechaNacimiento" dateFormat="dd/mm/yy" :showIcon="true" class="w-full" :inputClass="'border border-ink-300 bg-ink-50'" required />
+            <label for="field-fechaNacimiento" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Fecha de nacimiento <span class="text-danger-600">*</span>
+            </label>
+            <Calendar
+              inputId="field-fechaNacimiento"
+              v-model="form.fechaNacimiento"
+              dateFormat="dd/mm/yy"
+              :showIcon="true"
+              class="w-full"
+              :inputClass="errors.fechaNacimiento ? 'border border-danger-500 !bg-danger-50' : 'border border-ink-300 bg-ink-50'"
+              @update:modelValue="clearError('fechaNacimiento')"
+            />
+            <p v-if="errors.fechaNacimiento" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.fechaNacimiento }}
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Género *</label>
+            <label for="field-genero" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Género <span class="text-danger-600">*</span>
+            </label>
             <Dropdown
+              inputId="field-genero"
               v-model="form.genero"
               :options="[
                 { label: 'Masculino', value: 'M' },
@@ -64,9 +125,13 @@
               option-label="label"
               option-value="value"
               placeholder="Selecciona"
-              class="w-full border border-ink-300 bg-ink-50"
-              required
+              class="w-full bg-ink-50"
+              :class="errors.genero ? 'border border-danger-500 !bg-danger-50' : 'border border-ink-300'"
+              @update:modelValue="clearError('genero')"
             />
+            <p v-if="errors.genero" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.genero }}
+            </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-ink-700 mb-1.5">Tipo de sangre</label>
@@ -91,17 +156,56 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Email *</label>
-            <InputText v-model="form.email" type="email" placeholder="estudiante@correo.com" class="w-full border border-ink-300 bg-ink-50" required />
+            <label for="field-email" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Email <span class="text-danger-600">*</span>
+            </label>
+            <InputText
+              id="field-email"
+              v-model="form.email"
+              type="email"
+              placeholder="estudiante@correo.com"
+              class="w-full bg-ink-50"
+              :class="errors.email ? 'border border-danger-500 !bg-danger-50' : 'border border-ink-300'"
+              @update:modelValue="clearError('email')"
+            />
+            <p v-if="errors.email" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.email }}
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Teléfono * <span class="text-xs text-ink-500">(09XXXXXXXX)</span></label>
-            <InputText v-model="form.telefono" placeholder="0987654321" maxlength="10" class="w-full border border-ink-300 bg-ink-50" required />
+            <label for="field-telefono" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Teléfono <span class="text-danger-600">*</span> <span class="text-xs text-ink-500">(09XXXXXXXX)</span>
+            </label>
+            <InputText
+              id="field-telefono"
+              v-model="form.telefono"
+              placeholder="0987654321"
+              maxlength="10"
+              class="w-full bg-ink-50"
+              :class="errors.telefono ? 'border border-danger-500 !bg-danger-50' : 'border border-ink-300'"
+              @update:modelValue="clearError('telefono')"
+            />
+            <p v-if="errors.telefono" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.telefono }}
+            </p>
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Dirección *</label>
-          <Textarea v-model="form.direccion" rows="3" placeholder="Calle, número, sector, ciudad" class="w-full border border-ink-300 bg-ink-50" required />
+          <label for="field-direccion" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Dirección <span class="text-danger-600">*</span>
+          </label>
+          <Textarea
+            id="field-direccion"
+            v-model="form.direccion"
+            rows="3"
+            placeholder="Calle, número, sector, ciudad"
+            class="w-full bg-ink-50"
+            :class="errors.direccion ? 'border border-danger-500 !bg-danger-50' : 'border border-ink-300'"
+            @update:modelValue="clearError('direccion')"
+          />
+          <p v-if="errors.direccion" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.direccion }}
+          </p>
         </div>
       </div>
 
@@ -114,17 +218,21 @@
         <p class="text-sm text-ink-600 mb-4">Curso que el estudiante va a tomar. El precio del curso determina cuánto debe pagar.</p>
 
         <div class="mb-4">
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Tipo de curso *</label>
+          <label for="field-tipoCursoId" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Tipo de curso <span class="text-danger-600">*</span>
+          </label>
           <Dropdown
+            inputId="field-tipoCursoId"
             v-model="form.tipoCursoId"
             :options="tiposCurso"
             optionValue="id"
             optionLabel="nombre"
             placeholder="Selecciona un curso"
-            class="w-full border border-ink-300 bg-ink-50"
+            class="w-full bg-ink-50"
+            :class="errors.tipoCursoId ? 'border border-danger-500 !bg-danger-50' : 'border border-ink-300'"
             :loading="cargandoCursos"
             @change="onTipoCursoChange"
-            required
+            @update:modelValue="clearError('tipoCursoId')"
           >
             <template #value="{ value, placeholder }">
               <span v-if="!value" class="text-ink-500">{{ placeholder }}</span>
@@ -150,6 +258,9 @@
               <p class="px-3 py-2 text-sm text-ink-500">No hay tipos de curso configurados. Crea uno en Configuración → Catálogos.</p>
             </template>
           </Dropdown>
+          <p v-if="errors.tipoCursoId" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errors.tipoCursoId }}
+          </p>
           <p class="text-xs text-ink-500 mt-1.5">Cada curso está vinculado a una categoría de licencia (A, B, C, etc.) y tiene un precio base que se usará para calcular los pagos.</p>
         </div>
 
@@ -326,6 +437,21 @@ const cargandoCursos = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
 
+const errors = reactive<Record<string, string>>({})
+const setError = (campo: string, mensaje: string) => { errors[campo] = mensaje }
+const clearError = (campo: string) => { if (errors[campo]) delete errors[campo] }
+const clearAllErrors = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+
+const ORDEN_CAMPOS = ['nombre','apellido','cedula','fechaNacimiento','genero','email','telefono','direccion','tipoCursoId']
+const focusFirstError = () => {
+  const primero = ORDEN_CAMPOS.find(k => errors[k])
+  if (!primero) return
+  const el = document.getElementById(`field-${primero}`)
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  setTimeout(() => (el as HTMLElement).focus?.(), 300)
+}
+
 const cursoSeleccionado = computed(() =>
   tiposCurso.value.find(c => c.id === form.tipoCursoId) || null
 )
@@ -378,46 +504,35 @@ const cargarEstudiante = async () => {
   }
 }
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const soloDigitos = (v: string) => /^\d+$/.test(v)
+
 const validar = (): boolean => {
   errorMessage.value = ''
+  clearAllErrors()
 
-  if (!form.nombre?.trim()) {
-    errorMessage.value = 'El nombre es requerido'
-    return false
-  }
-  if (!form.apellido?.trim()) {
-    errorMessage.value = 'El apellido es requerido'
-    return false
-  }
-  if (!form.cedula?.trim() || form.cedula.length !== 10) {
-    errorMessage.value = 'La cédula debe tener 10 dígitos'
-    return false
-  }
-  if (!form.email?.trim()) {
-    errorMessage.value = 'El email es requerido'
-    return false
-  }
-  if (!form.telefono?.trim() || form.telefono.length !== 10) {
-    errorMessage.value = 'El teléfono debe tener 10 dígitos'
-    return false
-  }
-  if (!form.direccion?.trim()) {
-    errorMessage.value = 'La dirección es requerida'
-    return false
-  }
-  if (!form.fechaNacimiento) {
-    errorMessage.value = 'La fecha de nacimiento es requerida'
-    return false
-  }
-  if (!form.genero) {
-    errorMessage.value = 'El género es requerido'
-    return false
-  }
-  if (!form.tipoCursoId) {
-    errorMessage.value = 'El tipo de curso es requerido'
-    return false
-  }
+  if (!form.nombre?.trim()) setError('nombre', 'El nombre es requerido')
+  if (!form.apellido?.trim()) setError('apellido', 'El apellido es requerido')
 
+  if (!form.cedula?.trim()) setError('cedula', 'La cédula es requerida')
+  else if (form.cedula.length !== 10 || !soloDigitos(form.cedula)) setError('cedula', 'La cédula debe tener 10 dígitos numéricos')
+
+  if (!form.fechaNacimiento) setError('fechaNacimiento', 'La fecha de nacimiento es requerida')
+  if (!form.genero) setError('genero', 'El género es requerido')
+
+  if (!form.email?.trim()) setError('email', 'El email es requerido')
+  else if (!emailRegex.test(form.email.trim())) setError('email', 'El email no tiene un formato válido')
+
+  if (!form.telefono?.trim()) setError('telefono', 'El teléfono es requerido')
+  else if (form.telefono.length !== 10 || !soloDigitos(form.telefono)) setError('telefono', 'El teléfono debe tener 10 dígitos numéricos')
+
+  if (!form.direccion?.trim()) setError('direccion', 'La dirección es requerida')
+  if (!form.tipoCursoId) setError('tipoCursoId', 'El tipo de curso es requerido')
+
+  if (Object.keys(errors).length > 0) {
+    focusFirstError()
+    return false
+  }
   return true
 }
 
