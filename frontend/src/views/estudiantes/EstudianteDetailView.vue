@@ -534,38 +534,55 @@
       <div class="space-y-4">
         <div class="rounded-lg bg-info-50 border border-info-200 p-3 text-xs text-ink-700">
           <p>Estado actual: <strong>{{ estudiante.estado }}</strong></p>
-          <p class="mt-1 text-ink-600">Las transiciones desde PRE_MATRICULADO se hacen automáticamente al registrar el primer pago.</p>
+          <p class="mt-1 text-ink-600">
+            Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+            Las transiciones desde PRE_MATRICULADO se hacen automáticamente al registrar el primer pago.
+          </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Nuevo estado *</label>
+          <label for="field-est-estado" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Nuevo estado <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <Dropdown
             v-model="formEstado.estado"
+            inputId="field-est-estado"
             :options="estadosPermitidos"
             option-label="label"
             option-value="value"
             placeholder="Selecciona estado"
             class="w-full border border-ink-300 bg-ink-50"
+            :class="errorsEst.estado ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrEst('estado')"
           />
+          <p v-if="errorsEst.estado" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsEst.estado }}
+          </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">
+          <label for="field-est-motivo" class="block text-sm font-medium text-ink-700 mb-1.5">
             Motivo
-            <span v-if="formEstado.estado === 'RETIRADO'" class="text-danger-600">*</span>
+            <span v-if="formEstado.estado === 'RETIRADO'" class="text-danger-600 font-semibold">*</span>
             <span v-else class="text-xs text-ink-500">(opcional)</span>
           </label>
           <Textarea
+            id="field-est-motivo"
             v-model="formEstado.motivo"
             rows="3"
             placeholder="Ej: Curso completado satisfactoriamente / Retiro voluntario por motivos personales..."
             class="w-full border border-ink-300 bg-ink-50"
+            :class="errorsEst.motivo ? '!border-danger-500 !bg-danger-50' : ''"
             maxlength="500"
+            @update:modelValue="clearErrEst('motivo')"
           />
-          <p class="text-xs text-ink-500 mt-1">Se anexará a las observaciones del estudiante con fecha.</p>
+          <p v-if="errorsEst.motivo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsEst.motivo }}
+          </p>
+          <p v-else class="text-xs text-ink-500 mt-1">Se anexará a las observaciones del estudiante con fecha.</p>
         </div>
       </div>
       <template #footer>
         <Button label="Cancelar" severity="secondary" outlined @click="cerrarDialogEstado" :disabled="cambiandoEstado" />
-        <Button label="Cambiar estado" icon="pi pi-check" @click="cambiarEstado" :loading="cambiandoEstado" :disabled="!formEstado.estado" />
+        <Button label="Cambiar estado" icon="pi pi-check" @click="cambiarEstado" :loading="cambiandoEstado" />
       </template>
     </Dialog>
 
@@ -578,26 +595,48 @@
       :closable="!subiendoDocumento"
     >
       <div class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          <p class="text-sm text-ink-700">
+            Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+          </p>
+        </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Tipo de documento *</label>
+          <label for="field-doc-tipo" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Tipo de documento <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <Dropdown
             v-model="formSubida.tipo"
+            inputId="field-doc-tipo"
             :options="tiposDocumento"
             option-label="label"
             option-value="value"
             placeholder="Selecciona el tipo"
             class="w-full border border-ink-300 bg-ink-50"
+            :class="errorsDoc.tipo ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrDoc('tipo')"
           />
+          <p v-if="errorsDoc.tipo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsDoc.tipo }}
+          </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Archivo * <span class="text-xs text-ink-500">(máx. 10 MB)</span></label>
+          <label for="field-doc-archivo" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Archivo <span class="text-danger-600 font-semibold">*</span>
+            <span class="text-xs text-ink-500">(máx. 10 MB)</span>
+          </label>
           <input
+            id="field-doc-archivo"
             ref="fileInputRef"
             type="file"
-            class="block w-full text-sm text-ink-700 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
+            :class="['block w-full text-sm text-ink-700 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer',
+              errorsDoc.archivo ? 'rounded border border-danger-500 bg-danger-50 p-1.5' : '']"
             @change="onArchivoSeleccionado"
           />
-          <p v-if="formSubida.archivo" class="text-xs text-ink-600 mt-1.5">
+          <p v-if="errorsDoc.archivo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsDoc.archivo }}
+          </p>
+          <p v-else-if="formSubida.archivo" class="text-xs text-ink-600 mt-1.5">
             <i class="pi pi-paperclip mr-1" />
             {{ formSubida.archivo.name }} · {{ formatearTamano(formSubida.archivo.size) }}
           </p>
@@ -605,7 +644,7 @@
       </div>
       <template #footer>
         <Button label="Cancelar" severity="secondary" outlined @click="cerrarDialogSubida" :disabled="subiendoDocumento" />
-        <Button label="Subir" icon="pi pi-upload" @click="subirDocumento" :loading="subiendoDocumento" :disabled="!formSubida.tipo || !formSubida.archivo" />
+        <Button label="Subir" icon="pi pi-upload" @click="subirDocumento" :loading="subiendoDocumento" />
       </template>
     </Dialog>
   </div>
@@ -824,6 +863,37 @@ const TRANSICIONES_MANUALES: Record<string, { value: string; label: string }[]> 
   ]
 }
 
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string, scroll = true) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => {
+      const el = document.getElementById(`field-${prefijo}-${p}`)
+      if (!el) return
+      if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      ;(el as HTMLElement).focus?.()
+    }, scroll ? 300 : 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
+const valEst = useValidation()
+const errorsEst = valEst.errors
+const setErrEst = valEst.setError
+const clearErrEst = valEst.clearError
+const clearAllEst = valEst.clearAll
+
+const valDoc = useValidation()
+const errorsDoc = valDoc.errors
+const setErrDoc = valDoc.setError
+const clearErrDoc = valDoc.clearError
+const clearAllDoc = valDoc.clearAll
+
 const dialogEstadoVisible = ref(false)
 const cambiandoEstado = ref(false)
 const formEstado = reactive<{ estado: string | null; motivo: string }>({ estado: null, motivo: '' })
@@ -833,6 +903,7 @@ const estadosPermitidos = computed(() => TRANSICIONES_MANUALES[estudiante.estado
 const abrirDialogEstado = () => {
   formEstado.estado = null
   formEstado.motivo = ''
+  clearAllEst()
   dialogEstadoVisible.value = true
 }
 
@@ -840,17 +911,21 @@ const cerrarDialogEstado = () => {
   dialogEstadoVisible.value = false
 }
 
-const cambiarEstado = async () => {
-  if (!formEstado.estado) return
-  if (formEstado.estado === 'RETIRADO' && !formEstado.motivo.trim()) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Motivo requerido',
-      detail: 'Debes ingresar un motivo al marcar el estudiante como RETIRADO',
-      life: 4000
-    })
-    return
+const validarEstado = (): boolean => {
+  clearAllEst()
+  if (!formEstado.estado) setErrEst('estado', 'Selecciona el nuevo estado')
+  if (formEstado.estado === 'RETIRADO' && !formEstado.motivo?.trim()) {
+    setErrEst('motivo', 'El motivo es requerido al marcar como RETIRADO')
   }
+  if (Object.keys(errorsEst).length > 0) {
+    valEst.focusFirst(['estado', 'motivo'], 'est', false)
+    return false
+  }
+  return true
+}
+
+const cambiarEstado = async () => {
+  if (!validarEstado()) return
 
   cambiandoEstado.value = true
   try {
@@ -912,6 +987,7 @@ const abrirDialogSubida = () => {
   formSubida.tipo = null
   formSubida.archivo = null
   if (fileInputRef.value) fileInputRef.value.value = ''
+  clearAllDoc()
   dialogSubidaVisible.value = true
 }
 
@@ -920,10 +996,11 @@ const cerrarDialogSubida = () => {
 }
 
 const onArchivoSeleccionado = (event: Event) => {
+  clearErrDoc('archivo')
   const input = event.target as HTMLInputElement
   const file = input.files?.[0] || null
   if (file && file.size > 10 * 1024 * 1024) {
-    toast.add({ severity: 'error', summary: 'Archivo muy grande', detail: 'El tamaño máximo es 10 MB', life: 4000 })
+    setErrDoc('archivo', 'El tamaño máximo es 10 MB')
     input.value = ''
     formSubida.archivo = null
     return
@@ -931,8 +1008,19 @@ const onArchivoSeleccionado = (event: Event) => {
   formSubida.archivo = file
 }
 
+const validarSubida = (): boolean => {
+  clearAllDoc()
+  if (!formSubida.tipo) setErrDoc('tipo', 'Selecciona el tipo de documento')
+  if (!formSubida.archivo) setErrDoc('archivo', 'Selecciona un archivo')
+  if (Object.keys(errorsDoc).length > 0) {
+    valDoc.focusFirst(['tipo', 'archivo'], 'doc', false)
+    return false
+  }
+  return true
+}
+
 const subirDocumento = async () => {
-  if (!formSubida.tipo || !formSubida.archivo) return
+  if (!validarSubida()) return
   subiendoDocumento.value = true
   try {
     await estudiantesService.subirDocumento(parseInt(estudianteId), formSubida.tipo, formSubida.archivo)

@@ -124,8 +124,11 @@
     <!-- Dialog: Nuevo/Editar usuario -->
     <Dialog v-model:visible="dlgUsuario" modal :header="formUsuario.id ? 'Editar usuario' : 'Nuevo usuario'" :style="{ width: '680px' }" class="max-h-[90vh] overflow-y-auto">
       <div class="space-y-4">
-        <div v-if="errUsuario" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 text-sm text-danger-600">
-          {{ errUsuario }}
+        <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          <p class="text-sm text-ink-700">
+            Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+          </p>
         </div>
 
         <!-- Datos Personales -->
@@ -133,26 +136,78 @@
           <p class="text-sm font-semibold text-ink-900 mb-3 pb-2 border-b border-ink-200">Datos Personales</p>
           <div class="grid grid-cols-2 gap-3 mb-4">
             <div>
-              <label class="block text-sm font-medium text-ink-700 mb-1.5">Nombre *</label>
-              <InputText v-model="formUsuario.nombre" placeholder="Juan" class="w-full border border-ink-300 bg-ink-50" />
+              <label for="field-usr-nombre" class="block text-sm font-medium text-ink-700 mb-1.5">
+                Nombre <span class="text-danger-600 font-semibold">*</span>
+              </label>
+              <InputText
+                id="field-usr-nombre"
+                v-model="formUsuario.nombre"
+                placeholder="Juan"
+                maxlength="50"
+                class="w-full border border-ink-300 bg-ink-50"
+                :class="errorsU.nombre ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearErrU('nombre')"
+              />
+              <p v-if="errorsU.nombre" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsU.nombre }}
+              </p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-ink-700 mb-1.5">Apellido *</label>
-              <InputText v-model="formUsuario.apellido" placeholder="Pérez" class="w-full border border-ink-300 bg-ink-50" />
+              <label for="field-usr-apellido" class="block text-sm font-medium text-ink-700 mb-1.5">
+                Apellido <span class="text-danger-600 font-semibold">*</span>
+              </label>
+              <InputText
+                id="field-usr-apellido"
+                v-model="formUsuario.apellido"
+                placeholder="Pérez"
+                maxlength="50"
+                class="w-full border border-ink-300 bg-ink-50"
+                :class="errorsU.apellido ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearErrU('apellido')"
+              />
+              <p v-if="errorsU.apellido" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsU.apellido }}
+              </p>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3 mb-4">
             <div>
-              <label class="block text-sm font-medium text-ink-700 mb-1.5">Cédula</label>
-              <InputText v-model="formUsuario.cedula" placeholder="1234567890" class="w-full border border-ink-300 bg-ink-50" />
+              <label for="field-usr-cedula" class="block text-sm font-medium text-ink-700 mb-1.5">
+                Cédula <span class="text-xs text-ink-500">(opcional)</span>
+              </label>
+              <InputText
+                id="field-usr-cedula"
+                v-model="formUsuario.cedula"
+                placeholder="1234567890"
+                maxlength="10"
+                class="w-full border border-ink-300 bg-ink-50"
+                :class="errorsU.cedula ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearErrU('cedula')"
+              />
+              <p v-if="errorsU.cedula" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsU.cedula }}
+              </p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-ink-700 mb-1.5">Fecha de Nacimiento</label>
-              <Calendar v-model="formUsuario.fechaNacimiento" dateFormat="dd/mm/yy" class="w-full border border-ink-300 bg-ink-50" :inputClass="'border border-ink-300 bg-ink-50'" />
+              <label for="field-usr-fechaNacimiento" class="block text-sm font-medium text-ink-700 mb-1.5">
+                Fecha de Nacimiento <span class="text-xs text-ink-500">(opcional)</span>
+              </label>
+              <Calendar
+                v-model="formUsuario.fechaNacimiento"
+                inputId="field-usr-fechaNacimiento"
+                dateFormat="dd/mm/yy"
+                class="w-full border border-ink-300 bg-ink-50"
+                :inputClass="errorsU.fechaNacimiento ? '!border-danger-500 !bg-danger-50' : 'border border-ink-300 bg-ink-50'"
+                :maxDate="new Date()"
+                @update:modelValue="clearErrU('fechaNacimiento')"
+              />
+              <p v-if="errorsU.fechaNacimiento" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsU.fechaNacimiento }}
+              </p>
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Género</label>
+            <label class="block text-sm font-medium text-ink-700 mb-1.5">Género <span class="text-xs text-ink-500">(opcional)</span></label>
             <Dropdown
               v-model="formUsuario.genero"
               :options="[
@@ -172,27 +227,56 @@
         <div>
           <p class="text-sm font-semibold text-ink-900 mb-3 pb-2 border-b border-ink-200">Datos de Contacto</p>
           <div class="mb-4">
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Email *</label>
-            <InputText v-model="formUsuario.email" placeholder="juan@escuela.com" type="email" class="w-full border border-ink-300 bg-ink-50" :disabled="!!formUsuario.id" />
+            <label for="field-usr-email" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Email <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <InputText
+              id="field-usr-email"
+              v-model="formUsuario.email"
+              placeholder="juan@escuela.com"
+              type="email"
+              maxlength="120"
+              class="w-full border border-ink-300 bg-ink-50"
+              :class="errorsU.email ? '!border-danger-500 !bg-danger-50' : ''"
+              :disabled="!!formUsuario.id"
+              @update:modelValue="clearErrU('email')"
+            />
+            <p v-if="errorsU.email" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsU.email }}
+            </p>
+            <p v-else-if="formUsuario.id" class="text-xs text-ink-500 mt-1">El email no se puede cambiar tras crear el usuario.</p>
           </div>
           <div class="grid grid-cols-2 gap-3 mb-4">
             <div>
-              <label class="block text-sm font-medium text-ink-700 mb-1.5">Teléfono</label>
-              <InputText v-model="formUsuario.telefono" placeholder="+593 9 123456789" class="w-full border border-ink-300 bg-ink-50" />
+              <label for="field-usr-telefono" class="block text-sm font-medium text-ink-700 mb-1.5">
+                Teléfono <span class="text-xs text-ink-500">(opcional)</span>
+              </label>
+              <InputText
+                id="field-usr-telefono"
+                v-model="formUsuario.telefono"
+                placeholder="0991234567"
+                maxlength="10"
+                class="w-full border border-ink-300 bg-ink-50"
+                :class="errorsU.telefono ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearErrU('telefono')"
+              />
+              <p v-if="errorsU.telefono" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+                <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsU.telefono }}
+              </p>
             </div>
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Dirección</label>
-            <InputText v-model="formUsuario.direccion" placeholder="Calle Principal 123" class="w-full border border-ink-300 bg-ink-50" />
+            <label class="block text-sm font-medium text-ink-700 mb-1.5">Dirección <span class="text-xs text-ink-500">(opcional)</span></label>
+            <InputText v-model="formUsuario.direccion" placeholder="Calle Principal 123" maxlength="200" class="w-full border border-ink-300 bg-ink-50" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium text-ink-700 mb-1.5">Ciudad</label>
-              <InputText v-model="formUsuario.ciudad" placeholder="Quito" class="w-full border border-ink-300 bg-ink-50" />
+              <label class="block text-sm font-medium text-ink-700 mb-1.5">Ciudad <span class="text-xs text-ink-500">(opcional)</span></label>
+              <InputText v-model="formUsuario.ciudad" placeholder="Quito" maxlength="80" class="w-full border border-ink-300 bg-ink-50" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-ink-700 mb-1.5">Provincia</label>
-              <InputText v-model="formUsuario.provincia" placeholder="Pichincha" class="w-full border border-ink-300 bg-ink-50" />
+              <label class="block text-sm font-medium text-ink-700 mb-1.5">Provincia <span class="text-xs text-ink-500">(opcional)</span></label>
+              <InputText v-model="formUsuario.provincia" placeholder="Pichincha" maxlength="80" class="w-full border border-ink-300 bg-ink-50" />
             </div>
           </div>
         </div>
@@ -201,17 +285,25 @@
         <div>
           <p class="text-sm font-semibold text-ink-900 mb-3 pb-2 border-b border-ink-200">Datos de Cuenta</p>
           <div class="mb-4">
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Roles *</label>
+            <label for="field-usr-roles" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Roles <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <MultiSelect
               v-model="formUsuario.roles"
+              inputId="field-usr-roles"
               :options="rolesDisponibles"
               optionLabel="label"
               optionValue="value"
               placeholder="Selecciona uno o más roles"
               class="w-full border border-ink-300 bg-ink-50"
+              :class="errorsU.roles ? '!border-danger-500 !bg-danger-50' : ''"
               display="chip"
+              @update:modelValue="clearErrU('roles')"
             />
-            <p class="text-xs text-ink-500 mt-1.5">Un usuario puede tener múltiples roles.</p>
+            <p v-if="errorsU.roles" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsU.roles }}
+            </p>
+            <p v-else class="text-xs text-ink-500 mt-1.5">Un usuario puede tener múltiples roles.</p>
           </div>
         </div>
 
@@ -219,13 +311,19 @@
         <div v-if="!formUsuario.id">
           <p class="text-sm font-semibold text-ink-900 mb-3 pb-2 border-b border-ink-200">Seguridad</p>
           <div class="mb-4">
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Contraseña temporal *</label>
+            <label for="field-usr-password" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Contraseña temporal <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <div class="flex gap-2">
               <InputText
+                id="field-usr-password"
                 v-model="formUsuario.password"
-                placeholder="Contraseña inicial"
+                placeholder="Al menos 8 caracteres"
                 :type="showPassword ? 'text' : 'password'"
+                maxlength="100"
                 class="w-full border border-ink-300 bg-ink-50"
+                :class="errorsU.password ? '!border-danger-500 !bg-danger-50' : ''"
+                @update:modelValue="clearErrU('password')"
               />
               <Button
                 :icon="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
@@ -235,6 +333,10 @@
                 @click="showPassword = !showPassword"
               />
             </div>
+            <p v-if="errorsU.password" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsU.password }}
+            </p>
+            <p v-else class="text-xs text-ink-500 mt-1">Mínimo 8 caracteres. El usuario podrá cambiarla en el primer login.</p>
           </div>
           <div class="flex items-center gap-2 p-3 rounded-lg bg-success-50 border border-success-200">
             <Checkbox v-model="formUsuario.passwordChangeRequired" :binary="true" inputId="pwd-change" />
@@ -252,6 +354,12 @@
             <label for="usr-activo" class="text-sm text-ink-700">Cuenta activa (permite iniciar sesión)</label>
           </div>
         </div>
+
+        <!-- Error de servidor (409 email duplicado, red, etc.) -->
+        <div v-if="errUsuario" class="rounded-lg bg-danger-50 border border-danger-500/20 p-3 flex items-start gap-2 text-sm text-danger-600">
+          <i class="pi pi-exclamation-circle mt-0.5" />
+          <span>{{ errUsuario }}</span>
+        </div>
       </div>
 
       <template #footer>
@@ -265,17 +373,25 @@
       <div class="space-y-4">
         <div>
           <p class="text-sm font-semibold text-ink-900 mb-3">{{ usuarioRolesEdit?.nombre }} {{ usuarioRolesEdit?.apellido }}</p>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Roles *</label>
+          <label for="field-rol-roles" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Roles <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <MultiSelect
             v-model="formRoles"
+            inputId="field-rol-roles"
             :options="rolesDisponibles"
             optionLabel="label"
             optionValue="value"
             placeholder="Selecciona uno o más roles"
             class="w-full"
+            :class="errorsR.roles ? '!border-danger-500 !bg-danger-50' : ''"
             display="chip"
+            @update:modelValue="clearErrR('roles')"
           />
-          <p class="text-xs text-ink-500 mt-1.5">Un usuario puede tener múltiples roles.</p>
+          <p v-if="errorsR.roles" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsR.roles }}
+          </p>
+          <p v-else class="text-xs text-ink-500 mt-1.5">Un usuario puede tener múltiples roles.</p>
         </div>
       </div>
 
@@ -457,6 +573,37 @@ const toggleActivo = async (u: any) => {
   } finally { toggleandoId.value = null }
 }
 
+// -------- Helper factory de validación por campo --------
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string, scroll = true) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => {
+      const el = document.getElementById(`field-${prefijo}-${p}`)
+      if (!el) return
+      if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      ;(el as HTMLElement).focus?.()
+    }, scroll ? 300 : 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+
+const valU = useValidation()
+const errorsU = valU.errors
+const setErrU = valU.setError
+const clearErrU = valU.clearError
+const clearAllU = valU.clearAll
+
+const valR = useValidation()
+const errorsR = valR.errors
+const setErrR = valR.setError
+const clearErrR = valR.clearError
+const clearAllR = valR.clearAll
+
 // Dialog y formulario
 const dlgUsuario = ref(false)
 const guardandoUsuario = ref(false)
@@ -481,6 +628,7 @@ const formUsuario = reactive<any>({
 
 const abrirFormUsuario = (u?: any) => {
   errUsuario.value = ''
+  clearAllU()
   showPassword.value = false
   if (u) {
     Object.assign(formUsuario, {
@@ -522,13 +670,59 @@ const abrirFormUsuario = (u?: any) => {
   dlgUsuario.value = true
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const validarUsuario = (): boolean => {
+  clearAllU()
+  const nombre = formUsuario.nombre?.trim() ?? ''
+  if (!nombre) setErrU('nombre', 'El nombre es requerido')
+  else if (nombre.length < 2) setErrU('nombre', 'Mínimo 2 caracteres')
+
+  const apellido = formUsuario.apellido?.trim() ?? ''
+  if (!apellido) setErrU('apellido', 'El apellido es requerido')
+  else if (apellido.length < 2) setErrU('apellido', 'Mínimo 2 caracteres')
+
+  const cedula = formUsuario.cedula?.trim() ?? ''
+  if (cedula && (cedula.length !== 10 || !/^\d+$/.test(cedula))) {
+    setErrU('cedula', 'La cédula debe tener 10 dígitos numéricos')
+  }
+
+  if (formUsuario.fechaNacimiento) {
+    const fn = new Date(formUsuario.fechaNacimiento)
+    const hoy = new Date()
+    if (fn > hoy) setErrU('fechaNacimiento', 'No puede ser una fecha futura')
+  }
+
+  const email = formUsuario.email?.trim() ?? ''
+  if (!email) setErrU('email', 'El email es requerido')
+  else if (!EMAIL_REGEX.test(email)) setErrU('email', 'Formato de email inválido')
+
+  const telefono = formUsuario.telefono?.trim() ?? ''
+  if (telefono && (telefono.length !== 10 || !/^\d+$/.test(telefono))) {
+    setErrU('telefono', 'El teléfono debe tener 10 dígitos numéricos')
+  }
+
+  if (!formUsuario.roles || formUsuario.roles.length === 0) {
+    setErrU('roles', 'Debe seleccionar al menos un rol')
+  }
+
+  if (!formUsuario.id) {
+    const pass = formUsuario.password ?? ''
+    if (!pass.trim()) setErrU('password', 'La contraseña es requerida')
+    else if (pass.length < 8) setErrU('password', 'Mínimo 8 caracteres')
+  }
+
+  if (Object.keys(errorsU).length > 0) {
+    const orden = ['nombre','apellido','cedula','fechaNacimiento','email','telefono','roles','password']
+    valU.focusFirst(orden, 'usr', true)
+    return false
+  }
+  return true
+}
+
 const guardarUsuario = async () => {
   errUsuario.value = ''
-  if (!formUsuario.nombre?.trim()) { errUsuario.value = 'El nombre es obligatorio'; return }
-  if (!formUsuario.apellido?.trim()) { errUsuario.value = 'El apellido es obligatorio'; return }
-  if (!formUsuario.email?.trim()) { errUsuario.value = 'El email es obligatorio'; return }
-  if (!formUsuario.roles || formUsuario.roles.length === 0) { errUsuario.value = 'Debe seleccionar al menos un rol'; return }
-  if (!formUsuario.id && !formUsuario.password?.trim()) { errUsuario.value = 'La contraseña es obligatoria para nuevos usuarios'; return }
+  if (!validarUsuario()) return
 
   guardandoUsuario.value = true
   try {
@@ -585,12 +779,15 @@ const formRoles = ref<string[]>([])
 const abrirRoles = (u: any) => {
   usuarioRolesEdit.value = u
   formRoles.value = [...(u.roles || [])]
+  clearAllR()
   dlgRoles.value = true
 }
 
 const guardarRolesEdit = async () => {
+  clearAllR()
   if (!formRoles.value || formRoles.value.length === 0) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Debe seleccionar al menos un rol', life: 3000 })
+    setErrR('roles', 'Debe seleccionar al menos un rol')
+    valR.focusFirst(['roles'], 'rol', false)
     return
   }
 
