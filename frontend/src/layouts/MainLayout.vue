@@ -49,7 +49,9 @@
           <NavItem to="/asignaciones"  icon="pi-calendar"  label="Asignaciones" />
 
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Finanzas</p>
-          <NavItem to="/cobros"        icon="pi-wallet"    label="Cobros" />
+          <NavItem to="/cobros"          icon="pi-wallet"     label="Cobros" />
+          <NavItem to="/finanzas/gastos" icon="pi-arrow-down" label="Gastos" />
+          <NavItem to="/finanzas/saldo"  icon="pi-chart-pie"  label="Saldo" />
 
           <p class="px-3 pt-4 pb-2 text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Reportes Operativos</p>
           <NavItem to="/reportes/operativos/estudiantes" icon="pi-chart-bar" label="Estudiantes" />

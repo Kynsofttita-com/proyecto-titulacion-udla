@@ -9,6 +9,7 @@ public record PagoResponse(
     BigDecimal monto,
     LocalDateTime fechaPago,
     String metodoPago,
+    Long cuentaId,
     String referenciaTransaccion,
     String observaciones,
     Long usuarioRegistroId,
