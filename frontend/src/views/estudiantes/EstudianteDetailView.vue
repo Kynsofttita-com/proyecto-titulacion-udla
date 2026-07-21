@@ -161,7 +161,7 @@
 
           <div class="space-y-3">
             <DetailRow label="Tipo de curso" :value="nombreCurso || 'No especificado'" />
-            <DetailRow label="Categoría licencia" :value="estudiante.categoriaLicenciaId ? `Categoría ${estudiante.categoriaLicenciaId}` : 'No especificado'" />
+            <DetailRow label="Categoría licencia" :value="descripcionCategoria || 'No especificado'" />
             <DetailRow label="Fecha de matrícula" :value="estudiante.fechaMatricula" type="date" />
             <DetailRow label="Observaciones" :value="estudiante.observaciones || 'Sin observaciones'" />
           </div>
@@ -719,8 +719,20 @@ const editandoContacto = reactive<any>({ id: null })
 const formContactoEmergencia = reactive<any>({ nombre: '', telefono: '', parentesco: '', esPrincipal: false })
 
 const nombreCurso = computed(() => {
-  // En una aplicación real, esto vendría de un catálogo o endpoint
-  return estudiante.tipoCursoId ? `Curso ${estudiante.tipoCursoId}` : null
+  const id = estudiante.tipoCursoId
+  if (!id) return null
+  const t = mapTiposCurso.value.get(id)
+  if (!t) return `Curso #${id}`
+  const horas = t.duracionTotalHoras ? ` · ${t.duracionTotalHoras}h` : ''
+  return `${t.nombre}${horas}`
+})
+
+const descripcionCategoria = computed(() => {
+  const id = estudiante.categoriaLicenciaId
+  if (!id) return null
+  const c = mapCategoriasLic.value.get(id)
+  if (!c) return `Categoría #${id}`
+  return c.descripcion ? `${c.codigo} — ${c.descripcion}` : c.codigo
 })
 
 const formatearTamano = (bytes?: number) => {
@@ -755,17 +767,24 @@ const tieneCredito = computed(() =>
 // Maps id -> nombre/placa para mostrar nombres reales (no IDs) en el historial.
 const mapInstructores = ref<Map<number, string>>(new Map())
 const mapVehiculos    = ref<Map<number, string>>(new Map())
+const mapTiposCurso   = ref<Map<number, any>>(new Map())
+const mapCategoriasLic = ref<Map<number, any>>(new Map())
 const nombreInstructor = (id: number) => mapInstructores.value.get(id) || `Instructor #${id}`
 const placaVehiculo    = (id: number) => mapVehiculos.value.get(id) || `Vehículo #${id}`
 
 const cargarCatalogos = async () => {
   try {
-    const [insRes, vehRes] = await Promise.all([
-      api.get('/instructores', { params: { size: 200 } }),
-      api.get('/vehiculos',    { params: { size: 200 } })
+    const [insRes, vehRes, tcRes, catRes] = await Promise.all([
+      api.get('/instructores',       { params: { size: 200 } }),
+      api.get('/vehiculos',          { params: { size: 200 } }),
+      api.get('/tipos-curso',        { params: { size: 100 } }),
+      api.get('/categorias-licencia', { params: { size: 50 } })
     ])
     const ins = insRes.data.content || []
     const veh = vehRes.data.content || []
+    // tipos-curso y categorias-licencia pueden devolver List<> o Page<> segun MS
+    const tc  = Array.isArray(tcRes.data)  ? tcRes.data  : (tcRes.data.content  || [])
+    const cat = Array.isArray(catRes.data) ? catRes.data : (catRes.data.content || [])
     mapInstructores.value = new Map(ins.map((i: any) => [
       i.id,
       i.nombreCompleto || `${i.nombre ?? ''} ${i.apellido ?? ''}`.trim() || `Instructor #${i.id}`
@@ -774,6 +793,8 @@ const cargarCatalogos = async () => {
       v.id,
       v.placa ? `${v.placa}${v.marca ? ` · ${v.marca} ${v.modelo ?? ''}`.trim() : ''}` : `Vehículo #${v.id}`
     ]))
+    mapTiposCurso.value   = new Map(tc.map((t: any)  => [t.id, t]))
+    mapCategoriasLic.value = new Map(cat.map((c: any) => [c.id, c]))
   } catch (e) {
     console.warn('No se pudo cargar catalogos para historial', e)
   }
