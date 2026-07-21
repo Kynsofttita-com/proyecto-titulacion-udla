@@ -102,15 +102,25 @@
                 Disponible para asignar
               </label>
             </div>
-            <Button
-              icon="pi pi-trash"
-              text
-              rounded
-              size="small"
-              severity="danger"
-              v-tooltip="'Desactivar permanentemente'"
-              @click="confirmarDesactivar(tipo)"
-            />
+            <div class="flex items-center gap-1">
+              <Button
+                icon="pi pi-pencil"
+                text
+                rounded
+                size="small"
+                v-tooltip="'Editar nombre y observaciones'"
+                @click="abrirDialogEditar(tipo)"
+              />
+              <Button
+                icon="pi pi-trash"
+                text
+                rounded
+                size="small"
+                severity="danger"
+                v-tooltip="'Desactivar permanentemente'"
+                @click="confirmarDesactivar(tipo)"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -209,6 +219,79 @@
       <template #footer>
         <Button label="Cancelar" outlined @click="dialogCrearVisible = false" :disabled="creando" />
         <Button label="Crear tipo" icon="pi pi-check" :loading="creando" @click="crearTipo" />
+      </template>
+    </Dialog>
+
+    <!-- Dialog: editar tipo existente -->
+    <Dialog v-model:visible="dialogEditarVisible" modal header="Editar tipo de combustible" :style="{ width: '480px' }">
+      <div class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 p-3 text-xs text-ink-700">
+          <i class="pi pi-info-circle text-info-600 mr-1" />
+          Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+          <br />
+          El <strong>código</strong> y la <strong>unidad</strong> no se pueden cambiar tras crear el combustible
+          (rompería los datos históricos de carga). Para cambiar el precio, usa el botón "Guardar" de la tarjeta.
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-ink-700 mb-1.5">Código</label>
+            <InputText
+              :model-value="formEditar.codigo"
+              disabled
+              class="w-full font-mono !bg-ink-100"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-ink-700 mb-1.5">Unidad</label>
+            <InputText
+              :model-value="formEditar.unidad"
+              disabled
+              class="w-full !bg-ink-100"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="field-edit-nombre" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Nombre completo <span class="text-danger-600 font-semibold">*</span>
+          </label>
+          <InputText
+            id="field-edit-nombre"
+            v-model="formEditar.nombre"
+            placeholder="Gasolina Extra"
+            maxlength="100"
+            class="w-full"
+            :class="errorsEditar.nombre ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrEditar('nombre')"
+          />
+          <p v-if="errorsEditar.nombre" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsEditar.nombre }}
+          </p>
+          <p v-else class="text-xs text-ink-500 mt-1">Entre 2 y 100 caracteres</p>
+        </div>
+
+        <div>
+          <label for="field-edit-observaciones" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Observaciones <span class="text-xs text-ink-500">(opcional)</span>
+          </label>
+          <Textarea
+            id="field-edit-observaciones"
+            v-model="formEditar.observaciones"
+            rows="2"
+            class="w-full"
+            maxlength="500"
+            :class="errorsEditar.observaciones ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrEditar('observaciones')"
+          />
+          <p v-if="errorsEditar.observaciones" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsEditar.observaciones }}
+          </p>
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Cancelar" outlined @click="dialogEditarVisible = false" :disabled="editando" />
+        <Button label="Guardar cambios" icon="pi pi-check" :loading="editando" @click="guardarEdicion" />
       </template>
     </Dialog>
   </div>
@@ -370,6 +453,85 @@ const crearTipo = async () => {
       life: 4000
     })
   } finally { creando.value = false }
+}
+
+// ----- Editar tipo existente -----
+const dialogEditarVisible = ref(false)
+const editando = ref(false)
+const formEditar = reactive<{ id: number | null; codigo: string; unidad: string; nombre: string; observaciones: string }>({
+  id: null,
+  codigo: '',
+  unidad: '',
+  nombre: '',
+  observaciones: ''
+})
+
+const errorsEditar = reactive<Record<string, string>>({})
+const setErrEditar = (k: string, v: string) => { errorsEditar[k] = v }
+const clearErrEditar = (k: string) => { if (errorsEditar[k]) delete errorsEditar[k] }
+const clearAllEditar = () => { Object.keys(errorsEditar).forEach(k => delete errorsEditar[k]) }
+
+const abrirDialogEditar = (tipo: TipoCombustibleResponse) => {
+  formEditar.id = tipo.id
+  formEditar.codigo = tipo.codigo
+  formEditar.unidad = tipo.unidad
+  formEditar.nombre = tipo.nombre
+  formEditar.observaciones = tipo.observaciones ?? ''
+  clearAllEditar()
+  dialogEditarVisible.value = true
+}
+
+const validarEditar = (): boolean => {
+  clearAllEditar()
+  const nombre = formEditar.nombre?.trim() ?? ''
+  if (!nombre) setErrEditar('nombre', 'El nombre es requerido')
+  else if (nombre.length < 2) setErrEditar('nombre', 'El nombre debe tener al menos 2 caracteres')
+  else if (nombre.length > 100) setErrEditar('nombre', 'El nombre no puede exceder 100 caracteres')
+
+  if ((formEditar.observaciones?.length ?? 0) > 500) {
+    setErrEditar('observaciones', 'Las observaciones no pueden exceder 500 caracteres')
+  }
+
+  if (Object.keys(errorsEditar).length > 0) {
+    const orden = ['nombre', 'observaciones']
+    const primero = orden.find(k => errorsEditar[k])
+    if (primero) {
+      setTimeout(() => document.getElementById(`field-edit-${primero}`)?.focus?.(), 100)
+    }
+    return false
+  }
+  return true
+}
+
+const guardarEdicion = async () => {
+  if (!validarEditar()) return
+  if (formEditar.id == null) return
+  editando.value = true
+  try {
+    const actualizado = await vehiculosService.actualizarTipoCombustible(formEditar.id, {
+      nombre: formEditar.nombre.trim(),
+      observaciones: formEditar.observaciones?.trim() || undefined
+    })
+    // Reemplazar en la lista
+    const idx = tipos.value.findIndex(t => t.id === actualizado.id)
+    if (idx >= 0) tipos.value[idx] = actualizado
+    toast.add({
+      severity: 'success',
+      summary: 'Actualizado',
+      detail: `${actualizado.codigo}: ${actualizado.nombre}`,
+      life: 3000
+    })
+    dialogEditarVisible.value = false
+  } catch (e: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: e.response?.data?.detail || 'No se pudo actualizar el tipo de combustible',
+      life: 4000
+    })
+  } finally {
+    editando.value = false
+  }
 }
 
 // ----- Desactivar tipo existente -----
