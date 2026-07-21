@@ -125,36 +125,67 @@
         <div class="rounded-lg bg-info-50 border border-info-200 p-3 text-xs text-ink-700">
           <i class="pi pi-info-circle text-info-600 mr-1" />
           Útil para agregar combustibles especiales (ej: GLP de auto, biodiesel, etc.) o tipos regionales.
+          Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Código *</label>
+          <label for="field-nuevo-codigo" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Código <span class="text-danger-600 font-semibold">*</span>
+          </label>
           <InputText
+            id="field-nuevo-codigo"
             v-model="formNuevo.codigo"
-            @input="formNuevo.codigo = formNuevo.codigo.toUpperCase().replace(/[^A-Z0-9_]/g, '')"
+            @input="formNuevo.codigo = formNuevo.codigo.toUpperCase().replace(/[^A-Z0-9_]/g, ''); clearErrCrear('codigo')"
             placeholder="GLP_AUTO"
             maxlength="20"
             class="w-full font-mono"
+            :class="errorsCrear.codigo ? '!border-danger-500 !bg-danger-50' : ''"
           />
-          <p class="text-xs text-ink-500 mt-1">MAYÚSCULAS, letras/números/guión bajo, único en el sistema</p>
+          <p v-if="errorsCrear.codigo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCrear.codigo }}
+          </p>
+          <p v-else class="text-xs text-ink-500 mt-1">MAYÚSCULAS, letras/números/guión bajo, único en el sistema</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-ink-700 mb-1.5">Nombre completo *</label>
-          <InputText v-model="formNuevo.nombre" placeholder="GLP automotriz" class="w-full" />
+          <label for="field-nuevo-nombre" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Nombre completo <span class="text-danger-600 font-semibold">*</span>
+          </label>
+          <InputText
+            id="field-nuevo-nombre"
+            v-model="formNuevo.nombre"
+            placeholder="GLP automotriz"
+            class="w-full"
+            :class="errorsCrear.nombre ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrCrear('nombre')"
+          />
+          <p v-if="errorsCrear.nombre" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCrear.nombre }}
+          </p>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Unidad *</label>
+            <label for="field-nuevo-unidad" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Unidad <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <Dropdown
+              inputId="field-nuevo-unidad"
               v-model="formNuevo.unidad"
               :options="[{label:'Galón',value:'GALON'},{label:'Litro',value:'LITRO'},{label:'kWh (eléctrico)',value:'KWH'}]"
               option-label="label"
               option-value="value"
               class="w-full"
+              :class="errorsCrear.unidad ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearErrCrear('unidad')"
             />
+            <p v-if="errorsCrear.unidad" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCrear.unidad }}
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-ink-700 mb-1.5">Precio actual *</label>
+            <label for="field-nuevo-precioActual" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Precio actual <span class="text-danger-600 font-semibold">*</span>
+            </label>
             <InputNumber
+              inputId="field-nuevo-precioActual"
               v-model="formNuevo.precioActual"
               mode="decimal"
               :minFractionDigits="2"
@@ -162,7 +193,12 @@
               :min="0.0001"
               prefix="$ "
               class="w-full"
+              :class="errorsCrear.precioActual ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+              @update:modelValue="clearErrCrear('precioActual')"
             />
+            <p v-if="errorsCrear.precioActual" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCrear.precioActual }}
+            </p>
           </div>
         </div>
         <div>
@@ -279,28 +315,41 @@ const formNuevo = reactive<{ codigo: string; nombre: string; unidad: UnidadCombu
   observaciones: ''
 })
 
+const errorsCrear = reactive<Record<string, string>>({})
+const setErrCrear = (k: string, v: string) => { errorsCrear[k] = v }
+const clearErrCrear = (k: string) => { if (errorsCrear[k]) delete errorsCrear[k] }
+const clearAllCrear = () => { Object.keys(errorsCrear).forEach(k => delete errorsCrear[k]) }
+
 const abrirDialogCrear = () => {
   formNuevo.codigo = ''
   formNuevo.nombre = ''
   formNuevo.unidad = 'GALON'
   formNuevo.precioActual = null
   formNuevo.observaciones = ''
+  clearAllCrear()
   dialogCrearVisible.value = true
 }
 
+const validarCrear = (): boolean => {
+  clearAllCrear()
+  if (!formNuevo.codigo?.trim()) setErrCrear('codigo', 'El código es requerido')
+  else if (formNuevo.codigo.length < 2) setErrCrear('codigo', 'El código debe tener al menos 2 caracteres')
+  if (!formNuevo.nombre?.trim()) setErrCrear('nombre', 'El nombre es requerido')
+  if (!formNuevo.unidad) setErrCrear('unidad', 'La unidad es requerida')
+  if (!formNuevo.precioActual || formNuevo.precioActual <= 0) setErrCrear('precioActual', 'El precio debe ser mayor a 0')
+  if (Object.keys(errorsCrear).length > 0) {
+    const orden = ['codigo','nombre','unidad','precioActual']
+    const primero = orden.find(k => errorsCrear[k])
+    if (primero) {
+      setTimeout(() => document.getElementById(`field-nuevo-${primero}`)?.focus?.(), 100)
+    }
+    return false
+  }
+  return true
+}
+
 const crearTipo = async () => {
-  if (!formNuevo.codigo?.trim() || formNuevo.codigo.length < 2) {
-    toast.add({ severity:'error', summary:'Error', detail:'Código requerido (mínimo 2 caracteres)', life:3000 })
-    return
-  }
-  if (!formNuevo.nombre?.trim()) {
-    toast.add({ severity:'error', summary:'Error', detail:'Nombre requerido', life:3000 })
-    return
-  }
-  if (!formNuevo.precioActual || formNuevo.precioActual <= 0) {
-    toast.add({ severity:'error', summary:'Error', detail:'Precio actual debe ser > 0', life:3000 })
-    return
-  }
+  if (!validarCrear()) return
   creando.value = true
   try {
     const nuevo = await vehiculosService.crearTipoCombustible({
