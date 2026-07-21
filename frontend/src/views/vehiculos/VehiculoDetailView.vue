@@ -420,26 +420,80 @@
     <!-- Dialog: agregar mantenimiento -->
     <Dialog v-model:visible="dialogMantVisible" modal header="Registrar mantenimiento" :style="{ width:'520px' }">
       <div class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 px-3 py-2 text-xs text-ink-700 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-medium text-ink-700 mb-1">Tipo *</label>
-            <Dropdown v-model="formMant.tipo" :options="[{label:'Preventivo',value:'PREVENTIVO'},{label:'Correctivo',value:'CORRECTIVO'}]" option-label="label" option-value="value" class="w-full" />
+            <label for="field-mant-tipo" class="block text-xs font-medium text-ink-700 mb-1">
+              Tipo <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Dropdown
+              inputId="field-mant-tipo"
+              v-model="formMant.tipo"
+              :options="[{label:'Preventivo',value:'PREVENTIVO'},{label:'Correctivo',value:'CORRECTIVO'}]"
+              option-label="label" option-value="value"
+              class="w-full"
+              :class="valMant.errors.tipo ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="valMant.clearError('tipo')"
+            />
+            <p v-if="valMant.errors.tipo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valMant.errors.tipo }}
+            </p>
           </div>
           <div>
-            <label class="block text-xs font-medium text-ink-700 mb-1">Fecha *</label>
-            <Calendar v-model="formMant.fecha" dateFormat="yy-mm-dd" :showIcon="true" class="w-full" :maxDate="new Date()" />
+            <label for="field-mant-fecha" class="block text-xs font-medium text-ink-700 mb-1">
+              Fecha <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Calendar
+              inputId="field-mant-fecha"
+              v-model="formMant.fecha"
+              dateFormat="yy-mm-dd" :showIcon="true"
+              class="w-full"
+              :inputClass="valMant.errors.fecha ? '!border-danger-500 !bg-danger-50' : ''"
+              :maxDate="new Date()"
+              @update:modelValue="valMant.clearError('fecha')"
+            />
+            <p v-if="valMant.errors.fecha" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valMant.errors.fecha }}
+            </p>
           </div>
           <div>
-            <label class="block text-xs font-medium text-ink-700 mb-1">Costo (USD) *</label>
-            <InputNumber v-model="formMant.costo" mode="currency" currency="USD" locale="en-US" class="w-full" />
+            <label for="field-mant-costo" class="block text-xs font-medium text-ink-700 mb-1">
+              Costo (USD) <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <InputNumber
+              inputId="field-mant-costo"
+              v-model="formMant.costo"
+              mode="currency" currency="USD" locale="en-US"
+              class="w-full"
+              :class="valMant.errors.costo ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+              @update:modelValue="valMant.clearError('costo')"
+            />
+            <p v-if="valMant.errors.costo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valMant.errors.costo }}
+            </p>
           </div>
           <div>
             <label class="block text-xs font-medium text-ink-700 mb-1">Km al servicio</label>
             <InputNumber v-model="formMant.kilometrajeServicio" :min="0" suffix=" km" class="w-full" />
           </div>
           <div class="col-span-2">
-            <label class="block text-xs font-medium text-ink-700 mb-1">Descripción *</label>
-            <Textarea v-model="formMant.descripcion" rows="2" placeholder="Cambio de aceite, frenos, etc." class="w-full" />
+            <label for="field-mant-descripcion" class="block text-xs font-medium text-ink-700 mb-1">
+              Descripción <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Textarea
+              id="field-mant-descripcion"
+              v-model="formMant.descripcion"
+              rows="2" placeholder="Cambio de aceite, frenos, etc."
+              class="w-full"
+              :class="valMant.errors.descripcion ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="valMant.clearError('descripcion')"
+            />
+            <p v-if="valMant.errors.descripcion" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valMant.errors.descripcion }}
+            </p>
           </div>
           <div class="col-span-2">
             <label class="block text-xs font-medium text-ink-700 mb-1">Taller</label>
@@ -457,21 +511,64 @@
       </template>
     </Dialog>
 
-    <!-- Dialog: agregar / editar inspección -->
+    <!-- Dialog: agregar / editar inspección (SOAT / RTV / Interna) -->
     <Dialog v-model:visible="dialogInspVisible" modal :header="inspeccionEnEdicion ? 'Editar inspección' : 'Registrar inspección'" :style="{ width:'520px' }">
       <div class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 px-3 py-2 text-xs text-ink-700 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-medium text-ink-700 mb-1">Tipo *</label>
-            <Dropdown v-model="formInsp.tipo" :options="[{label:'Técnica (RTV)',value:'TECNICA'},{label:'SOAT',value:'SOAT'},{label:'Interna',value:'INTERNA'}]" option-label="label" option-value="value" class="w-full" />
+            <label for="field-insp-tipo" class="block text-xs font-medium text-ink-700 mb-1">
+              Tipo <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Dropdown
+              inputId="field-insp-tipo"
+              v-model="formInsp.tipo"
+              :options="[{label:'Técnica (RTV)',value:'TECNICA'},{label:'SOAT',value:'SOAT'},{label:'Interna',value:'INTERNA'}]"
+              option-label="label" option-value="value"
+              class="w-full"
+              :class="valInsp.errors.tipo ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="valInsp.clearError('tipo')"
+            />
+            <p v-if="valInsp.errors.tipo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valInsp.errors.tipo }}
+            </p>
           </div>
           <div>
-            <label class="block text-xs font-medium text-ink-700 mb-1">Resultado *</label>
-            <Dropdown v-model="formInsp.resultado" :options="[{label:'Aprobada',value:'APROBADA'},{label:'Condicionada',value:'CONDICIONADA'},{label:'Reprobada',value:'REPROBADA'}]" option-label="label" option-value="value" class="w-full" />
+            <label for="field-insp-resultado" class="block text-xs font-medium text-ink-700 mb-1">
+              Resultado <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Dropdown
+              inputId="field-insp-resultado"
+              v-model="formInsp.resultado"
+              :options="[{label:'Aprobada',value:'APROBADA'},{label:'Condicionada',value:'CONDICIONADA'},{label:'Reprobada',value:'REPROBADA'}]"
+              option-label="label" option-value="value"
+              class="w-full"
+              :class="valInsp.errors.resultado ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="valInsp.clearError('resultado')"
+            />
+            <p v-if="valInsp.errors.resultado" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valInsp.errors.resultado }}
+            </p>
           </div>
           <div>
-            <label class="block text-xs font-medium text-ink-700 mb-1">Fecha *</label>
-            <Calendar v-model="formInsp.fecha" dateFormat="yy-mm-dd" :showIcon="true" class="w-full" :maxDate="new Date()" />
+            <label for="field-insp-fecha" class="block text-xs font-medium text-ink-700 mb-1">
+              Fecha <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Calendar
+              inputId="field-insp-fecha"
+              v-model="formInsp.fecha"
+              dateFormat="yy-mm-dd" :showIcon="true"
+              class="w-full"
+              :inputClass="valInsp.errors.fecha ? '!border-danger-500 !bg-danger-50' : ''"
+              :maxDate="new Date()"
+              @update:modelValue="valInsp.clearError('fecha')"
+            />
+            <p v-if="valInsp.errors.fecha" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valInsp.errors.fecha }}
+            </p>
           </div>
           <div>
             <label class="block text-xs font-medium text-ink-700 mb-1">Próxima inspección</label>
@@ -492,6 +589,10 @@
     <!-- Dialog: registrar combustible (con auto-cálculo) -->
     <Dialog v-model:visible="dialogCombVisible" modal header="Registrar carga de combustible" :style="{ width:'560px' }">
       <div class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 px-3 py-2 text-xs text-ink-700 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+        </div>
         <div v-if="combustibleActual" class="p-3 rounded-lg bg-info-50 border border-info-200 text-xs text-ink-700">
           <i class="pi pi-info-circle text-info-600 mr-1" />
           Combustible del vehículo: <strong>{{ combustibleActual.nombre }}</strong> a
@@ -500,16 +601,41 @@
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-medium text-ink-700 mb-1">Fecha *</label>
-            <Calendar v-model="formComb.fecha" dateFormat="yy-mm-dd" :showIcon="true" showTime hourFormat="24" class="w-full" :maxDate="new Date()" />
+            <label for="field-comb-fecha" class="block text-xs font-medium text-ink-700 mb-1">
+              Fecha <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Calendar
+              inputId="field-comb-fecha"
+              v-model="formComb.fecha"
+              dateFormat="yy-mm-dd" :showIcon="true" showTime hourFormat="24"
+              class="w-full"
+              :inputClass="valComb.errors.fecha ? '!border-danger-500 !bg-danger-50' : ''"
+              :maxDate="new Date()"
+              @update:modelValue="valComb.clearError('fecha')"
+            />
+            <p v-if="valComb.errors.fecha" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valComb.errors.fecha }}
+            </p>
           </div>
           <div>
             <label class="block text-xs font-medium text-ink-700 mb-1">Estación</label>
             <InputText v-model="formComb.estacion" placeholder="Ej: Primax 6 de Diciembre" class="w-full" />
           </div>
           <div>
-            <label class="block text-xs font-medium text-ink-700 mb-1">{{ combustibleActual?.unidad === 'KWH' ? 'kWh' : 'Litros' }} *</label>
-            <InputNumber v-model="formComb.litros" :min="0.01" :minFractionDigits="2" class="w-full" />
+            <label for="field-comb-litros" class="block text-xs font-medium text-ink-700 mb-1">
+              {{ combustibleActual?.unidad === 'KWH' ? 'kWh' : 'Litros' }} <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <InputNumber
+              inputId="field-comb-litros"
+              v-model="formComb.litros"
+              :min="0.01" :minFractionDigits="2"
+              class="w-full"
+              :class="valComb.errors.litros ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+              @update:modelValue="valComb.clearError('litros')"
+            />
+            <p v-if="valComb.errors.litros" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valComb.errors.litros }}
+            </p>
           </div>
           <div>
             <label class="block text-xs font-medium text-ink-700 mb-1">
@@ -518,9 +644,21 @@
             <InputNumber v-model="formComb.costoTotal" :min="0.01" mode="currency" currency="USD" locale="en-US" :minFractionDigits="2" :placeholder="costoEstimado ? `$${costoEstimado.toFixed(2)}` : '0.00'" class="w-full" />
           </div>
           <div class="col-span-2">
-            <label class="block text-xs font-medium text-ink-700 mb-1">Kilometraje actual *</label>
-            <InputNumber v-model="formComb.kilometrajeActual" :min="vehiculo.kilometraje || 0" suffix=" km" class="w-full" />
-            <p class="text-xs text-ink-500 mt-1">Debe ser ≥ {{ (vehiculo.kilometraje || 0).toLocaleString('es-EC') }} km (actual del vehículo).</p>
+            <label for="field-comb-kilometrajeActual" class="block text-xs font-medium text-ink-700 mb-1">
+              Kilometraje actual <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <InputNumber
+              inputId="field-comb-kilometrajeActual"
+              v-model="formComb.kilometrajeActual"
+              :min="vehiculo.kilometraje || 0" suffix=" km"
+              class="w-full"
+              :class="valComb.errors.kilometrajeActual ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+              @update:modelValue="valComb.clearError('kilometrajeActual')"
+            />
+            <p v-if="valComb.errors.kilometrajeActual" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ valComb.errors.kilometrajeActual }}
+            </p>
+            <p v-else class="text-xs text-ink-500 mt-1">Debe ser ≥ {{ (vehiculo.kilometraje || 0).toLocaleString('es-EC') }} km (actual del vehículo).</p>
           </div>
         </div>
       </div>
@@ -567,6 +705,26 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
+
+// Helper compartido de validacion por dialog (mant / insp / comb)
+function useValidation() {
+  const errors = reactive<Record<string, string>>({})
+  const setError = (k: string, v: string) => { errors[k] = v }
+  const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+  const clearAll = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+  const focusFirst = (orden: string[], prefijo: string) => {
+    const p = orden.find(k => errors[k])
+    if (!p) return
+    setTimeout(() => {
+      const el = document.getElementById(`field-${prefijo}-${p}`)
+      if (el) (el as HTMLElement).focus?.()
+    }, 100)
+  }
+  return { errors, setError, clearError, clearAll, focusFirst }
+}
+const valMant = useValidation()
+const valInsp = useValidation()
+const valComb = useValidation()
 
 const vehiculoId = computed(() => parseInt(route.params.id as string))
 
@@ -673,10 +831,25 @@ const formMant = reactive<any>({
 })
 const abrirDialogMantenimiento = () => {
   Object.assign(formMant, { tipo:'PREVENTIVO', fecha:new Date(), costo:0, descripcion:'', taller:'', kilometrajeServicio:vehiculo.kilometraje, proximaFecha:null })
+  valMant.clearAll()
   dialogMantVisible.value = true
 }
+const validarMantenimiento = (): boolean => {
+  valMant.clearAll()
+  if (!formMant.tipo) valMant.setError('tipo', 'Selecciona el tipo')
+  if (!formMant.fecha) valMant.setError('fecha', 'La fecha es requerida')
+  if (formMant.costo === null || formMant.costo === undefined || formMant.costo < 0) {
+    valMant.setError('costo', 'El costo es requerido (0 o mayor)')
+  }
+  if (!formMant.descripcion?.trim()) valMant.setError('descripcion', 'La descripción es requerida')
+  if (Object.keys(valMant.errors).length > 0) {
+    valMant.focusFirst(['tipo','fecha','costo','descripcion'], 'mant')
+    return false
+  }
+  return true
+}
 const guardarMantenimiento = async () => {
-  if (!formMant.descripcion?.trim()) { toast.add({severity:'error',summary:'Error',detail:'Descripción requerida',life:3000}); return }
+  if (!validarMantenimiento()) return
   guardandoMant.value = true
   try {
     const payload: MantenimientoRequest = {
@@ -755,9 +928,22 @@ const abrirDialogInspeccion = (i?: InspeccionResponse) => {
       proximaInspeccion: null, observaciones: ''
     })
   }
+  valInsp.clearAll()
   dialogInspVisible.value = true
 }
+const validarInspeccion = (): boolean => {
+  valInsp.clearAll()
+  if (!formInsp.tipo) valInsp.setError('tipo', 'Selecciona el tipo')
+  if (!formInsp.resultado) valInsp.setError('resultado', 'Selecciona el resultado')
+  if (!formInsp.fecha) valInsp.setError('fecha', 'La fecha es requerida')
+  if (Object.keys(valInsp.errors).length > 0) {
+    valInsp.focusFirst(['tipo','resultado','fecha'], 'insp')
+    return false
+  }
+  return true
+}
 const guardarInspeccion = async () => {
+  if (!validarInspeccion()) return
   guardandoInsp.value = true
   try {
     const payload: InspeccionRequest = {
@@ -895,15 +1081,29 @@ const abrirDialogCombustible = () => {
     fecha: new Date(), litros: 0, costoTotal: null,
     kilometrajeActual: vehiculo.kilometraje || 0, estacion: ''
   })
+  valComb.clearAll()
   dialogCombVisible.value = true
 }
-const guardarCombustible = async () => {
+const validarCombustible = (): boolean => {
+  valComb.clearAll()
+  if (!formComb.fecha) valComb.setError('fecha', 'La fecha es requerida')
   if (!formComb.litros || formComb.litros <= 0) {
-    toast.add({severity:'error',summary:'Error',detail:'Litros debe ser > 0',life:3000}); return
+    valComb.setError('litros', (combustibleActual.value?.unidad === 'KWH' ? 'kWh' : 'Litros') + ' debe ser mayor a 0')
   }
-  if (formComb.kilometrajeActual < (vehiculo.kilometraje || 0)) {
-    toast.add({severity:'error',summary:'Error',detail:`Kilometraje debe ser >= ${vehiculo.kilometraje}`,life:3000}); return
+  const kmMin = vehiculo.kilometraje || 0
+  if (formComb.kilometrajeActual === null || formComb.kilometrajeActual === undefined) {
+    valComb.setError('kilometrajeActual', 'El kilometraje es requerido')
+  } else if (formComb.kilometrajeActual < kmMin) {
+    valComb.setError('kilometrajeActual', `El kilometraje debe ser ≥ ${kmMin.toLocaleString('es-EC')} km`)
   }
+  if (Object.keys(valComb.errors).length > 0) {
+    valComb.focusFirst(['fecha','litros','kilometrajeActual'], 'comb')
+    return false
+  }
+  return true
+}
+const guardarCombustible = async () => {
+  if (!validarCombustible()) return
   guardandoComb.value = true
   try {
     await vehiculosService.registrarCombustible(vehiculoId.value, {

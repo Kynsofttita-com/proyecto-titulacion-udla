@@ -23,23 +23,70 @@
       </div>
     </div>
 
-    <form @submit.prevent="guardar" class="space-y-6">
+    <form @submit.prevent="guardar" class="space-y-6" novalidate>
+      <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+        <i class="pi pi-info-circle text-info-600" />
+        <p class="text-sm text-ink-700">
+          Los campos marcados con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+        </p>
+      </div>
+
       <FormCard title="Identificación" icon="pi pi-tag">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Field label="Placa" required hint="Formato: ABC-1234 o AB-1234A">
-            <InputText v-model="form.placa" @input="form.placa = form.placa.toUpperCase()" placeholder="ABC-1234" maxlength="8" class="w-full font-mono" :disabled="isEditing" required />
+          <Field label="Placa" required :error="errors.placa" for="field-placa" hint="Formato: ABC-1234 o AB-1234A">
+            <InputText
+              id="field-placa"
+              v-model="form.placa"
+              @input="form.placa = form.placa.toUpperCase(); clearError('placa')"
+              placeholder="ABC-1234"
+              maxlength="8"
+              class="w-full font-mono"
+              :class="errors.placa ? '!border-danger-500 !bg-danger-50' : ''"
+              :disabled="isEditing"
+            />
           </Field>
-          <Field label="VIN" hint="17 caracteres (opcional)">
-            <InputText v-model="form.vin" @input="form.vin = form.vin.toUpperCase()" maxlength="17" class="w-full font-mono" :disabled="isEditing" />
+          <Field label="VIN" :error="errors.vin" for="field-vin" hint="17 caracteres (opcional)">
+            <InputText
+              id="field-vin"
+              v-model="form.vin"
+              @input="form.vin = form.vin.toUpperCase(); clearError('vin')"
+              maxlength="17"
+              class="w-full font-mono"
+              :class="errors.vin ? '!border-danger-500 !bg-danger-50' : ''"
+              :disabled="isEditing"
+            />
           </Field>
-          <Field label="Marca" required>
-            <InputText v-model="form.marca" placeholder="Toyota" class="w-full" required />
+          <Field label="Marca" required :error="errors.marca" for="field-marca">
+            <InputText
+              id="field-marca"
+              v-model="form.marca"
+              placeholder="Toyota"
+              class="w-full"
+              :class="errors.marca ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearError('marca')"
+            />
           </Field>
-          <Field label="Modelo" required>
-            <InputText v-model="form.modelo" placeholder="Yaris" class="w-full" required />
+          <Field label="Modelo" required :error="errors.modelo" for="field-modelo">
+            <InputText
+              id="field-modelo"
+              v-model="form.modelo"
+              placeholder="Yaris"
+              class="w-full"
+              :class="errors.modelo ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearError('modelo')"
+            />
           </Field>
-          <Field label="Año" required>
-            <InputNumber v-model="form.anio" :min="1990" :max="2050" :useGrouping="false" class="w-full" />
+          <Field label="Año" required :error="errors.anio" for="field-anio">
+            <InputNumber
+              inputId="field-anio"
+              v-model="form.anio"
+              :min="1990"
+              :max="2050"
+              :useGrouping="false"
+              class="w-full"
+              :class="errors.anio ? '[&_input]:!border-danger-500 [&_input]:!bg-danger-50' : ''"
+              @update:modelValue="clearError('anio')"
+            />
           </Field>
           <Field label="Color">
             <InputText v-model="form.color" placeholder="Blanco" class="w-full" />
@@ -61,8 +108,9 @@
           <Field label="Capacidad de pasajeros" hint="Incluye al conductor">
             <InputNumber v-model="form.capacidadPasajeros" :min="1" :max="100" class="w-full" />
           </Field>
-          <Field label="Categoría de licencia" required hint="Qué licencia se necesita para conducirlo">
+          <Field label="Categoría de licencia" required :error="errors.categoriaLicenciaId" for="field-categoriaLicenciaId" hint="Qué licencia se necesita para conducirlo">
             <Dropdown
+              inputId="field-categoriaLicenciaId"
               v-model="form.categoriaLicenciaId"
               :options="categorias"
               option-label="label"
@@ -70,16 +118,21 @@
               placeholder="Selecciona categoría"
               filter
               class="w-full"
+              :class="errors.categoriaLicenciaId ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearError('categoriaLicenciaId')"
             />
           </Field>
-          <Field label="Tipo de combustible" required hint="Determina el precio en el registro de carga">
+          <Field label="Tipo de combustible" required :error="errors.tipoCombustibleId" for="field-tipoCombustibleId" hint="Determina el precio en el registro de carga">
             <Dropdown
+              inputId="field-tipoCombustibleId"
               v-model="form.tipoCombustibleId"
               :options="tiposCombustible"
               option-label="label"
               option-value="value"
               placeholder="Selecciona combustible"
               class="w-full"
+              :class="errors.tipoCombustibleId ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearError('tipoCombustibleId')"
             />
           </Field>
           <Field label="Estado">
@@ -151,21 +204,49 @@ const route = useRoute()
 const toast = useToast()
 
 const Field = defineComponent({
-  props: ['label', 'required', 'hint'],
+  props: {
+    label: { type: String, required: true },
+    required: { type: Boolean, default: false },
+    hint: { type: String, default: '' },
+    error: { type: String, default: '' },
+    for: { type: String, default: '' }
+  },
   setup(props, { slots, attrs }) {
     return () =>
       h('div', { ...attrs }, [
-        h('label', { class: 'block text-sm font-medium text-ink-700 mb-1.5' }, [
-          props.label, props.required && h('span', { class: 'text-danger-500 ml-0.5' }, '*')
+        h('label', {
+          class: 'block text-sm font-medium text-ink-700 mb-1.5',
+          for: props.for || undefined
+        }, [
+          props.label,
+          props.required ? h('span', { class: 'text-danger-600 ml-0.5 font-semibold' }, ' *') : null
         ]),
         slots.default?.(),
-        props.hint && h('p', { class: 'text-xs text-ink-500 mt-1' }, props.hint)
+        props.error
+          ? h('p', { class: 'text-xs text-danger-600 mt-1 flex items-center gap-1' }, [
+              h('i', { class: 'pi pi-exclamation-circle text-[10px]' }),
+              props.error
+            ])
+          : (props.hint ? h('p', { class: 'text-xs text-ink-500 mt-1' }, props.hint) : null)
       ])
   }
 })
 
 const isLoading = ref(false)
 const errorMessage = ref('')
+const errors = reactive<Record<string, string>>({})
+const setError = (k: string, v: string) => { errors[k] = v }
+const clearError = (k: string) => { if (errors[k]) delete errors[k] }
+const clearAllErrors = () => { Object.keys(errors).forEach(k => delete errors[k]) }
+const ORDEN_CAMPOS = ['placa','vin','marca','modelo','anio','categoriaLicenciaId','tipoCombustibleId']
+const focusFirstError = () => {
+  const primero = ORDEN_CAMPOS.find(k => errors[k])
+  if (!primero) return
+  const el = document.getElementById(`field-${primero}`)
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  setTimeout(() => (el as HTMLElement).focus?.(), 300)
+}
 const id = computed(() => {
   const v = route.params.id
   return typeof v === 'string' ? parseInt(v) : (v as number | undefined)
@@ -263,24 +344,30 @@ const cargar = async () => {
 
 const validarPlaca = (placa: string) => /^[A-Z]{3}-\d{4}$|^[A-Z]{2}-\d{4}[A-Z]$/.test(placa)
 
-const validar = (): string | null => {
-  if (!form.placa.trim()) return 'La placa es requerida'
-  if (!isEditing.value && !validarPlaca(form.placa.trim())) {
-    return 'Placa inválida. Formato: ABC-1234 o AB-1234A'
+const validar = (): boolean => {
+  errorMessage.value = ''
+  clearAllErrors()
+
+  if (!form.placa.trim()) setError('placa', 'La placa es requerida')
+  else if (!isEditing.value && !validarPlaca(form.placa.trim())) {
+    setError('placa', 'Placa inválida. Formato: ABC-1234 o AB-1234A')
   }
-  if (!form.marca.trim()) return 'La marca es requerida'
-  if (!form.modelo.trim()) return 'El modelo es requerido'
-  if (!form.anio || form.anio < 1990 || form.anio > 2050) return 'Año debe estar entre 1990 y 2050'
-  if (form.vin && form.vin.length !== 17) return 'El VIN debe tener 17 caracteres (déjalo vacío si no lo conoces)'
-  if (!form.categoriaLicenciaId) return 'Debes seleccionar la categoría de licencia'
-  if (!form.tipoCombustibleId) return 'Debes seleccionar el tipo de combustible'
-  return null
+  if (!form.marca.trim()) setError('marca', 'La marca es requerida')
+  if (!form.modelo.trim()) setError('modelo', 'El modelo es requerido')
+  if (!form.anio || form.anio < 1990 || form.anio > 2050) setError('anio', 'El año debe estar entre 1990 y 2050')
+  if (form.vin && form.vin.length !== 17) setError('vin', 'El VIN debe tener 17 caracteres (déjalo vacío si no lo conoces)')
+  if (!form.categoriaLicenciaId) setError('categoriaLicenciaId', 'Selecciona la categoría de licencia')
+  if (!form.tipoCombustibleId) setError('tipoCombustibleId', 'Selecciona el tipo de combustible')
+
+  if (Object.keys(errors).length > 0) {
+    focusFirstError()
+    return false
+  }
+  return true
 }
 
 const guardar = async () => {
-  errorMessage.value = ''
-  const err = validar()
-  if (err) { errorMessage.value = err; return }
+  if (!validar()) return
 
   try {
     isLoading.value = true
