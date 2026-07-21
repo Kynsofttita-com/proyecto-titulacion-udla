@@ -32,4 +32,9 @@ public interface EstudianteRepository
     boolean existsByCedulaAndDeletedAtIsNull(String cedula);
 
     boolean existsByEmailAndDeletedAtIsNull(String email);
+
+    /** Incluye soft-deleted. Usado para detectar colisiones con la UNIQUE global de cedula/email. */
+    Optional<Estudiante> findByCedula(String cedula);
+
+    Optional<Estudiante> findByEmail(String email);
 }

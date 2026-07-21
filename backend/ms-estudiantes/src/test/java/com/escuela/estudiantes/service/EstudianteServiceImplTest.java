@@ -98,8 +98,8 @@ class EstudianteServiceImplTest {
     @Test
     @DisplayName("create con cedula valida y unicidad OK -> retorna response")
     void createOk() {
-        when(repository.existsByCedulaAndDeletedAtIsNull(CEDULA_VALIDA)).thenReturn(false);
-        when(repository.existsByEmailAndDeletedAtIsNull("hernan@test.com")).thenReturn(false);
+        when(repository.findByCedula(CEDULA_VALIDA)).thenReturn(Optional.empty());
+        when(repository.findByEmail("hernan@test.com")).thenReturn(Optional.empty());
         when(mapper.toEntity(createRequest)).thenReturn(entidad);
         when(repository.save(any(Estudiante.class))).thenReturn(entidad);
         when(mapper.toResponse(entidad)).thenReturn(new EstudianteResponse(
@@ -131,7 +131,7 @@ class EstudianteServiceImplTest {
     @Test
     @DisplayName("create con cedula ya existente -> CedulaDuplicadaException")
     void createCedulaDuplicada() {
-        when(repository.existsByCedulaAndDeletedAtIsNull(CEDULA_VALIDA)).thenReturn(true);
+        when(repository.findByCedula(CEDULA_VALIDA)).thenReturn(Optional.of(entidad));
 
         assertThatThrownBy(() -> service.create(createRequest))
                 .isInstanceOf(CedulaDuplicadaException.class);
@@ -142,8 +142,8 @@ class EstudianteServiceImplTest {
     @Test
     @DisplayName("create con email ya existente -> EmailDuplicadoException")
     void createEmailDuplicado() {
-        when(repository.existsByCedulaAndDeletedAtIsNull(CEDULA_VALIDA)).thenReturn(false);
-        when(repository.existsByEmailAndDeletedAtIsNull("hernan@test.com")).thenReturn(true);
+        when(repository.findByCedula(CEDULA_VALIDA)).thenReturn(Optional.empty());
+        when(repository.findByEmail("hernan@test.com")).thenReturn(Optional.of(entidad));
 
         assertThatThrownBy(() -> service.create(createRequest))
                 .isInstanceOf(EmailDuplicadoException.class);
