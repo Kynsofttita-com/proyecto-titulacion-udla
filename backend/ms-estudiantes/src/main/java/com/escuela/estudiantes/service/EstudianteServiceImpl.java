@@ -245,10 +245,11 @@ public class EstudianteServiceImpl implements EstudianteService {
             ? (int) Math.ceil(entity.getMinutosCompletados() / 60.0)
             : 0;
 
-        // TODO: Obtener horas requeridas del tipoCurso
-        // Actualmente retorna 0. Se necesita implementar un método en ms-auth
-        // o agregar una columna de duracion_total_horas en estudiantes_schema.
-        Integer horasRequeridas = 120; // Default: 120 horas (estándar para cursos de conducción)
+        // Horas requeridas: consulta al catalogo tipos-curso via MS-Auth.
+        // Fallback a 0 si el estudiante no tiene tipoCursoId asignado o si
+        // MS-Auth esta caido.
+        Integer horasRequeridas = obtenerHorasRequeridasSafe(entity.getTipoCursoId());
+        if (horasRequeridas == null) horasRequeridas = 0;
 
         return new EstudianteListResponse(
                 entity.getId(),
