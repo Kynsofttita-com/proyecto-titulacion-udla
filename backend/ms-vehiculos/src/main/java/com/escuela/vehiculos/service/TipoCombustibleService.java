@@ -1,6 +1,7 @@
 package com.escuela.vehiculos.service;
 
 import com.escuela.vehiculos.dto.ActualizarPrecioRequest;
+import com.escuela.vehiculos.dto.ActualizarTipoCombustibleRequest;
 import com.escuela.vehiculos.dto.CrearTipoCombustibleRequest;
 import com.escuela.vehiculos.dto.TipoCombustibleResponse;
 import com.escuela.vehiculos.entity.TipoCombustible;
@@ -62,6 +63,17 @@ public class TipoCombustibleService {
                 .build();
         t = repository.save(t);
         log.info("TipoCombustible creado: codigo={} precio={}/{}", t.getCodigo(), t.getPrecioActual(), t.getUnidad());
+        return toResponse(t);
+    }
+
+    public TipoCombustibleResponse actualizar(Long id, ActualizarTipoCombustibleRequest request) {
+        TipoCombustible t = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "TipoCombustible no encontrado: " + id));
+        t.setNombre(request.nombre());
+        t.setObservaciones(request.observaciones());
+        repository.save(t);
+        log.info("TipoCombustible actualizado: codigo={} nombre={}", t.getCodigo(), t.getNombre());
         return toResponse(t);
     }
 

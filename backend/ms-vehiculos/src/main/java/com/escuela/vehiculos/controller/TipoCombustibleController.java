@@ -2,6 +2,7 @@ package com.escuela.vehiculos.controller;
 
 import com.escuela.common.security.headers.UserHeaders;
 import com.escuela.vehiculos.dto.ActualizarPrecioRequest;
+import com.escuela.vehiculos.dto.ActualizarTipoCombustibleRequest;
 import com.escuela.vehiculos.dto.CrearTipoCombustibleRequest;
 import com.escuela.vehiculos.dto.TipoCombustibleResponse;
 import com.escuela.vehiculos.service.TipoCombustibleService;
@@ -80,6 +81,17 @@ public class TipoCombustibleController {
         validarAuth(userEmail, userRoles, ROLES_ESCRITURA);
         service.desactivar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar nombre y observaciones de un tipo (solo ADMIN). Codigo y unidad son inmutables.")
+    public ResponseEntity<TipoCombustibleResponse> actualizar(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long id,
+            @Valid @RequestBody ActualizarTipoCombustibleRequest request) {
+        validarAuth(userEmail, userRoles, ROLES_ESCRITURA);
+        return ResponseEntity.ok(service.actualizar(id, request));
     }
 
     @PutMapping("/{id}/precio")

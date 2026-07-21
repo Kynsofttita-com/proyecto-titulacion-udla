@@ -114,6 +114,11 @@ export interface CrearTipoCombustibleRequest {
   observaciones?: string
 }
 
+export interface ActualizarTipoCombustibleRequest {
+  nombre: string
+  observaciones?: string
+}
+
 // --- Categorias de licencia (cross-schema via ms-auth) ---
 export interface CategoriaLicenciaResponse {
   id: number
@@ -288,6 +293,11 @@ const vehiculosService = {
 
   async crearTipoCombustible(data: CrearTipoCombustibleRequest): Promise<TipoCombustibleResponse> {
     const r = await api.post<TipoCombustibleResponse>('/tipos-combustible', data)
+    return r.data
+  },
+
+  async actualizarTipoCombustible(id: number, data: ActualizarTipoCombustibleRequest): Promise<TipoCombustibleResponse> {
+    const r = await api.put<TipoCombustibleResponse>(`/tipos-combustible/${id}`, data)
     return r.data
   },
 
