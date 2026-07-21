@@ -23,6 +23,13 @@ public interface InstructorRepository extends JpaRepository<Instructor, Long> {
 
     Optional<Instructor> findByLicenciaNumeroAndDeletedAtIsNull(String licenciaNumero);
 
+    /** Incluye soft-deleted. Usado para detectar colisiones con la UNIQUE global. */
+    Optional<Instructor> findByCedula(String cedula);
+
+    Optional<Instructor> findByEmail(String email);
+
+    Optional<Instructor> findByLicenciaNumero(String licenciaNumero);
+
     Optional<Instructor> findByUsuarioIdAndDeletedAtIsNull(Long usuarioId);
 
     Page<Instructor> findByDeletedAtIsNull(Pageable pageable);

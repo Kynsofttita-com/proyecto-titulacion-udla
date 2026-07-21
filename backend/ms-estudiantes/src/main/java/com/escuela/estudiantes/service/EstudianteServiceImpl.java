@@ -94,12 +94,15 @@ public class EstudianteServiceImpl implements EstudianteService {
     @Transactional
     public EstudianteResponse create(CreateEstudianteRequest request) {
         validarCedula(request.cedula());
-        if (repository.existsByCedulaAndDeletedAtIsNull(request.cedula())) {
-            throw new CedulaDuplicadaException(request.cedula());
-        }
-        if (repository.existsByEmailAndDeletedAtIsNull(request.email())) {
-            throw new EmailDuplicadoException(request.email());
-        }
+        // Chequeamos contra la tabla completa (incluyendo soft-deleted) porque
+        // el UNIQUE de la DB es global; sin este check el INSERT reventaria en
+        // ConstraintViolation con un 500 opaco.
+        repository.findByCedula(request.cedula()).ifPresent(e -> {
+            throw new CedulaDuplicadaException(request.cedula(), e.getDeletedAt());
+        });
+        repository.findByEmail(request.email()).ifPresent(e -> {
+            throw new EmailDuplicadoException(request.email(), e.getDeletedAt());
+        });
 
         Estudiante estudiante = getMapper().toEntity(request);
         // Re-asignar el padre en los contactos hijos (MapStruct no lo hace solo

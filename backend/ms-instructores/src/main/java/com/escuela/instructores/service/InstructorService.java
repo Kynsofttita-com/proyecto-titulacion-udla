@@ -73,15 +73,17 @@ public class InstructorService {
         if (!CedulaEcuadorValidator.isValid(request.cedula())) {
             throw new IllegalArgumentException("Cedula ecuatoriana invalida: " + request.cedula());
         }
-        repository.findByCedulaAndDeletedAtIsNull(request.cedula()).ifPresent(i -> {
-            throw new DuplicateResourceException("Ya existe instructor con cedula " + request.cedula());
+        // Chequeamos contra la tabla completa (incluyendo soft-deleted): la UNIQUE
+        // de la DB es global y sin este check el INSERT reventaria en 500 opaco.
+        repository.findByCedula(request.cedula()).ifPresent(i -> {
+            throw new DuplicateResourceException(mensajeDuplicado("cedula", request.cedula(), i.getDeletedAt()));
         });
-        repository.findByEmailAndDeletedAtIsNull(request.email()).ifPresent(i -> {
-            throw new DuplicateResourceException("Ya existe instructor con email " + request.email());
+        repository.findByEmail(request.email()).ifPresent(i -> {
+            throw new DuplicateResourceException(mensajeDuplicado("email", request.email(), i.getDeletedAt()));
         });
-        repository.findByLicenciaNumeroAndDeletedAtIsNull(request.licenciaNumero()).ifPresent(i -> {
+        repository.findByLicenciaNumero(request.licenciaNumero()).ifPresent(i -> {
             throw new DuplicateResourceException(
-                    "Ya existe instructor con licencia " + request.licenciaNumero());
+                    mensajeDuplicado("licencia", request.licenciaNumero(), i.getDeletedAt()));
         });
 
         Instructor entity = getMapper().toEntity(request);
@@ -176,5 +178,15 @@ public class InstructorService {
     public Instructor buscarOFallar(Long id) {
         return repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new InstructorNotFoundException(id));
+    }
+
+    private static String mensajeDuplicado(String campo, String valor, LocalDateTime deletedAt) {
+        if (deletedAt == null) {
+            return "Ya existe un instructor activo con " + campo + " " + valor;
+        }
+        return campo.substring(0, 1).toUpperCase() + campo.substring(1) + " " + valor
+                + " pertenece a un instructor dado de baja el "
+                + deletedAt.toLocalDate()
+                + ". Contacte al administrador para liberarlo o reactivar el registro.";
     }
 }

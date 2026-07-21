@@ -3,6 +3,7 @@ package com.escuela.estudiantes.exception;
 import com.escuela.estudiantes.controller.EstudianteController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -114,6 +115,29 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleNotReadable(HttpMessageNotReadableException ex) {
         return build(HttpStatus.BAD_REQUEST, "malformed-body",
                 "Body invalido", "Cuerpo de request invalido o malformado");
+    }
+
+    /**
+     * Red de seguridad: convierte cualquier violacion de constraint que se
+     * escape del service en un 409 con detail parseando el nombre de la
+     * constraint. Idealmente el service ya la habria detectado antes con un
+     * mensaje mas rico.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
+        String raw = ex.getMostSpecificCause().getMessage();
+        String detail;
+        if (raw != null && raw.contains("uq_estudiantes_cedula")) {
+            detail = "La cedula ya esta registrada (posiblemente en un registro dado de baja). "
+                    + "Contacte al administrador para liberarla.";
+        } else if (raw != null && raw.contains("uq_estudiantes_email")) {
+            detail = "El email ya esta registrado (posiblemente en un registro dado de baja). "
+                    + "Contacte al administrador para liberarlo.";
+        } else {
+            detail = "Conflicto de integridad de datos.";
+        }
+        log.warn("DataIntegrityViolation atrapada por red de seguridad: {}", raw);
+        return build(HttpStatus.CONFLICT, "data-integrity", "Conflicto de datos", detail);
     }
 
     // -----------------------------------------------------------------------
