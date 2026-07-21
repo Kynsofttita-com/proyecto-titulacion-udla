@@ -36,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -94,15 +95,37 @@ public class EstudianteServiceImpl implements EstudianteService {
     @Transactional
     public EstudianteResponse create(CreateEstudianteRequest request) {
         validarCedula(request.cedula());
-        // Chequeamos contra la tabla completa (incluyendo soft-deleted) porque
-        // el UNIQUE de la DB es global; sin este check el INSERT reventaria en
-        // ConstraintViolation con un 500 opaco.
-        repository.findByCedula(request.cedula()).ifPresent(e -> {
-            throw new CedulaDuplicadaException(request.cedula(), e.getDeletedAt());
-        });
-        repository.findByEmail(request.email()).ifPresent(e -> {
-            throw new EmailDuplicadoException(request.email(), e.getDeletedAt());
-        });
+
+        // Chequeamos contra la tabla completa (incluye soft-deleted) porque el
+        // UNIQUE de la DB es global. Politica de reactivacion:
+        //   1. Cedula matchea activo         -> 409 (conflicto real)
+        //   2. Email matchea activo (distinto reg.) -> 409
+        //   3. Cedula matchea soft-deleted   -> REACTIVAR ese registro
+        //   4. Solo email matchea soft-del.  -> REACTIVAR ese registro
+        //   5. Nada matchea                  -> crear nuevo
+        Optional<Estudiante> porCedula = repository.findByCedula(request.cedula());
+        Optional<Estudiante> porEmail  = repository.findByEmail(request.email());
+
+        if (porCedula.isPresent() && porCedula.get().getDeletedAt() == null) {
+            throw new CedulaDuplicadaException(request.cedula(), null);
+        }
+        if (porEmail.isPresent() && porEmail.get().getDeletedAt() == null
+                && (porCedula.isEmpty() || !porCedula.get().getId().equals(porEmail.get().getId()))) {
+            throw new EmailDuplicadoException(request.email(), null);
+        }
+
+        if (porCedula.isPresent()) {
+            // Ambiguo: cedula X (soft-del reg A) + email Y (soft-del reg B distinto).
+            // Reactivar A pisando su email por Y colisionaria con la UNIQUE global.
+            // Se lo rechaza con mensaje claro para que el admin resuelva a mano.
+            if (porEmail.isPresent() && !porEmail.get().getId().equals(porCedula.get().getId())) {
+                throw new EmailDuplicadoException(request.email(), porEmail.get().getDeletedAt());
+            }
+            return reactivar(porCedula.get(), request);
+        }
+        if (porEmail.isPresent()) {
+            return reactivar(porEmail.get(), request);
+        }
 
         Estudiante estudiante = getMapper().toEntity(request);
         // Re-asignar el padre en los contactos hijos (MapStruct no lo hace solo
@@ -130,6 +153,62 @@ public class EstudianteServiceImpl implements EstudianteService {
                 .build());
 
         return getMapper().toResponse(guardado);
+    }
+
+    /**
+     * Reactiva un estudiante soft-deleted con los datos del request nuevo.
+     * En Ecuador la cedula = persona, asi que reactivar es semanticamente correcto:
+     * es la misma persona volviendo. Actualizamos todos los campos y limpiamos
+     * deleted_at. Tambien disparamos el evento y la creacion de cuenta de usuario:
+     * el ms-auth AutoUsuarioCreator reactivara el usuario soft-deleted correspondiente.
+     */
+    private EstudianteResponse reactivar(Estudiante viejo, CreateEstudianteRequest request) {
+        viejo.setDeletedAt(null);
+        viejo.setEstado("PRE_MATRICULADO");
+        viejo.setCedula(request.cedula());
+        viejo.setNombre(request.nombre());
+        viejo.setApellido(request.apellido());
+        viejo.setEmail(request.email());
+        viejo.setTelefono(request.telefono());
+        viejo.setDireccion(request.direccion());
+        viejo.setFechaNacimiento(request.fechaNacimiento());
+        viejo.setGenero(request.genero());
+        viejo.setTipoCursoId(request.tipoCursoId());
+        viejo.setCategoriaLicenciaId(request.categoriaLicenciaId());
+        viejo.setObservaciones(request.observaciones());
+        viejo.setMinutosCompletados(0);
+        viejo.setFechaMatricula(null);
+
+        // Contactos de emergencia: reemplazar los que hubiera (los viejos van a
+        // orphanRemoval) por los del request nuevo.
+        if (viejo.getContactosEmergencia() != null) {
+            viejo.getContactosEmergencia().clear();
+        }
+        if (request.contactosEmergencia() != null) {
+            for (var ceReq : request.contactosEmergencia()) {
+                ContactoEmergencia ce = new ContactoEmergencia();
+                ce.setNombre(ceReq.nombre());
+                ce.setTelefono(ceReq.telefono());
+                ce.setParentesco(ceReq.parentesco());
+                ce.setEsPrincipal(ceReq.esPrincipal() != null && ceReq.esPrincipal());
+                ce.setEstudiante(viejo);
+                viejo.getContactosEmergencia().add(ce);
+            }
+        }
+
+        Estudiante reactivado = repository.save(viejo);
+        log.info("Estudiante REACTIVADO id={} cedula={} email={}",
+                reactivado.getId(), reactivado.getCedula(), reactivado.getEmail());
+
+        crearCuentaUsuarioAsociada(reactivado);
+        eventDispatcher.publishCreado(EstudianteCreadoEvent.builder()
+                .estudianteId(reactivado.getId())
+                .cedula(reactivado.getCedula())
+                .email(reactivado.getEmail())
+                .nombreCompleto(nombreCompleto(reactivado))
+                .estado(reactivado.getEstado())
+                .build());
+        return getMapper().toResponse(reactivado);
     }
 
     @Override

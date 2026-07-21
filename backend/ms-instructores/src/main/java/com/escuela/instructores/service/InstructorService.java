@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -73,18 +74,45 @@ public class InstructorService {
         if (!CedulaEcuadorValidator.isValid(request.cedula())) {
             throw new IllegalArgumentException("Cedula ecuatoriana invalida: " + request.cedula());
         }
-        // Chequeamos contra la tabla completa (incluyendo soft-deleted): la UNIQUE
-        // de la DB es global y sin este check el INSERT reventaria en 500 opaco.
-        repository.findByCedula(request.cedula()).ifPresent(i -> {
-            throw new DuplicateResourceException(mensajeDuplicado("cedula", request.cedula(), i.getDeletedAt()));
-        });
-        repository.findByEmail(request.email()).ifPresent(i -> {
-            throw new DuplicateResourceException(mensajeDuplicado("email", request.email(), i.getDeletedAt()));
-        });
-        repository.findByLicenciaNumero(request.licenciaNumero()).ifPresent(i -> {
+        // Politica: si cedula (o email) matchea un registro soft-deleted -> REACTIVAR.
+        // En Ecuador cedula = persona, asi que reactivar es semanticamente correcto.
+        Optional<Instructor> porCedula = repository.findByCedula(request.cedula());
+        Optional<Instructor> porEmail  = repository.findByEmail(request.email());
+        Optional<Instructor> porLicencia = repository.findByLicenciaNumero(request.licenciaNumero());
+
+        if (porCedula.isPresent() && porCedula.get().getDeletedAt() == null) {
+            throw new DuplicateResourceException(mensajeDuplicado("cedula", request.cedula(), null));
+        }
+        if (porEmail.isPresent() && porEmail.get().getDeletedAt() == null
+                && (porCedula.isEmpty() || !porCedula.get().getId().equals(porEmail.get().getId()))) {
+            throw new DuplicateResourceException(mensajeDuplicado("email", request.email(), null));
+        }
+        if (porLicencia.isPresent() && porLicencia.get().getDeletedAt() == null
+                && (porCedula.isEmpty() || !porCedula.get().getId().equals(porLicencia.get().getId()))) {
             throw new DuplicateResourceException(
-                    mensajeDuplicado("licencia", request.licenciaNumero(), i.getDeletedAt()));
-        });
+                    mensajeDuplicado("licencia", request.licenciaNumero(), null));
+        }
+
+        if (porCedula.isPresent()) {
+            // Ambiguedades: cedula = A soft-del, pero email o licencia = B soft-del distinto.
+            // Reactivar A sobreescribiendo esos campos con los del request colisionaria en UNIQUE.
+            if (porEmail.isPresent() && !porEmail.get().getId().equals(porCedula.get().getId())) {
+                throw new DuplicateResourceException(
+                        mensajeDuplicado("email", request.email(), porEmail.get().getDeletedAt()));
+            }
+            if (porLicencia.isPresent() && !porLicencia.get().getId().equals(porCedula.get().getId())) {
+                throw new DuplicateResourceException(
+                        mensajeDuplicado("licencia", request.licenciaNumero(),
+                                porLicencia.get().getDeletedAt()));
+            }
+            return reactivar(porCedula.get(), request);
+        }
+        if (porEmail.isPresent()) {
+            return reactivar(porEmail.get(), request);
+        }
+        if (porLicencia.isPresent()) {
+            return reactivar(porLicencia.get(), request);
+        }
 
         Instructor entity = getMapper().toEntity(request);
         entity.setEstado("ACTIVO");
@@ -102,6 +130,46 @@ public class InstructorService {
                 .build());
 
         return getMapper().toResponse(entity);
+    }
+
+    /**
+     * Reactiva un instructor soft-deleted con los datos del request nuevo.
+     * Actualiza todos los campos y limpia deleted_at. El evento publicado provoca
+     * que ms-auth reactive el usuario del sistema asociado.
+     */
+    private InstructorResponse reactivar(Instructor viejo, CreateInstructorRequest request) {
+        viejo.setDeletedAt(null);
+        viejo.setEstado("ACTIVO");
+        viejo.setCedula(request.cedula());
+        viejo.setNombre(request.nombre());
+        viejo.setApellido(request.apellido());
+        viejo.setEmail(request.email());
+        viejo.setTelefono(request.telefono());
+        viejo.setDireccion(request.direccion());
+        viejo.setFechaNacimiento(request.fechaNacimiento());
+        viejo.setLicenciaCategoria(request.licenciaCategoria());
+        viejo.setLicenciaNumero(request.licenciaNumero());
+        viejo.setLicenciaEmision(request.licenciaEmision());
+        viejo.setLicenciaCaducidad(request.licenciaCaducidad());
+        viejo.setFechaContratacion(request.fechaContratacion());
+        viejo.setSalarioMensual(request.salarioMensual());
+        viejo.setTipoContrato(request.tipoContrato());
+        viejo.setHorasContratoSemanales(request.horasContratoSemanales());
+        viejo.setTarifaHora(request.tarifaHora());
+        viejo.setObservaciones(request.observaciones());
+
+        Instructor reactivado = repository.save(viejo);
+        log.info("Instructor REACTIVADO id={} cedula={} email={}",
+                reactivado.getId(), reactivado.getCedula(), reactivado.getEmail());
+
+        eventDispatcher.publishCreado(InstructorCreadoEvent.builder()
+                .instructorId(reactivado.getId())
+                .cedula(reactivado.getCedula())
+                .email(reactivado.getEmail())
+                .nombre(reactivado.getNombre())
+                .apellido(reactivado.getApellido())
+                .build());
+        return getMapper().toResponse(reactivado);
     }
 
     public InstructorResponse actualizar(Long id, UpdateInstructorRequest request) {
