@@ -65,6 +65,24 @@ public class MovimientoContable implements Serializable {
     @Column(name = "pago_id")
     private Long pagoId;
 
+    /** ID opcional a {@code vehiculos_schema.registros_combustible.id} cuando el gasto viene de una carga de combustible. */
+    @Column(name = "registro_combustible_id")
+    private Long registroCombustibleId;
+
+    /** ID opcional a {@code vehiculos_schema.mantenimientos.id} cuando el gasto viene de un mantenimiento. */
+    @Column(name = "mantenimiento_id")
+    private Long mantenimientoId;
+
+    @Column(name = "vehiculo_id")
+    private Long vehiculoId;
+
+    /** Placa denormalizada al momento del registro (visible en la tabla de Gastos). */
+    @Column(name = "placa_vehiculo", length = 20)
+    private String placaVehiculo;
+
+    /** Kilometraje del vehiculo al registrar el gasto. Solo para gastos de vehiculo. */
+    private Integer kilometraje;
+
     @Column(nullable = false)
     private Boolean anulado = false;
 

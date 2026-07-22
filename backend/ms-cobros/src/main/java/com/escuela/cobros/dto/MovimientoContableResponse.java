@@ -17,6 +17,12 @@ public record MovimientoContableResponse(
         String descripcion,
         String referencia,
         Long pagoId,
+        // Origen "Vehiculo" (opcional): NULL en movimientos manuales o de pago
+        Long registroCombustibleId,
+        Long mantenimientoId,
+        Long vehiculoId,
+        String placaVehiculo,
+        Integer kilometraje,
         Boolean anulado,
         String motivoAnulacion,
         LocalDateTime createdAt,

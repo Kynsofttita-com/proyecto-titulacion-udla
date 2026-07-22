@@ -290,11 +290,20 @@
               </span>
             </template>
           </Column>
-          <Column header="Origen" style="width: 110px">
+          <Column header="Origen" style="width: 140px">
             <template #body="{ data }">
               <span v-if="data.pagoId" v-tooltip.left="'Auto-generado desde pago #' + data.pagoId" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-brand-50 text-brand-700 text-[10px] font-medium border border-brand-200">
                 <i class="pi pi-link text-[9px]" /> Cobro
               </span>
+              <router-link
+                v-else-if="data.vehiculoId"
+                :to="`/vehiculos/${data.vehiculoId}`"
+                v-tooltip.left="'Ver vehículo — auto-generado desde ' + (data.registroCombustibleId ? 'combustible' : 'mantenimiento')"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-info-50 text-info-700 text-[10px] font-medium border border-info-200 hover:bg-info-100"
+              >
+                <i class="pi pi-car text-[9px]" />
+                {{ data.placaVehiculo || `Vehículo #${data.vehiculoId}` }}
+              </router-link>
               <span v-else class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-ink-100 text-ink-600 text-[10px] font-medium">
                 Manual
               </span>

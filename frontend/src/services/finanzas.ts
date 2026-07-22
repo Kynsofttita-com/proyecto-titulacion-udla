@@ -74,7 +74,12 @@ export interface MovimientoContableResponse {
   categoriaNombre: string
   descripcion?: string
   referencia?: string
-  pagoId?: number              // NULL = manual, no-NULL = auto-generado desde un pago
+  pagoId?: number                   // no-NULL = auto-generado desde un pago
+  registroCombustibleId?: number    // no-NULL = auto-generado desde combustible en Vehículos
+  mantenimientoId?: number          // no-NULL = auto-generado desde mantenimiento en Vehículos
+  vehiculoId?: number
+  placaVehiculo?: string
+  kilometraje?: number
   anulado: boolean
   motivoAnulacion?: string
   createdAt?: string

@@ -42,11 +42,22 @@ public class MovimientoContableController {
             @RequestParam(required = false) Long cuentaId,
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) Long vehiculoId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
             @PageableDefault(size = 50) Pageable pageable) {
         validarAuth(userEmail, userRoles, ROLE_ADMIN, ROLE_STAFF);
-        return ResponseEntity.ok(service.buscar(cuentaId, categoriaId, tipo, fechaInicio, fechaFin, pageable));
+        return ResponseEntity.ok(service.buscar(cuentaId, categoriaId, tipo, vehiculoId, fechaInicio, fechaFin, pageable));
+    }
+
+    @GetMapping("/resumen-vehiculo/{vehiculoId}")
+    @Operation(summary = "Resumen de gastos (combustible + mantenimiento) de un vehiculo")
+    public ResponseEntity<java.util.Map<String, java.math.BigDecimal>> resumenVehiculo(
+            @RequestHeader(value = UserHeaders.USER_EMAIL, required = false) String userEmail,
+            @RequestHeader(value = UserHeaders.USER_ROLES, required = false) String userRoles,
+            @PathVariable Long vehiculoId) {
+        validarAuth(userEmail, userRoles, ROLE_ADMIN, ROLE_STAFF);
+        return ResponseEntity.ok(service.resumenGastosVehiculo(vehiculoId));
     }
 
     @GetMapping("/{id}")
