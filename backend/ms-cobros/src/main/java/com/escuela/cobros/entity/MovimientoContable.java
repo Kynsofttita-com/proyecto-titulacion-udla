@@ -83,6 +83,18 @@ public class MovimientoContable implements Serializable {
     /** Kilometraje del vehiculo al registrar el gasto. Solo para gastos de vehiculo. */
     private Integer kilometraje;
 
+    /**
+     * ID de la persona a la que se le paga (instructor o usuario admin/staff).
+     * Usado por categorias de sueldo. Semantica depende de la categoria del movimiento.
+     * Sin FK cross-MS.
+     */
+    @Column(name = "pagado_a_id")
+    private Long pagadoAId;
+
+    /** Nombre denormalizado al momento del pago (visible en la tabla de Gastos). */
+    @Column(name = "nombre_pagado_a", length = 200)
+    private String nombrePagadoA;
+
     @Column(nullable = false)
     private Boolean anulado = false;
 

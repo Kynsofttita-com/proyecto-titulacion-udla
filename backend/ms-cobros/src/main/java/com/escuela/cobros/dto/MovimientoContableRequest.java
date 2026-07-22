@@ -42,5 +42,11 @@ public record MovimientoContableRequest(
         // denormalizados en el movimiento y aparecen en el detalle del vehiculo.
         Long vehiculoId,
         @Size(max = 20) String placaVehiculo,
-        Integer kilometraje
+        Integer kilometraje,
+
+        // Vinculo opcional a la persona a la que se le paga (instructor o admin/staff).
+        // Usado por categorias de sueldo. El frontend envia id + nombre resueltos
+        // del dropdown; sin validacion cross-MS.
+        Long pagadoAId,
+        @Size(max = 200) String nombrePagadoA
 ) {}

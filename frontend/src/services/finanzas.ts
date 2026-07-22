@@ -64,6 +64,9 @@ export interface MovimientoContableRequest {
   vehiculoId?: number | null
   placaVehiculo?: string | null
   kilometraje?: number | null
+  // Vínculo opcional a persona a la que se paga (categorías de sueldo)
+  pagadoAId?: number | null
+  nombrePagadoA?: string | null
 }
 
 export interface MovimientoContableResponse {
@@ -84,6 +87,8 @@ export interface MovimientoContableResponse {
   vehiculoId?: number
   placaVehiculo?: string
   kilometraje?: number
+  pagadoAId?: number                // no-NULL = sueldo pagado a instructor/staff
+  nombrePagadoA?: string
   anulado: boolean
   motivoAnulacion?: string
   createdAt?: string

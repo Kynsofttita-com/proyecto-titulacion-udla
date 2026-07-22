@@ -23,6 +23,9 @@ public record MovimientoContableResponse(
         Long vehiculoId,
         String placaVehiculo,
         Integer kilometraje,
+        // Persona a la que se le paga (opcional, categorias de sueldo)
+        Long pagadoAId,
+        String nombrePagadoA,
         Boolean anulado,
         String motivoAnulacion,
         LocalDateTime createdAt,

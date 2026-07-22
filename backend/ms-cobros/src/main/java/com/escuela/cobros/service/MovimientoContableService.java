@@ -51,9 +51,9 @@ public class MovimientoContableService {
 
     @Transactional(readOnly = true)
     public Page<MovimientoContableResponse> buscar(
-            Long cuentaId, Long categoriaId, String tipo, Long vehiculoId,
+            Long cuentaId, Long categoriaId, String tipo, Long vehiculoId, Long pagadoAId,
             LocalDate fechaInicio, LocalDate fechaFin, Pageable pageable) {
-        return movimientosRepo.buscarConFiltros(cuentaId, categoriaId, tipo, vehiculoId, fechaInicio, fechaFin, pageable)
+        return movimientosRepo.buscarConFiltros(cuentaId, categoriaId, tipo, vehiculoId, pagadoAId, fechaInicio, fechaFin, pageable)
                 .map(this::toResponse);
     }
 
@@ -111,12 +111,15 @@ public class MovimientoContableService {
                 .vehiculoId(request.vehiculoId())
                 .placaVehiculo(trimOrNull(request.placaVehiculo()))
                 .kilometraje(request.kilometraje())
+                .pagadoAId(request.pagadoAId())
+                .nombrePagadoA(trimOrNull(request.nombrePagadoA()))
                 .anulado(false)
                 .build();
         m = movimientosRepo.save(m);
-        log.info("Movimiento creado: id={} tipo={} monto={} cuenta={} categoria={} vehiculo={}",
+        log.info("Movimiento creado: id={} tipo={} monto={} cuenta={} categoria={} vehiculo={} pagadoA={}",
                 m.getId(), m.getTipo(), m.getMonto(), cuenta.getNombre(), categoria.getCodigo(),
-                m.getPlacaVehiculo() != null ? m.getPlacaVehiculo() : "—");
+                m.getPlacaVehiculo() != null ? m.getPlacaVehiculo() : "—",
+                m.getNombrePagadoA() != null ? m.getNombrePagadoA() : "—");
         return toResponse(m);
     }
 
@@ -158,6 +161,8 @@ public class MovimientoContableService {
         m.setVehiculoId(request.vehiculoId());
         m.setPlacaVehiculo(trimOrNull(request.placaVehiculo()));
         m.setKilometraje(request.kilometraje());
+        m.setPagadoAId(request.pagadoAId());
+        m.setNombrePagadoA(trimOrNull(request.nombrePagadoA()));
         m = movimientosRepo.save(m);
         return toResponse(m);
     }
@@ -372,6 +377,8 @@ public class MovimientoContableService {
                 m.getVehiculoId(),
                 m.getPlacaVehiculo(),
                 m.getKilometraje(),
+                m.getPagadoAId(),
+                m.getNombrePagadoA(),
                 m.getAnulado(),
                 m.getMotivoAnulacion(),
                 m.getCreatedAt(),
