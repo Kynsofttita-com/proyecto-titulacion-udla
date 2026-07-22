@@ -19,5 +19,8 @@ public record ConfiguracionResponse(
         Short diasAlertaSoat,
         Short maxIntentosFallidos,
         Short duracionBloqueoMinutos,
-        Short expiracionTokenResetMinutos
+        Short expiracionTokenResetMinutos,
+        Long cuentaDefaultCobrosId,
+        Long cuentaDefaultCombustibleId,
+        Long cuentaDefaultMantenimientoId
 ) {}
