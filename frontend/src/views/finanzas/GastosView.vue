@@ -304,6 +304,49 @@
           </p>
         </div>
 
+        <!-- Vehículo (aparece solo si la categoría es de vehículo) -->
+        <div v-if="esCategoriaVehiculo" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg bg-brand-50/50 border border-brand-200">
+          <div class="md:col-span-2 flex items-center gap-2 text-xs text-brand-700">
+            <i class="pi pi-car" />
+            <span>Vinculá este gasto a un vehículo para que aparezca también en su detalle.</span>
+          </div>
+          <div>
+            <label for="field-gasto-vehiculoId" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Vehículo <span class="text-xs text-ink-500">(opcional)</span>
+            </label>
+            <Dropdown
+              v-model="formG.vehiculoId"
+              inputId="field-gasto-vehiculoId"
+              :options="vehiculosOpciones"
+              optionLabel="etiqueta" optionValue="id"
+              placeholder="Sin vehículo"
+              class="w-full" showClear
+              @update:modelValue="onVehiculoSelect"
+            >
+              <template #option="{ option }">
+                <div class="flex items-center gap-2">
+                  <i class="pi pi-car text-brand-600 text-xs" />
+                  <span class="font-mono text-sm">{{ option.placa }}</span>
+                  <span class="text-xs text-ink-500">— {{ option.marca }} {{ option.modelo }}</span>
+                </div>
+              </template>
+            </Dropdown>
+          </div>
+          <div>
+            <label for="field-gasto-kilometraje" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Kilometraje <span class="text-xs text-ink-500">(opcional)</span>
+            </label>
+            <InputNumber
+              v-model="formG.kilometraje"
+              inputId="field-gasto-kilometraje"
+              :min="0"
+              suffix=" km"
+              class="w-full"
+              :disabled="!formG.vehiculoId"
+            />
+          </div>
+        </div>
+
         <div>
           <label for="field-gasto-descripcion" class="block text-sm font-medium text-ink-700 mb-1.5">
             Descripción <span class="text-xs text-ink-500">(opcional)</span>
@@ -401,6 +444,7 @@ import finanzasService, {
   type MovimientoContableResponse,
   type TipoCuenta
 } from '@/services/finanzas'
+import api from '@/services/api'
 
 const vTooltip = Tooltip
 const toast = useToast()
@@ -421,6 +465,20 @@ const gastos = ref<MovimientoContableResponse[]>([])
 const cuentas = ref<CuentaResponse[]>([])
 const categoriasGasto = ref<CategoriaMovimientoResponse[]>([])
 const cargando = ref(false)
+
+// Vehículos disponibles (para vincular gastos de combustible/mantenimiento)
+const vehiculos = ref<Array<{ id: number; placa: string; marca: string; modelo: string }>>([])
+const vehiculosOpciones = computed(() =>
+  vehiculos.value.map(v => ({ ...v, etiqueta: `${v.placa} — ${v.marca} ${v.modelo}` }))
+)
+
+// Categorías vinculables a vehículo (por código de sistema)
+const CATEGORIAS_VEHICULO_CODIGOS = ['COMBUSTIBLE', 'MANTENIMIENTO_VEHICULO'] as const
+
+const esCategoriaVehiculo = computed(() => {
+  const cat = categoriasGasto.value.find(c => c.id === formG.categoriaId)
+  return !!cat && CATEGORIAS_VEHICULO_CODIGOS.includes(cat.codigo as any)
+})
 
 const cuentasActivas = computed(() => cuentas.value.filter(c => c.activo))
 const totalPeriodo = computed(() => gastos.value.reduce((s, g) => s + Number(g.monto), 0))
@@ -447,6 +505,30 @@ const cargarCatalogos = async () => {
     cuentas.value = ctas
     categoriasGasto.value = cats
   } catch { /* ignore */ }
+}
+
+const cargarVehiculos = async () => {
+  try {
+    const { data } = await api.get('/vehiculos', { params: { size: 200 } })
+    const raw = data?.content || data || []
+    vehiculos.value = raw
+      .filter((v: any) => !v.deletedAt)
+      .map((v: any) => ({ id: v.id, placa: v.placa, marca: v.marca || '', modelo: v.modelo || '' }))
+  } catch (e) {
+    console.warn('No se pudieron cargar los vehículos', e)
+    vehiculos.value = []
+  }
+}
+
+const onVehiculoSelect = (id: number | null) => {
+  if (!id) {
+    formG.vehiculoId = null
+    formG.placaVehiculo = null
+    formG.kilometraje = null
+    return
+  }
+  const v = vehiculos.value.find(x => x.id === id)
+  formG.placaVehiculo = v?.placa || null
 }
 
 const cargarGastos = async () => {
@@ -567,14 +649,16 @@ const guardando = ref(false)
 const formG = reactive<any>({
   id: null, fecha: new Date(), monto: null,
   cuentaId: null, categoriaId: null,
-  descripcion: '', referencia: ''
+  descripcion: '', referencia: '',
+  vehiculoId: null, placaVehiculo: null, kilometraje: null
 })
 
 const abrirDialogNuevo = () => {
   Object.assign(formG, {
     id: null, fecha: new Date(), monto: null,
     cuentaId: null, categoriaId: null,
-    descripcion: '', referencia: ''
+    descripcion: '', referencia: '',
+    vehiculoId: null, placaVehiculo: null, kilometraje: null
   })
   clearAllG()
   dialogVisible.value = true
@@ -606,7 +690,10 @@ const abrirDialogEditar = (g: MovimientoContableResponse) => {
     cuentaId: g.cuentaId,
     categoriaId: g.categoriaId,
     descripcion: g.descripcion || '',
-    referencia: g.referencia || ''
+    referencia: g.referencia || '',
+    vehiculoId: g.vehiculoId ?? null,
+    placaVehiculo: g.placaVehiculo ?? null,
+    kilometraje: g.kilometraje ?? null
   })
   clearAllG()
   dialogVisible.value = true
@@ -629,6 +716,8 @@ const guardar = async () => {
   if (!validar()) return
   guardando.value = true
   try {
+    // Si la categoría no es de vehículo, limpiar los campos de vehículo por si el usuario cambió de categoría
+    const usaVehiculo = esCategoriaVehiculo.value && formG.vehiculoId
     const payload = {
       fecha: fmtFecha(formG.fecha)!,
       tipo: 'GASTO' as const,
@@ -636,7 +725,10 @@ const guardar = async () => {
       cuentaId: formG.cuentaId,
       categoriaId: formG.categoriaId,
       descripcion: formG.descripcion?.trim() || undefined,
-      referencia: formG.referencia?.trim() || undefined
+      referencia: formG.referencia?.trim() || undefined,
+      vehiculoId: usaVehiculo ? formG.vehiculoId : null,
+      placaVehiculo: usaVehiculo ? (formG.placaVehiculo || null) : null,
+      kilometraje: usaVehiculo ? (formG.kilometraje ?? null) : null
     }
     if (formG.id) {
       await finanzasService.actualizarMovimiento(formG.id, payload)
@@ -713,7 +805,7 @@ const confirmarAnular = async () => {
 }
 
 onMounted(async () => {
-  await cargarCatalogos()
+  await Promise.all([cargarCatalogos(), cargarVehiculos()])
   await cargarGastos()
 })
 </script>

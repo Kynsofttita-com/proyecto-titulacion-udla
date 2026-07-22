@@ -108,11 +108,15 @@ public class MovimientoContableService {
                 .categoria(categoria)
                 .descripcion(trimOrNull(request.descripcion()))
                 .referencia(trimOrNull(request.referencia()))
+                .vehiculoId(request.vehiculoId())
+                .placaVehiculo(trimOrNull(request.placaVehiculo()))
+                .kilometraje(request.kilometraje())
                 .anulado(false)
                 .build();
         m = movimientosRepo.save(m);
-        log.info("Movimiento creado: id={} tipo={} monto={} cuenta={} categoria={}",
-                m.getId(), m.getTipo(), m.getMonto(), cuenta.getNombre(), categoria.getCodigo());
+        log.info("Movimiento creado: id={} tipo={} monto={} cuenta={} categoria={} vehiculo={}",
+                m.getId(), m.getTipo(), m.getMonto(), cuenta.getNombre(), categoria.getCodigo(),
+                m.getPlacaVehiculo() != null ? m.getPlacaVehiculo() : "—");
         return toResponse(m);
     }
 
@@ -151,6 +155,9 @@ public class MovimientoContableService {
         m.setCategoria(categoria);
         m.setDescripcion(trimOrNull(request.descripcion()));
         m.setReferencia(trimOrNull(request.referencia()));
+        m.setVehiculoId(request.vehiculoId());
+        m.setPlacaVehiculo(trimOrNull(request.placaVehiculo()));
+        m.setKilometraje(request.kilometraje());
         m = movimientosRepo.save(m);
         return toResponse(m);
     }

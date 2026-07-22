@@ -60,6 +60,10 @@ export interface MovimientoContableRequest {
   categoriaId: number
   descripcion?: string
   referencia?: string
+  // Vínculo opcional a vehículo (para gastos manuales de combustible/mantenimiento)
+  vehiculoId?: number | null
+  placaVehiculo?: string | null
+  kilometraje?: number | null
 }
 
 export interface MovimientoContableResponse {
