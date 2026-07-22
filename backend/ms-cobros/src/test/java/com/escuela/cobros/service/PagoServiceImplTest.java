@@ -1,5 +1,6 @@
 package com.escuela.cobros.service;
 
+import com.escuela.cobros.client.AuthClient;
 import com.escuela.cobros.dto.PagoListResponse;
 import com.escuela.cobros.dto.PagoRequest;
 import com.escuela.cobros.dto.PagoResponse;
@@ -58,6 +59,9 @@ class PagoServiceImplTest {
 
     @Mock
     private PagoEventDispatcher eventDispatcher;
+
+    @Mock
+    private AuthClient authClient;
 
     @InjectMocks
     private PagoServiceImpl pagoService;

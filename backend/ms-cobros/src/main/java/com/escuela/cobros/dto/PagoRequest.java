@@ -23,10 +23,10 @@ public record PagoRequest(
 
     /**
      * Cuenta contable a la que ingreso el pago.
-     * Requerido en pagos nuevos; los historicos previos a la migracion V3
-     * quedaron con cuenta_id=NULL.
+     * Opcional: si no se envia, se usa la cuenta default configurada en
+     * Configuracion → Contabilidad ({@code cuentaDefaultCobrosId}).
+     * Si tampoco hay default, la creacion falla con 400.
      */
-    @NotNull(message = "La cuenta contable es requerida")
     Long cuentaId,
 
     String referenciaTransaccion,

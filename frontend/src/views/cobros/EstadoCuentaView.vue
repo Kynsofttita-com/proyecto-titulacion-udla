@@ -701,7 +701,9 @@
           <label for="field-pago-cuentaId" class="label mb-1.5 block">
             <span class="flex items-center gap-2">
               <i class="pi pi-briefcase text-brand-600" />
-              Cuenta destino <span class="text-danger-600 font-semibold">*</span>
+              Cuenta destino
+              <span v-if="!cuentaDefaultCobrosId" class="text-danger-600 font-semibold">*</span>
+              <span v-else class="text-xs text-ink-500 font-normal">(usa la default si dejas vacío)</span>
             </span>
           </label>
           <Dropdown
@@ -709,9 +711,10 @@
             inputId="field-pago-cuentaId"
             :options="cuentasActivasPago"
             optionLabel="nombre" optionValue="id"
-            placeholder="¿A qué cuenta entra este pago?"
+            :placeholder="cuentaDefaultCobrosId ? 'Usando cuenta por defecto configurada' : '¿A qué cuenta entra este pago?'"
             class="w-full"
             :class="errorsP.cuentaId ? '!border-danger-500 !bg-danger-50' : ''"
+            :showClear="!!cuentaDefaultCobrosId"
             @update:modelValue="clearErrP('cuentaId')"
           >
             <template #option="{ option }">
@@ -719,6 +722,11 @@
                 <div class="flex items-center gap-2 min-w-0">
                   <i :class="iconoCuentaPago(option.tipo)" class="text-brand-600 text-xs" />
                   <span class="text-sm truncate">{{ option.nombre }}</span>
+                  <span
+                    v-if="option.id === cuentaDefaultCobrosId"
+                    class="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200 font-medium"
+                    v-tooltip.top="'Cuenta por defecto configurada'"
+                  >default</span>
                 </div>
                 <span class="text-xs text-ink-500 font-mono">{{ formatMoney(option.saldoActual) }}</span>
               </div>
@@ -731,6 +739,11 @@
             <i class="pi pi-exclamation-triangle mr-1" />
             No hay cuentas activas.
             <router-link to="/finanzas/saldo" class="underline font-medium">Crea una primero</router-link>.
+          </p>
+          <p v-else-if="cuentaDefaultCobrosId && !formP.cuentaId" class="text-[11px] text-brand-700 mt-1 flex items-center gap-1">
+            <i class="pi pi-info-circle text-[10px]" />
+            Se registrará en <b>{{ nombreCuentaDefault }}</b> (configurable en
+            <router-link to="/configuracion" class="underline">Configuración → Contabilidad</router-link>).
           </p>
         </div>
 
@@ -1052,6 +1065,12 @@ const iconoCuentaPago = (t: string) => ({
   TARJETA: 'pi pi-credit-card'
 }[t] || 'pi pi-briefcase')
 
+// Cuenta default de cobros (configurada en Configuracion → Contabilidad)
+const cuentaDefaultCobrosId = ref<number | null>(null)
+const nombreCuentaDefault = computed(() =>
+  cuentasContables.value.find(c => c.id === cuentaDefaultCobrosId.value)?.nombre || 'cuenta por defecto'
+)
+
 const cargarCuentasContables = async () => {
   try {
     const { data } = await api.get('/cuentas', { params: { soloActivas: false } })
@@ -1059,6 +1078,16 @@ const cargarCuentasContables = async () => {
   } catch (e) {
     console.warn('No se pudieron cargar las cuentas contables', e)
     cuentasContables.value = []
+  }
+}
+
+const cargarCuentaDefault = async () => {
+  try {
+    const { data } = await api.get('/configuracion')
+    cuentaDefaultCobrosId.value = data?.cuentaDefaultCobrosId ?? null
+  } catch (e) {
+    console.warn('No se pudo cargar la configuracion (cuenta default cobros)', e)
+    cuentaDefaultCobrosId.value = null
   }
 }
 
@@ -1077,17 +1106,21 @@ const proximaCuota = computed(() => {
   return cuotasFactura.value.find(c => c.estado === 'PENDIENTE' || c.estado === 'PARCIAL') || null
 })
 
-const abrirFormPago = () => {
+const abrirFormPago = async () => {
   errP.value = ''
   clearAllP()
   selEstudiantePago.value = null
   facturasEstudiante.value = []
   cuotasFactura.value = []
   Object.assign(formP, { facturaId: null, monto: 0, metodoPago: 'EFECTIVO', cuentaId: null, observaciones: '' })
-  cargarCuentasContables()
   // Precargar sugerencias para que el dropdown funcione al primer click
   estudiantesFiltered.value = estudiantes.value.slice(0, 20)
   mostrarFormPago.value = true
+  // Cargar cuentas + cuenta default (ambos disparados; pre-seleccionamos al terminar)
+  await Promise.all([cargarCuentasContables(), cargarCuentaDefault()])
+  if (cuentaDefaultCobrosId.value && cuentasActivasPago.value.some(c => c.id === cuentaDefaultCobrosId.value)) {
+    formP.cuentaId = cuentaDefaultCobrosId.value
+  }
 }
 
 const onEstudiantePagoSelect = async (e: any) => {
@@ -1131,8 +1164,10 @@ const validarPago = (): boolean => {
   if (!formP.metodoPago) {
     setErrP('metodoPago', 'Selecciona el método de pago')
   }
-  if (!formP.cuentaId) {
-    setErrP('cuentaId', 'Selecciona la cuenta a la que ingresa el pago')
+  // Cuenta destino: obligatoria SOLO si no hay cuenta default configurada.
+  // Si hay default, el backend la usa cuando cuentaId viene null.
+  if (!formP.cuentaId && !cuentaDefaultCobrosId.value) {
+    setErrP('cuentaId', 'Selecciona la cuenta a la que ingresa el pago (o configura una default en Configuración → Contabilidad)')
   }
   if (Object.keys(errorsP).length > 0) {
     const orden = ['estudiante', 'factura', 'monto', 'metodoPago', 'cuentaId']
