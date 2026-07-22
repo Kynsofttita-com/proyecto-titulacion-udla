@@ -35,5 +35,12 @@ public record MovimientoContableRequest(
         String descripcion,
 
         @Size(max = 80, message = "La referencia no puede exceder 80 caracteres")
-        String referencia
+        String referencia,
+
+        // Vinculo opcional a un vehiculo (para gastos manuales de combustible o
+        // mantenimiento cargados desde /finanzas/gastos). Cuando vienen, quedan
+        // denormalizados en el movimiento y aparecen en el detalle del vehiculo.
+        Long vehiculoId,
+        @Size(max = 20) String placaVehiculo,
+        Integer kilometraje
 ) {}
