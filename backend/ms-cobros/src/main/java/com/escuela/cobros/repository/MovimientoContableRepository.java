@@ -27,6 +27,7 @@ public interface MovimientoContableRepository extends JpaRepository<MovimientoCo
           AND (:categoriaId IS NULL OR m.categoria.id = :categoriaId)
           AND (:tipo IS NULL OR m.tipo = :tipo)
           AND (:vehiculoId IS NULL OR m.vehiculoId = :vehiculoId)
+          AND (:pagadoAId IS NULL OR m.pagadoAId = :pagadoAId)
           AND (:fechaInicio IS NULL OR m.fecha >= :fechaInicio)
           AND (:fechaFin IS NULL OR m.fecha <= :fechaFin)
         ORDER BY m.fecha DESC, m.id DESC
@@ -36,6 +37,7 @@ public interface MovimientoContableRepository extends JpaRepository<MovimientoCo
             Long categoriaId,
             String tipo,
             Long vehiculoId,
+            Long pagadoAId,
             LocalDate fechaInicio,
             LocalDate fechaFin,
             Pageable pageable

@@ -650,6 +650,55 @@
               </div>
             </div>
           </TabPanel>
+
+          <!-- Tab: Sueldos pagados -->
+          <TabPanel header="Sueldos">
+            <div class="card p-5 space-y-4">
+              <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-start gap-2 text-xs text-ink-700">
+                <i class="pi pi-info-circle text-info-600 mt-0.5" />
+                <span>
+                  Historial de sueldos pagados a este instructor. Los registros se crean desde
+                  <router-link to="/finanzas/gastos" class="underline font-medium">Finanzas → Gastos</router-link>
+                  con categoría "Sueldos instructores".
+                </span>
+              </div>
+
+              <div v-if="cargandoSueldos" class="text-center py-8"><ProgressSpinner style="width:32px;height:32px" /></div>
+              <div v-else-if="sueldosPagados.length === 0" class="text-center py-10">
+                <i class="pi pi-money-bill text-4xl text-ink-300 mb-2" />
+                <p class="text-sm text-ink-500">Sin sueldos registrados.</p>
+                <router-link to="/finanzas/gastos" class="text-xs text-brand-700 hover:underline mt-1 inline-block">
+                  Registrar el primero <i class="pi pi-external-link text-[10px]" />
+                </router-link>
+              </div>
+              <div v-else>
+                <div class="p-4 rounded-lg bg-gradient-to-br from-brand-600 to-brand-700 text-white mb-4">
+                  <p class="text-xs text-white/80 uppercase tracking-wider">Total pagado</p>
+                  <p class="text-3xl font-bold mt-1">${{ totalSueldos.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                  <p class="text-xs text-white/70 mt-1">{{ sueldosPagados.length }} pago{{ sueldosPagados.length === 1 ? '' : 's' }} registrado{{ sueldosPagados.length === 1 ? '' : 's' }}</p>
+                </div>
+
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-ink-200 text-left text-xs text-ink-600 uppercase">
+                      <th class="py-2 pr-2 font-medium">Fecha</th>
+                      <th class="py-2 px-2 font-medium">Cuenta</th>
+                      <th class="py-2 px-2 font-medium">Descripción</th>
+                      <th class="py-2 pl-2 font-medium text-right">Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="s in sueldosPagados" :key="s.id" class="border-b border-ink-100 hover:bg-ink-50">
+                      <td class="py-2 pr-2 text-ink-900 whitespace-nowrap">{{ s.fecha }}</td>
+                      <td class="py-2 px-2 text-ink-700 text-xs">{{ s.cuentaNombre }}</td>
+                      <td class="py-2 px-2 text-ink-700 text-xs">{{ s.descripcion || '—' }}</td>
+                      <td class="py-2 pl-2 text-right font-semibold text-danger-700">− ${{ Number(s.monto).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabPanel>
         </TabView>
       </div>
     </div>
@@ -937,6 +986,7 @@ import instructoresService, {
   type HorarioTrabajoResponse,
   type TipoExcepcion
 } from '@/services/instructores'
+import api from '@/services/api'
 import { fmtFechaLocal } from '@/utils/fechas'
 
 const vTooltip = Tooltip
@@ -1195,6 +1245,7 @@ const cargar = async () => {
     cargarResumenHoras()
     cargarDisponibilidad()
     cargarExcepciones()
+    cargarSueldos()
   } catch (e: any) {
     toast.add({
       severity: 'error',
@@ -1434,6 +1485,27 @@ const cargarResumenHoras = async () => {
   } finally {
     cargandoResumen.value = false
   }
+}
+
+// ----- Sueldos pagados (movimientos contables categoria SUELDO_INSTRUCTOR vinculados) -----
+const sueldosPagados = ref<any[]>([])
+const cargandoSueldos = ref(false)
+const totalSueldos = computed(() => sueldosPagados.value.reduce((s, m) => s + Number(m.monto || 0), 0))
+
+const cargarSueldos = async () => {
+  cargandoSueldos.value = true
+  try {
+    const { data } = await api.get('/movimientos', {
+      params: { pagadoAId: instructorId.value, tipo: 'GASTO', size: 200 }
+    })
+    // Filtro adicional para asegurar que solo veamos sueldos de instructor
+    sueldosPagados.value = (data?.content || []).filter(
+      (m: any) => m.categoriaCodigo === 'SUELDO_INSTRUCTOR'
+    )
+  } catch (e) {
+    console.warn('No se pudieron cargar los sueldos', e)
+    sueldosPagados.value = []
+  } finally { cargandoSueldos.value = false }
 }
 
 // ----- Editar Personal -----

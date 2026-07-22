@@ -86,17 +86,25 @@
             <p v-if="data.referencia" class="text-[10px] text-ink-500 font-mono">Ref: {{ data.referencia }}</p>
           </template>
         </Column>
-        <Column header="Origen" style="width: 140px">
+        <Column header="Origen" style="width: 180px">
           <template #body="{ data }">
             <router-link
               v-if="data.vehiculoId"
               :to="`/vehiculos/${data.vehiculoId}`"
               class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-info-50 text-info-700 text-[10px] font-medium border border-info-200 hover:bg-info-100"
-              v-tooltip.top="'Ver vehículo — este gasto se generó automáticamente'"
+              v-tooltip.top="esOrigenVehiculo(data) ? 'Ver vehículo — gasto auto-generado' : 'Ver vehículo — gasto manual vinculado'"
             >
               <i class="pi pi-car text-[9px]" />
               {{ data.placaVehiculo || `Vehículo #${data.vehiculoId}` }}
             </router-link>
+            <span
+              v-else-if="data.pagadoAId && data.nombrePagadoA"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-accent-50 text-accent-700 text-[10px] font-medium border border-accent-200"
+              v-tooltip.top="'Sueldo pagado a esta persona'"
+            >
+              <i class="pi pi-user text-[9px]" />
+              {{ data.nombrePagadoA }}
+            </span>
             <span
               v-else
               class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-ink-100 text-ink-600 text-[10px] font-medium"
@@ -304,6 +312,37 @@
           </p>
         </div>
 
+        <!-- Persona (aparece solo si la categoría es de sueldo) -->
+        <div v-if="esCategoriaSueldo" class="p-3 rounded-lg bg-accent-50/50 border border-accent-200 space-y-3">
+          <div class="flex items-center gap-2 text-xs text-accent-700">
+            <i class="pi pi-user" />
+            <span>Vinculá este sueldo a la persona que lo recibe para que quede registrado en su historial.</span>
+          </div>
+          <div>
+            <label for="field-gasto-pagadoAId" class="block text-sm font-medium text-ink-700 mb-1.5">
+              {{ formG.categoriaId && esCategoriaSueldoAdministrativo ? 'Administrativo / Staff' : 'Instructor' }}
+              <span class="text-xs text-ink-500">(opcional)</span>
+            </label>
+            <Dropdown
+              v-model="formG.pagadoAId"
+              inputId="field-gasto-pagadoAId"
+              :options="personasOpciones"
+              optionLabel="etiqueta" optionValue="id"
+              :placeholder="cargandoPersonas ? 'Cargando...' : (personasOpciones.length === 0 ? 'Sin registros' : 'Selecciona una persona')"
+              class="w-full" showClear filter :loading="cargandoPersonas"
+              @update:modelValue="onPersonaSelect"
+            >
+              <template #option="{ option }">
+                <div class="flex items-center gap-2">
+                  <i class="pi pi-user text-accent-600 text-xs" />
+                  <span class="text-sm">{{ option.nombre }}</span>
+                  <span v-if="option.cedula" class="text-xs text-ink-500 font-mono ml-auto">{{ option.cedula }}</span>
+                </div>
+              </template>
+            </Dropdown>
+          </div>
+        </div>
+
         <!-- Vehículo (aparece solo si la categoría es de vehículo) -->
         <div v-if="esCategoriaVehiculo" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg bg-brand-50/50 border border-brand-200">
           <div class="md:col-span-2 flex items-center gap-2 text-xs text-brand-700">
@@ -421,7 +460,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import DataTable from 'primevue/datatable'
@@ -479,6 +518,75 @@ const esCategoriaVehiculo = computed(() => {
   const cat = categoriasGasto.value.find(c => c.id === formG.categoriaId)
   return !!cat && CATEGORIAS_VEHICULO_CODIGOS.includes(cat.codigo as any)
 })
+
+// Categorías de sueldo (instructor o administrativo)
+const esCategoriaSueldoInstructor = computed(() => {
+  const cat = categoriasGasto.value.find(c => c.id === formG.categoriaId)
+  return cat?.codigo === 'SUELDO_INSTRUCTOR'
+})
+const esCategoriaSueldoAdministrativo = computed(() => {
+  const cat = categoriasGasto.value.find(c => c.id === formG.categoriaId)
+  return cat?.codigo === 'SUELDO_ADMINISTRATIVO'
+})
+const esCategoriaSueldo = computed(() =>
+  esCategoriaSueldoInstructor.value || esCategoriaSueldoAdministrativo.value
+)
+
+// Personas a las que se puede pagar sueldo — se cargan lazily según categoría
+const personas = ref<Array<{ id: number; nombre: string; cedula?: string }>>([])
+const cargandoPersonas = ref(false)
+const personasOpciones = computed(() =>
+  personas.value.map(p => ({
+    ...p,
+    etiqueta: p.cedula ? `${p.nombre} · ${p.cedula}` : p.nombre
+  }))
+)
+
+const cargarInstructores = async () => {
+  cargandoPersonas.value = true
+  try {
+    const { data } = await api.get('/instructores', { params: { size: 200 } })
+    const raw = data?.content || data || []
+    personas.value = raw
+      .filter((i: any) => !i.deletedAt)
+      .map((i: any) => ({
+        id: i.id,
+        nombre: `${i.nombres || i.nombre || ''} ${i.apellidos || i.apellido || ''}`.trim() || 'Instructor',
+        cedula: i.cedula || i.numeroIdentificacion
+      }))
+  } catch (e) {
+    console.warn('No se pudieron cargar los instructores', e)
+    personas.value = []
+  } finally { cargandoPersonas.value = false }
+}
+
+const cargarAdministrativos = async () => {
+  cargandoPersonas.value = true
+  try {
+    const { data } = await api.get('/usuarios', { params: { size: 200 } })
+    const raw = data?.content || data || []
+    personas.value = raw
+      .filter((u: any) => !u.deletedAt && ['ADMIN', 'STAFF'].includes(u.rol))
+      .map((u: any) => ({
+        id: u.id,
+        nombre: `${u.nombres || ''} ${u.apellidos || ''}`.trim() || u.email || 'Usuario',
+        cedula: u.cedula
+      }))
+  } catch (e) {
+    console.warn('No se pudieron cargar los usuarios administrativos', e)
+    personas.value = []
+  } finally { cargandoPersonas.value = false }
+}
+
+const onPersonaSelect = (id: number | null) => {
+  if (!id) {
+    formG.pagadoAId = null
+    formG.nombrePagadoA = null
+    return
+  }
+  const p = personas.value.find(x => x.id === id)
+  formG.nombrePagadoA = p?.nombre || null
+}
 
 const cuentasActivas = computed(() => cuentas.value.filter(c => c.activo))
 const totalPeriodo = computed(() => gastos.value.reduce((s, g) => s + Number(g.monto), 0))
@@ -650,7 +758,8 @@ const formG = reactive<any>({
   id: null, fecha: new Date(), monto: null,
   cuentaId: null, categoriaId: null,
   descripcion: '', referencia: '',
-  vehiculoId: null, placaVehiculo: null, kilometraje: null
+  vehiculoId: null, placaVehiculo: null, kilometraje: null,
+  pagadoAId: null, nombrePagadoA: null
 })
 
 const abrirDialogNuevo = () => {
@@ -658,8 +767,10 @@ const abrirDialogNuevo = () => {
     id: null, fecha: new Date(), monto: null,
     cuentaId: null, categoriaId: null,
     descripcion: '', referencia: '',
-    vehiculoId: null, placaVehiculo: null, kilometraje: null
+    vehiculoId: null, placaVehiculo: null, kilometraje: null,
+    pagadoAId: null, nombrePagadoA: null
   })
+  personas.value = []
   clearAllG()
   dialogVisible.value = true
 }
@@ -693,7 +804,9 @@ const abrirDialogEditar = (g: MovimientoContableResponse) => {
     referencia: g.referencia || '',
     vehiculoId: g.vehiculoId ?? null,
     placaVehiculo: g.placaVehiculo ?? null,
-    kilometraje: g.kilometraje ?? null
+    kilometraje: g.kilometraje ?? null,
+    pagadoAId: g.pagadoAId ?? null,
+    nombrePagadoA: g.nombrePagadoA ?? null
   })
   clearAllG()
   dialogVisible.value = true
@@ -716,8 +829,9 @@ const guardar = async () => {
   if (!validar()) return
   guardando.value = true
   try {
-    // Si la categoría no es de vehículo, limpiar los campos de vehículo por si el usuario cambió de categoría
+    // Limpiar campos condicionales si la categoría cambió y ya no aplican
     const usaVehiculo = esCategoriaVehiculo.value && formG.vehiculoId
+    const usaSueldo = esCategoriaSueldo.value && formG.pagadoAId
     const payload = {
       fecha: fmtFecha(formG.fecha)!,
       tipo: 'GASTO' as const,
@@ -728,7 +842,9 @@ const guardar = async () => {
       referencia: formG.referencia?.trim() || undefined,
       vehiculoId: usaVehiculo ? formG.vehiculoId : null,
       placaVehiculo: usaVehiculo ? (formG.placaVehiculo || null) : null,
-      kilometraje: usaVehiculo ? (formG.kilometraje ?? null) : null
+      kilometraje: usaVehiculo ? (formG.kilometraje ?? null) : null,
+      pagadoAId: usaSueldo ? formG.pagadoAId : null,
+      nombrePagadoA: usaSueldo ? (formG.nombrePagadoA || null) : null
     }
     if (formG.id) {
       await finanzasService.actualizarMovimiento(formG.id, payload)
@@ -803,6 +919,24 @@ const confirmarAnular = async () => {
     })
   } finally { anulando.value = false }
 }
+
+// Al cambiar la categoría a una de sueldo, cargar la lista correcta de personas.
+// Al cambiar a NO-sueldo, limpiar. Preservar pagadoAId al abrir dialog de edición.
+watch(() => formG.categoriaId, async (nuevaId, viejaId) => {
+  if (nuevaId === viejaId) return
+  if (esCategoriaSueldoInstructor.value) {
+    await cargarInstructores()
+  } else if (esCategoriaSueldoAdministrativo.value) {
+    await cargarAdministrativos()
+  } else {
+    personas.value = []
+    if (viejaId != null) {
+      // El usuario cambió a otra categoría — limpiar campo pagadoA
+      formG.pagadoAId = null
+      formG.nombrePagadoA = null
+    }
+  }
+})
 
 onMounted(async () => {
   await Promise.all([cargarCatalogos(), cargarVehiculos()])

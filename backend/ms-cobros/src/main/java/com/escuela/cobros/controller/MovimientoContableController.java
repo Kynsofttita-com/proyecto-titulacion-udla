@@ -43,11 +43,12 @@ public class MovimientoContableController {
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) Long vehiculoId,
+            @RequestParam(required = false) Long pagadoAId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
             @PageableDefault(size = 50) Pageable pageable) {
         validarAuth(userEmail, userRoles, ROLE_ADMIN, ROLE_STAFF);
-        return ResponseEntity.ok(service.buscar(cuentaId, categoriaId, tipo, vehiculoId, fechaInicio, fechaFin, pageable));
+        return ResponseEntity.ok(service.buscar(cuentaId, categoriaId, tipo, vehiculoId, pagadoAId, fechaInicio, fechaFin, pageable));
     }
 
     @GetMapping("/resumen-vehiculo/{vehiculoId}")
