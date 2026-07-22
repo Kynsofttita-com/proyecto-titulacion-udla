@@ -85,6 +85,25 @@
             <p v-if="data.referencia" class="text-[10px] text-ink-500 font-mono">Ref: {{ data.referencia }}</p>
           </template>
         </Column>
+        <Column header="Origen" style="width: 140px">
+          <template #body="{ data }">
+            <router-link
+              v-if="data.vehiculoId"
+              :to="`/vehiculos/${data.vehiculoId}`"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-info-50 text-info-700 text-[10px] font-medium border border-info-200 hover:bg-info-100"
+              v-tooltip.top="'Ver vehículo — este gasto se generó automáticamente'"
+            >
+              <i class="pi pi-car text-[9px]" />
+              {{ data.placaVehiculo || `Vehículo #${data.vehiculoId}` }}
+            </router-link>
+            <span
+              v-else
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-ink-100 text-ink-600 text-[10px] font-medium"
+            >
+              Manual
+            </span>
+          </template>
+        </Column>
         <Column header="Monto" style="width: 130px" bodyClass="text-right">
           <template #body="{ data }">
             <span class="text-sm font-bold text-danger-700">− {{ formatMoney(data.monto) }}</span>
@@ -93,8 +112,16 @@
         <Column header="" style="width: 90px">
           <template #body="{ data }">
             <div class="flex items-center gap-1 justify-end">
-              <Button icon="pi pi-pencil" text rounded size="small" v-tooltip.left="'Editar'" @click="abrirDialogEditar(data)" />
-              <Button icon="pi pi-ban" text rounded size="small" severity="danger" v-tooltip.left="'Anular'" @click="abrirDialogAnular(data)" />
+              <Button
+                icon="pi pi-pencil" text rounded size="small"
+                v-tooltip.left="esOrigenVehiculo(data) ? 'Editable solo desde el módulo Vehículos' : 'Editar'"
+                :disabled="esOrigenVehiculo(data)"
+                @click="abrirDialogEditar(data)" />
+              <Button
+                icon="pi pi-ban" text rounded size="small" severity="danger"
+                v-tooltip.left="esOrigenVehiculo(data) ? 'Anulable solo desde el módulo Vehículos' : 'Anular'"
+                :disabled="esOrigenVehiculo(data)"
+                @click="abrirDialogAnular(data)" />
             </div>
           </template>
         </Column>
@@ -312,6 +339,9 @@ const iconoCuenta = (t: TipoCuenta) => ({
   TARJETA: 'pi pi-credit-card'
 }[t] || 'pi pi-briefcase')
 
+const esOrigenVehiculo = (m: MovimientoContableResponse) =>
+  !!(m.registroCombustibleId || m.mantenimientoId)
+
 const gastos = ref<MovimientoContableResponse[]>([])
 const cuentas = ref<CuentaResponse[]>([])
 const categoriasGasto = ref<CategoriaMovimientoResponse[]>([])
@@ -416,6 +446,15 @@ const abrirDialogEditar = (g: MovimientoContableResponse) => {
     })
     return
   }
+  if (esOrigenVehiculo(g)) {
+    toast.add({
+      severity: 'warn',
+      summary: 'No se puede editar',
+      detail: 'Este gasto se generó automáticamente desde Vehículos. Modifica el registro de combustible o mantenimiento.',
+      life: 5000
+    })
+    return
+  }
   Object.assign(formG, {
     id: g.id,
     fecha: new Date(g.fecha + 'T00:00:00'),
@@ -487,6 +526,15 @@ const abrirDialogAnular = (g: MovimientoContableResponse) => {
       severity: 'warn',
       summary: 'No se puede anular',
       detail: 'Este movimiento se generó automáticamente desde un pago.',
+      life: 5000
+    })
+    return
+  }
+  if (esOrigenVehiculo(g)) {
+    toast.add({
+      severity: 'warn',
+      summary: 'No se puede anular',
+      detail: 'Este gasto se generó automáticamente desde Vehículos. Elimina el registro origen desde ese módulo.',
       life: 5000
     })
     return

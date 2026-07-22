@@ -108,6 +108,12 @@
               <span class="text-sm font-bold text-ink-900">{{ combustibleRegistros.length }} cargas</span>
             </div>
           </button>
+          <button type="button" @click="activeTab = 4" class="w-full text-left p-3 rounded-lg bg-success-50 border border-success-200 hover:bg-success-100 transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-success-700"><i class="pi pi-dollar mr-1" /> Gastos totales</span>
+              <span class="text-sm font-bold text-ink-900">${{ formatearMonto(gastosResumen.total) }}</span>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -392,6 +398,85 @@
                       <td class="py-2 pl-2 text-right">
                         <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmarEliminarCombustible(r)" />
                       </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabPanel>
+
+          <!-- Tab 5: Gastos (auto-generados desde Combustible + Mantenimiento) -->
+          <TabPanel header="Gastos">
+            <div class="card p-5 space-y-5">
+              <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-start gap-2 text-xs text-ink-700">
+                <i class="pi pi-info-circle text-info-600 mt-0.5" />
+                <span>
+                  Estos gastos se registran <b>automáticamente en contabilidad</b> cada vez que cargás combustible o registrás un mantenimiento.
+                  Para modificarlos, cambia el registro origen (en las pestañas Mantenimientos o Combustible).
+                  Podés configurar a qué cuenta contable van en
+                  <router-link to="/configuracion" class="text-brand-700 underline font-medium">Configuración → Contabilidad</router-link>.
+                </span>
+              </div>
+
+              <!-- Resumen -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="p-4 bg-warning-50 rounded-lg border border-warning-200">
+                  <p class="text-xs text-ink-600 mb-1 flex items-center gap-1"><i class="pi pi-bolt text-warning-600" /> Combustible</p>
+                  <p class="text-2xl font-bold text-warning-800">${{ formatearMonto(gastosResumen.combustible) }}</p>
+                </div>
+                <div class="p-4 bg-info-50 rounded-lg border border-info-200">
+                  <p class="text-xs text-ink-600 mb-1 flex items-center gap-1"><i class="pi pi-wrench text-info-600" /> Mantenimiento</p>
+                  <p class="text-2xl font-bold text-info-800">${{ formatearMonto(gastosResumen.mantenimiento) }}</p>
+                </div>
+                <div class="p-4 bg-gradient-to-br from-brand-600 to-brand-700 text-white rounded-lg">
+                  <p class="text-xs text-white/80 mb-1 flex items-center gap-1"><i class="pi pi-dollar" /> Total del vehículo</p>
+                  <p class="text-2xl font-bold">${{ formatearMonto(gastosResumen.total) }}</p>
+                </div>
+              </div>
+
+              <!-- Historial -->
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="text-sm font-bold text-ink-800 flex items-center gap-2">
+                    <i class="pi pi-list text-brand-600" />
+                    Historial de movimientos
+                    <span v-if="gastosMovimientos.length" class="text-xs text-ink-500 font-normal">({{ gastosMovimientos.length }})</span>
+                  </h4>
+                  <router-link to="/finanzas/gastos" class="text-xs text-brand-700 hover:underline">
+                    Ver en módulo Gastos <i class="pi pi-external-link text-[10px]" />
+                  </router-link>
+                </div>
+                <div v-if="cargandoGastos" class="text-center py-8"><ProgressSpinner style="width:32px;height:32px" /></div>
+                <div v-else-if="gastosMovimientos.length === 0" class="text-center py-10">
+                  <i class="pi pi-inbox text-4xl text-ink-300 mb-2" />
+                  <p class="text-sm text-ink-500">Sin gastos registrados para este vehículo.</p>
+                  <p class="text-xs text-ink-400 mt-1">Se generarán automáticamente cuando cargues combustible o registres un mantenimiento.</p>
+                </div>
+                <table v-else class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-ink-200 text-left text-xs text-ink-600 uppercase">
+                      <th class="py-2 pr-2 font-medium">Fecha</th>
+                      <th class="py-2 px-2 font-medium">Categoría</th>
+                      <th class="py-2 px-2 font-medium">Descripción</th>
+                      <th class="py-2 px-2 font-medium text-right">Km</th>
+                      <th class="py-2 pl-2 font-medium text-right">Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="m in gastosMovimientos" :key="m.id" class="border-b border-ink-100 hover:bg-ink-50">
+                      <td class="py-2 pr-2 text-ink-900 whitespace-nowrap">{{ m.fecha }}</td>
+                      <td class="py-2 px-2">
+                        <span :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border',
+                          m.categoriaCodigo === 'COMBUSTIBLE'
+                            ? 'bg-warning-50 text-warning-700 border-warning-200'
+                            : 'bg-info-50 text-info-700 border-info-200']">
+                          <i :class="m.categoriaCodigo === 'COMBUSTIBLE' ? 'pi pi-bolt' : 'pi pi-wrench'" class="text-[10px]" />
+                          {{ m.categoriaNombre }}
+                        </span>
+                      </td>
+                      <td class="py-2 px-2 text-ink-700 text-xs">{{ m.descripcion || '—' }}</td>
+                      <td class="py-2 px-2 text-right text-ink-600 text-xs">{{ m.kilometraje != null ? m.kilometraje.toLocaleString('es-EC') : '—' }}</td>
+                      <td class="py-2 pl-2 text-right font-semibold text-danger-700">− ${{ formatearMonto(m.monto) }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -691,6 +776,7 @@ import { useConfirm } from 'primevue/useconfirm'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import DetailRow from '@/components/ui/DetailRow.vue'
+import api from '@/services/api'
 import vehiculosService, {
   type VehiculoResponse, type EstadoVehiculo,
   type MantenimientoResponse, type MantenimientoRequest,
@@ -864,7 +950,7 @@ const guardarMantenimiento = async () => {
     await vehiculosService.registrarMantenimiento(vehiculoId.value, payload)
     toast.add({ severity:'success', summary:'Registrado', detail:'Mantenimiento agregado', life:2500 })
     dialogMantVisible.value = false
-    await cargarMantenimientos()
+    await Promise.all([cargarMantenimientos(), cargarGastosVehiculo()])
   } catch (e: any) {
     toast.add({ severity:'error', summary:'Error', detail: e.response?.data?.detail || 'No se pudo registrar', life:4000 })
   } finally { guardandoMant.value = false }
@@ -878,7 +964,7 @@ const confirmarEliminarMantenimiento = (m: MantenimientoResponse) => {
       try {
         await vehiculosService.eliminarMantenimiento(vehiculoId.value, m.id)
         toast.add({ severity:'success', summary:'Eliminado', detail:'Mantenimiento eliminado', life:2500 })
-        await cargarMantenimientos()
+        await Promise.all([cargarMantenimientos(), cargarGastosVehiculo()])
       } catch (e: any) {
         toast.add({ severity:'error', summary:'Error', detail: e.response?.data?.detail || 'No se pudo eliminar', life:4000 })
       }
@@ -987,6 +1073,37 @@ const confirmarEliminarInspeccion = (i: InspeccionResponse) => {
       }
     }
   })
+}
+
+// ----- Gastos del vehículo (auto-generados desde combustible+mantenimiento) -----
+const gastosMovimientos = ref<any[]>([])
+const gastosResumen = reactive({ combustible: 0, mantenimiento: 0, total: 0 })
+const cargandoGastos = ref(false)
+
+const formatearMonto = (n: any): string =>
+  Number(n || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+const cargarGastosVehiculo = async () => {
+  cargandoGastos.value = true
+  try {
+    const [movs, resumen] = await Promise.all([
+      api.get('/movimientos', { params: { vehiculoId: vehiculoId.value, size: 100 } }),
+      api.get(`/movimientos/resumen-vehiculo/${vehiculoId.value}`)
+    ])
+    gastosMovimientos.value = movs.data?.content || []
+    const r = resumen.data || {}
+    gastosResumen.combustible = Number(r.combustible || 0)
+    gastosResumen.mantenimiento = Number(r.mantenimiento || 0)
+    gastosResumen.total = Number(r.total || 0)
+  } catch (e) {
+    console.warn('No se pudieron cargar los gastos del vehículo', e)
+    gastosMovimientos.value = []
+    gastosResumen.combustible = 0
+    gastosResumen.mantenimiento = 0
+    gastosResumen.total = 0
+  } finally {
+    cargandoGastos.value = false
+  }
 }
 
 // ----- Combustible -----
@@ -1115,7 +1232,7 @@ const guardarCombustible = async () => {
     })
     toast.add({ severity:'success', summary:'Carga registrada', life:2500 })
     dialogCombVisible.value = false
-    await Promise.all([cargarCombustible(), cargar()])
+    await Promise.all([cargarCombustible(), cargar(), cargarGastosVehiculo()])
   } catch (e: any) {
     toast.add({ severity:'error', summary:'Error', detail: e.response?.data?.detail || 'No se pudo registrar', life:4000 })
   } finally { guardandoComb.value = false }
@@ -1129,7 +1246,7 @@ const confirmarEliminarCombustible = (r: CombustibleResponse) => {
       try {
         await vehiculosService.eliminarCombustible(vehiculoId.value, r.id)
         toast.add({ severity:'success', summary:'Eliminada', life:2500 })
-        await cargarCombustible()
+        await Promise.all([cargarCombustible(), cargarGastosVehiculo()])
       } catch (e: any) {
         toast.add({ severity:'error', summary:'Error', detail: e.response?.data?.detail || 'No se pudo eliminar', life:4000 })
       }
@@ -1152,6 +1269,7 @@ const cargar = async () => {
     cargarMantenimientos()
     cargarInspecciones()
     cargarCombustible()
+    cargarGastosVehiculo()
   } catch (e: any) {
     toast.add({ severity:'error', summary:'Error', detail:'No se pudo cargar el vehículo', life:4000 })
     setTimeout(() => router.back(), 1200)

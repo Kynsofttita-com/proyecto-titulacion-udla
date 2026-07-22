@@ -26,6 +26,7 @@ public interface MovimientoContableRepository extends JpaRepository<MovimientoCo
           AND (:cuentaId IS NULL OR m.cuenta.id = :cuentaId)
           AND (:categoriaId IS NULL OR m.categoria.id = :categoriaId)
           AND (:tipo IS NULL OR m.tipo = :tipo)
+          AND (:vehiculoId IS NULL OR m.vehiculoId = :vehiculoId)
           AND (:fechaInicio IS NULL OR m.fecha >= :fechaInicio)
           AND (:fechaFin IS NULL OR m.fecha <= :fechaFin)
         ORDER BY m.fecha DESC, m.id DESC
@@ -34,10 +35,20 @@ public interface MovimientoContableRepository extends JpaRepository<MovimientoCo
             Long cuentaId,
             Long categoriaId,
             String tipo,
+            Long vehiculoId,
             LocalDate fechaInicio,
             LocalDate fechaFin,
             Pageable pageable
     );
+
+    /** Suma de gastos NO anulados de un vehiculo por codigo de categoria (ej: COMBUSTIBLE). */
+    @Query("""
+        SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoContable m
+        WHERE m.vehiculoId = :vehiculoId
+          AND m.categoria.codigo = :codigoCategoria
+          AND m.anulado = false
+    """)
+    BigDecimal sumaGastosPorVehiculoYCategoria(Long vehiculoId, String codigoCategoria);
 
     /** Suma de ingresos NO anulados de una cuenta. */
     @Query("""
@@ -60,4 +71,8 @@ public interface MovimientoContableRepository extends JpaRepository<MovimientoCo
     Optional<MovimientoContable> findByPagoId(Long pagoId);
 
     List<MovimientoContable> findByCategoriaIdAndAnuladoFalse(Long categoriaId);
+
+    Optional<MovimientoContable> findByRegistroCombustibleIdAndAnuladoFalse(Long registroCombustibleId);
+
+    Optional<MovimientoContable> findByMantenimientoIdAndAnuladoFalse(Long mantenimientoId);
 }

@@ -168,3 +168,8 @@ resilience4j:
       default:
         max-attempts: 3
         wait-duration: 1s
+
+# -----------------------------------------------------------------------------
+# Feign clients (URLs de otros MS)
+# -----------------------------------------------------------------------------
+FEIGN_MS_COBROS_URL: ${MS_COBROS_URL:http://localhost:8086}

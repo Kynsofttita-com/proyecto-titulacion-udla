@@ -1,7 +1,9 @@
 package com.escuela.vehiculos.service;
 
+import com.escuela.vehiculos.client.CobrosClient;
 import com.escuela.vehiculos.dto.CombustibleRequest;
 import com.escuela.vehiculos.dto.CombustibleResponse;
+import com.escuela.vehiculos.dto.MovimientoVehiculoRequest;
 import com.escuela.vehiculos.entity.RegistroCombustible;
 import com.escuela.vehiculos.entity.TipoCombustible;
 import com.escuela.vehiculos.entity.Vehiculo;
@@ -29,13 +31,16 @@ public class CombustibleService {
     private final RegistroCombustibleRepository repository;
     private final VehiculoRepository vehiculoRepository;
     private final TipoCombustibleRepository tipoCombustibleRepository;
+    private final CobrosClient cobrosClient;
 
     public CombustibleService(RegistroCombustibleRepository repository,
                               VehiculoRepository vehiculoRepository,
-                              TipoCombustibleRepository tipoCombustibleRepository) {
+                              TipoCombustibleRepository tipoCombustibleRepository,
+                              CobrosClient cobrosClient) {
         this.repository = repository;
         this.vehiculoRepository = vehiculoRepository;
         this.tipoCombustibleRepository = tipoCombustibleRepository;
+        this.cobrosClient = cobrosClient;
     }
 
     @Transactional(readOnly = true)
@@ -70,7 +75,56 @@ public class CombustibleService {
 
         log.info("Combustible registrado id={} vehiculoId={} litros={} costoTotal={}",
                 r.getId(), vehiculoId, r.getLitros(), costoTotal);
+
+        // Sincroniza el movimiento GASTO en contabilidad (best-effort).
+        sincronizarConCobrosCrear(r, v);
+
         return toResponse(r);
+    }
+
+    /**
+     * Elimina el registro Y anula el movimiento contable asociado (best-effort).
+     */
+    public void eliminar(Long vehiculoId, Long registroId) {
+        RegistroCombustible r = repository.findByIdAndVehiculoId(registroId, vehiculoId)
+                .orElseThrow(() -> new RecursoNotFoundException("RegistroCombustible", registroId));
+        // Hard delete (no extiende BaseEntity)
+        repository.delete(r);
+        log.info("Combustible eliminado id={}", registroId);
+
+        try {
+            cobrosClient.anularMovimientoCombustible(registroId,
+                    "Registro de combustible #" + registroId + " eliminado en Vehiculos");
+        } catch (Exception ex) {
+            log.warn("No se pudo anular el movimiento contable del combustible {}: {}",
+                    registroId, ex.getMessage());
+        }
+    }
+
+    private void sincronizarConCobrosCrear(RegistroCombustible r, Vehiculo v) {
+        try {
+            MovimientoVehiculoRequest req = new MovimientoVehiculoRequest(
+                    r.getFecha().toLocalDate(),
+                    r.getCostoTotal(),
+                    v.getId(),
+                    v.getPlaca(),
+                    r.getKilometrajeActual(),
+                    descripcionCombustible(r),
+                    v.getPlaca()
+            );
+            cobrosClient.crearMovimientoCombustible(r.getId(), req);
+        } catch (Exception ex) {
+            log.warn("No se pudo sincronizar el gasto contable del combustible {}: {}",
+                    r.getId(), ex.getMessage());
+        }
+    }
+
+    private String descripcionCombustible(RegistroCombustible r) {
+        String base = "Combustible: " + r.getLitros() + " L";
+        if (r.getEstacion() != null && !r.getEstacion().isBlank()) {
+            base += " en " + r.getEstacion();
+        }
+        return base;
     }
 
     /**
@@ -102,14 +156,6 @@ public class CombustibleService {
         return request.litros()
                 .multiply(tipo.getPrecioActual())
                 .setScale(2, RoundingMode.HALF_UP);
-    }
-
-    public void eliminar(Long vehiculoId, Long registroId) {
-        RegistroCombustible r = repository.findByIdAndVehiculoId(registroId, vehiculoId)
-                .orElseThrow(() -> new RecursoNotFoundException("RegistroCombustible", registroId));
-        // Hard delete (no extiende BaseEntity)
-        repository.delete(r);
-        log.info("Combustible eliminado id={}", registroId);
     }
 
     private Vehiculo vehiculoOFallar(Long id) {

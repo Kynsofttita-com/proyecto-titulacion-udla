@@ -1,7 +1,9 @@
 package com.escuela.vehiculos.service;
 
+import com.escuela.vehiculos.client.CobrosClient;
 import com.escuela.vehiculos.dto.MantenimientoRequest;
 import com.escuela.vehiculos.dto.MantenimientoResponse;
+import com.escuela.vehiculos.dto.MovimientoVehiculoRequest;
 import com.escuela.vehiculos.entity.Mantenimiento;
 import com.escuela.vehiculos.entity.Vehiculo;
 import com.escuela.vehiculos.exception.RecursoNotFoundException;
@@ -24,10 +26,14 @@ public class MantenimientoService {
 
     private final MantenimientoRepository repository;
     private final VehiculoRepository vehiculoRepository;
+    private final CobrosClient cobrosClient;
 
-    public MantenimientoService(MantenimientoRepository repository, VehiculoRepository vehiculoRepository) {
+    public MantenimientoService(MantenimientoRepository repository,
+                                VehiculoRepository vehiculoRepository,
+                                CobrosClient cobrosClient) {
         this.repository = repository;
         this.vehiculoRepository = vehiculoRepository;
+        this.cobrosClient = cobrosClient;
     }
 
     @Transactional(readOnly = true)
@@ -52,6 +58,8 @@ public class MantenimientoService {
         m = repository.save(m);
         log.info("Mantenimiento registrado id={} vehiculoId={} tipo={}",
                 m.getId(), vehiculoId, m.getTipo());
+
+        sincronizarConCobrosCrear(m, v);
         return toResponse(m);
     }
 
@@ -67,6 +75,8 @@ public class MantenimientoService {
         m.setProximaFecha(request.proximaFecha());
         repository.save(m);
         log.info("Mantenimiento actualizado id={}", mantId);
+
+        sincronizarConCobrosActualizar(m);
         return toResponse(m);
     }
 
@@ -76,6 +86,48 @@ public class MantenimientoService {
         m.setDeletedAt(LocalDateTime.now());
         repository.save(m);
         log.info("Mantenimiento soft-deleted id={}", mantId);
+
+        try {
+            cobrosClient.anularMovimientoMantenimiento(mantId,
+                    "Mantenimiento #" + mantId + " eliminado en Vehiculos");
+        } catch (Exception ex) {
+            log.warn("No se pudo anular el movimiento contable del mantenimiento {}: {}",
+                    mantId, ex.getMessage());
+        }
+    }
+
+    private void sincronizarConCobrosCrear(Mantenimiento m, Vehiculo v) {
+        try {
+            cobrosClient.crearMovimientoMantenimiento(m.getId(), toMovRequest(m, v));
+        } catch (Exception ex) {
+            log.warn("No se pudo sincronizar el gasto contable del mantenimiento {}: {}",
+                    m.getId(), ex.getMessage());
+        }
+    }
+
+    private void sincronizarConCobrosActualizar(Mantenimiento m) {
+        try {
+            cobrosClient.actualizarMovimientoMantenimiento(m.getId(), toMovRequest(m, m.getVehiculo()));
+        } catch (Exception ex) {
+            log.warn("No se pudo actualizar el gasto contable del mantenimiento {}: {}",
+                    m.getId(), ex.getMessage());
+        }
+    }
+
+    private MovimientoVehiculoRequest toMovRequest(Mantenimiento m, Vehiculo v) {
+        String desc = m.getTipo() + ": " + m.getDescripcion();
+        if (m.getTaller() != null && !m.getTaller().isBlank()) {
+            desc += " (" + m.getTaller() + ")";
+        }
+        return new MovimientoVehiculoRequest(
+                m.getFecha(),
+                m.getCosto(),
+                v.getId(),
+                v.getPlaca(),
+                m.getKilometrajeServicio(),
+                desc,
+                v.getPlaca()
+        );
     }
 
     private Vehiculo vehiculoOFallar(Long id) {
