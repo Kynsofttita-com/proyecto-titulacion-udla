@@ -1,5 +1,7 @@
 package com.escuela.cobros.service;
 
+import com.escuela.cobros.client.AuthClient;
+import com.escuela.cobros.dto.ConfiguracionEscuelaDTO;
 import com.escuela.cobros.dto.PagoListResponse;
 import com.escuela.cobros.dto.PagoRequest;
 import com.escuela.cobros.dto.PagoResponse;
@@ -44,6 +46,7 @@ public class PagoServiceImpl implements PagoService {
     private final MovimientoContableService movimientoContableService;
     private final PagoMapper pagoMapper;
     private final PagoEventDispatcher eventDispatcher;
+    private final AuthClient authClient;
 
     @Override
     public Page<PagoListResponse> findAll(Pageable pageable) {
@@ -77,7 +80,11 @@ public class PagoServiceImpl implements PagoService {
     @Override
     @Transactional
     public PagoResponse create(PagoRequest request) {
-        log.info("Registrando pago para factura: {} cuenta: {}", request.facturaId(), request.cuentaId());
+        // Resolvemos cuenta destino: la del request si viene, sino la default
+        // configurada en Configuracion → Contabilidad.
+        Long cuentaId = resolverCuentaId(request.cuentaId());
+        log.info("Registrando pago para factura: {} cuenta: {} (origen: {})",
+                request.facturaId(), cuentaId, request.cuentaId() == null ? "default" : "explicita");
 
         Factura factura = facturaRepository.findByIdAndDeletedAtIsNull(request.facturaId())
             .orElseThrow(() -> new FacturaNotFoundException(request.facturaId()));
@@ -86,9 +93,9 @@ public class PagoServiceImpl implements PagoService {
         validarSaldoSuficiente(request.monto(), factura);
 
         // Validar cuenta contable (activa)
-        CuentaContable cuenta = cuentaContableRepository.findById(request.cuentaId()).orElseThrow(() ->
+        CuentaContable cuenta = cuentaContableRepository.findById(cuentaId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Cuenta contable no encontrada: " + request.cuentaId()));
+                        "Cuenta contable no encontrada: " + cuentaId));
         if (Boolean.FALSE.equals(cuenta.getActivo())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La cuenta '" + cuenta.getNombre() + "' esta desactivada");
@@ -182,6 +189,34 @@ public class PagoServiceImpl implements PagoService {
                 monto, factura.getSaldo(), factura.getId());
             throw new SaldoInsuficienteException(monto, factura.getSaldo());
         }
+    }
+
+    /**
+     * Devuelve la cuenta a usar para el pago:
+     *   1) La del request si viene explicita.
+     *   2) La configurada como default de cobros en ms-auth (Configuracion → Contabilidad).
+     *   3) 400 con instruccion clara si no hay ninguna.
+     */
+    private Long resolverCuentaId(Long cuentaIdRequest) {
+        if (cuentaIdRequest != null) return cuentaIdRequest;
+
+        ConfiguracionEscuelaDTO conf;
+        try {
+            conf = authClient.obtenerConfiguracion();
+        } catch (Exception ex) {
+            log.warn("No se pudo consultar la configuracion de la escuela: {}", ex.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se pudo determinar la cuenta destino del pago y no hay cuenta configurada por defecto. "
+                    + "Selecciona la cuenta manualmente o configura una default en Configuracion → Contabilidad.");
+        }
+
+        Long defaultId = conf != null ? conf.cuentaDefaultCobrosId() : null;
+        if (defaultId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No hay cuenta de cobros configurada por defecto. "
+                    + "Selecciona la cuenta al registrar el pago o configura una en Configuracion → Contabilidad.");
+        }
+        return defaultId;
     }
 
     private Long getUsuarioActualId() {
