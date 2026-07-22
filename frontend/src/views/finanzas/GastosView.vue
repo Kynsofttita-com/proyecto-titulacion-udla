@@ -7,6 +7,7 @@
       :breadcrumbs="[{ label: 'Inicio', to: '/dashboard' }, { label: 'Finanzas' }, { label: 'Gastos' }]"
     >
       <template #actions>
+        <Button label="Nueva categoría" icon="pi pi-tag" outlined @click="abrirDialogNuevaCategoria" />
         <Button label="Nuevo gasto" icon="pi pi-plus" @click="abrirDialogNuevo" />
       </template>
     </PageHeader>
@@ -129,6 +130,80 @@
     </div>
 
     <Toast />
+
+    <!-- Dialog: Nueva categoría (rápido, solo crear; para editar/eliminar ir a Saldo → Categorías) -->
+    <Dialog v-model:visible="dialogCatVisible" modal header="Nueva categoría" :style="{ width: '500px' }">
+      <div class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-start gap-2 text-xs text-ink-700">
+          <i class="pi pi-info-circle text-info-600 mt-0.5" />
+          <span>
+            Crea una categoría personalizada para clasificar mejor tus gastos.
+            Para editar o eliminar categorías, ir a
+            <router-link to="/finanzas/saldo" class="underline font-medium">Saldo → Categorías</router-link>.
+          </span>
+        </div>
+
+        <div>
+          <label for="field-catg-nombre" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Nombre <span class="text-danger-600 font-semibold">*</span>
+          </label>
+          <InputText
+            id="field-catg-nombre"
+            v-model="formCat.nombre"
+            placeholder="Ej: Publicidad Meta, Limpieza oficina"
+            maxlength="80"
+            class="w-full"
+            :class="errorsCat.nombre ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrCat('nombre')"
+          />
+          <p v-if="errorsCat.nombre" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCat.nombre }}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="field-catg-codigo" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Código <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <InputText
+              id="field-catg-codigo"
+              v-model="formCat.codigo"
+              placeholder="Ej: PUBLICIDAD_META"
+              maxlength="40"
+              class="w-full font-mono"
+              :class="errorsCat.codigo ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="onCatCodigoInput"
+            />
+            <p v-if="errorsCat.codigo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCat.codigo }}
+            </p>
+            <p v-else class="text-[11px] text-ink-500 mt-1">MAYÚSCULAS, sin espacios (2–40 chars)</p>
+          </div>
+          <div>
+            <label for="field-catg-tipo" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Tipo <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Dropdown
+              v-model="formCat.tipo"
+              inputId="field-catg-tipo"
+              :options="[{ label: 'Gasto', value: 'GASTO' }, { label: 'Ingreso', value: 'INGRESO' }]"
+              optionLabel="label" optionValue="value"
+              class="w-full"
+              :class="errorsCat.tipo ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearErrCat('tipo')"
+            />
+            <p v-if="errorsCat.tipo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCat.tipo }}
+            </p>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Cancelar" outlined @click="dialogCatVisible = false" :disabled="guardandoCat" />
+        <Button label="Crear categoría" icon="pi pi-check" :loading="guardandoCat" @click="guardarCategoria" />
+      </template>
+    </Dialog>
 
     <!-- Dialog: Nuevo / Editar gasto -->
     <Dialog v-model:visible="dialogVisible" modal :header="formG.id ? 'Editar gasto' : 'Nuevo gasto'" :style="{ width: '600px' }">
@@ -417,6 +492,75 @@ const errorsG = valG.errors
 const setErrG = valG.setError
 const clearErrG = valG.clearError
 const clearAllG = valG.clearAll
+
+// ---------- Crear categoría rápido (dialog aparte) ----------
+const valCat = useValidation()
+const errorsCat = valCat.errors
+const setErrCat = valCat.setError
+const clearErrCat = valCat.clearError
+const clearAllCat = valCat.clearAll
+
+const dialogCatVisible = ref(false)
+const guardandoCat = ref(false)
+const formCat = reactive<any>({ codigo: '', nombre: '', tipo: 'GASTO' })
+
+const abrirDialogNuevaCategoria = () => {
+  Object.assign(formCat, { codigo: '', nombre: '', tipo: 'GASTO' })
+  clearAllCat()
+  dialogCatVisible.value = true
+}
+
+const onCatCodigoInput = (v: string) => {
+  formCat.codigo = (v || '').toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 40)
+  clearErrCat('codigo')
+}
+
+const validarCategoria = (): boolean => {
+  clearAllCat()
+  const nombre = formCat.nombre?.trim() ?? ''
+  if (!nombre) setErrCat('nombre', 'El nombre es requerido')
+  else if (nombre.length < 2) setErrCat('nombre', 'Mínimo 2 caracteres')
+
+  const codigo = (formCat.codigo || '').trim()
+  if (!codigo) setErrCat('codigo', 'El código es requerido')
+  else if (!/^[A-Z][A-Z0-9_]{1,39}$/.test(codigo)) {
+    setErrCat('codigo', 'Debe empezar con letra, solo MAYÚSCULAS, números y _ (2–40)')
+  }
+  if (!formCat.tipo) setErrCat('tipo', 'Selecciona el tipo')
+
+  if (Object.keys(errorsCat).length > 0) {
+    valCat.focusFirst(['nombre', 'codigo', 'tipo'], 'catg', true)
+    return false
+  }
+  return true
+}
+
+const guardarCategoria = async () => {
+  if (!validarCategoria()) return
+  guardandoCat.value = true
+  try {
+    const payload = {
+      codigo: formCat.codigo.trim().toUpperCase(),
+      nombre: formCat.nombre.trim(),
+      tipo: formCat.tipo,
+      activo: true
+    }
+    const creada = await finanzasService.crearCategoria(payload)
+    toast.add({ severity: 'success', summary: 'Categoría creada', detail: creada.nombre, life: 3000 })
+    dialogCatVisible.value = false
+    // Recargar catálogos para que la nueva aparezca en el filtro y en el dropdown del gasto
+    await cargarCatalogos()
+    // Si el dialog de "Nuevo gasto" está abierto y la categoría es GASTO, pre-seleccionarla
+    if (dialogVisible.value && creada.tipo === 'GASTO') {
+      formG.categoriaId = creada.id
+    }
+  } catch (e: any) {
+    const detail = e.response?.data?.detail || e.response?.data?.message
+    let mensaje = detail || 'No se pudo crear la categoría'
+    if (e.response?.status === 409) mensaje = detail || 'Ya existe una categoría con ese código'
+    toast.add({ severity: 'error', summary: 'Error', detail: mensaje, life: 4000 })
+  } finally { guardandoCat.value = false }
+}
 
 const dialogVisible = ref(false)
 const guardando = ref(false)
