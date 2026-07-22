@@ -240,6 +240,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres123
       JAVA_OPTS: -Duser.timezone=America/Guayaquil
       JWT_SECRET: ${JWT_SECRET:-miSecretaJWT123SecureKey256BitsBitsBits}
+      FEIGN_MS_COBROS_URL: http://ms-cobros:8086
     ports:
       - "8084:8084"
     healthcheck:
