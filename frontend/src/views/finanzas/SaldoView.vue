@@ -7,7 +7,20 @@
       :breadcrumbs="[{ label: 'Inicio', to: '/dashboard' }, { label: 'Finanzas' }, { label: 'Saldo' }]"
     >
       <template #actions>
-        <Button label="Nueva cuenta" icon="pi pi-plus" outlined @click="abrirDialogNuevaCuenta" v-if="esAdmin" />
+        <Button
+          v-if="esAdmin && tab === 'cuentas'"
+          label="Nueva cuenta"
+          icon="pi pi-plus"
+          outlined
+          @click="abrirDialogNuevaCuenta"
+        />
+        <Button
+          v-if="esAdmin && tab === 'categorias'"
+          label="Nueva categoría"
+          icon="pi pi-plus"
+          outlined
+          @click="abrirDialogNuevaCategoria"
+        />
       </template>
     </PageHeader>
 
@@ -97,6 +110,93 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Tab: Categorías -->
+      <div v-else-if="tab === 'categorias'" class="p-5 space-y-4">
+        <!-- Filtros -->
+        <div class="flex flex-wrap gap-3 items-end">
+          <div>
+            <label class="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
+            <Dropdown
+              v-model="filtroCatTipo"
+              :options="[{label:'Todos',value:null},{label:'Ingresos',value:'INGRESO'},{label:'Gastos',value:'GASTO'}]"
+              optionLabel="label" optionValue="value"
+              class="w-36" showClear
+            />
+          </div>
+          <div class="flex items-center gap-2 pb-0.5 text-xs text-ink-500">
+            <i class="pi pi-info-circle" />
+            <span>Las categorías <b>de sistema</b> solo permiten renombrar (no se borran ni cambian tipo).</span>
+          </div>
+        </div>
+
+        <div v-if="cargandoCategorias" class="text-center py-12"><ProgressSpinner /></div>
+        <EmptyState
+          v-else-if="categoriasFiltradas.length === 0"
+          icon="pi-tags"
+          title="Sin categorías"
+          :description="filtroCatTipo ? 'No hay categorías de este tipo.' : 'Aún no hay categorías registradas.'"
+        >
+          <template v-if="esAdmin" #action>
+            <Button label="Nueva categoría" icon="pi pi-plus" @click="abrirDialogNuevaCategoria" />
+          </template>
+        </EmptyState>
+        <DataTable
+          v-else
+          :value="categoriasFiltradas"
+          striped-rows
+          :pt="{ table: { style: 'min-width: 50rem' } }"
+        >
+          <Column header="Tipo" style="width: 100px">
+            <template #body="{ data }">
+              <span :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
+                data.tipo === 'INGRESO' ? 'bg-success-50 text-success-700 border border-success-200' : 'bg-danger-50 text-danger-700 border border-danger-200']">
+                <i :class="data.tipo === 'INGRESO' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'" class="text-[10px]" />
+                {{ data.tipo === 'INGRESO' ? 'Ingreso' : 'Gasto' }}
+              </span>
+            </template>
+          </Column>
+          <Column header="Código" style="width: 200px">
+            <template #body="{ data }">
+              <span class="text-xs font-mono text-ink-700">{{ data.codigo }}</span>
+            </template>
+          </Column>
+          <Column header="Nombre">
+            <template #body="{ data }">
+              <span class="text-sm font-medium text-ink-800">{{ data.nombre }}</span>
+            </template>
+          </Column>
+          <Column header="Origen" style="width: 110px">
+            <template #body="{ data }">
+              <span v-if="data.esSistema" v-tooltip.left="'Categoría predefinida del sistema — solo se puede renombrar'" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-brand-50 text-brand-700 text-[10px] font-medium border border-brand-200">
+                <i class="pi pi-shield text-[9px]" /> Sistema
+              </span>
+              <span v-else class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-ink-100 text-ink-600 text-[10px] font-medium">
+                Personalizada
+              </span>
+            </template>
+          </Column>
+          <Column header="Estado" style="width: 100px">
+            <template #body="{ data }">
+              <span :class="['inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                data.activo ? 'bg-success-100 text-success-700' : 'bg-ink-100 text-ink-600']">
+                {{ data.activo ? 'Activa' : 'Inactiva' }}
+              </span>
+            </template>
+          </Column>
+          <Column v-if="esAdmin" header="Acciones" style="width: 110px" bodyClass="text-right">
+            <template #body="{ data }">
+              <Button icon="pi pi-pencil" text rounded size="small" v-tooltip="'Editar'" @click="abrirDialogEditarCategoria(data)" />
+              <Button
+                v-if="!data.esSistema && data.activo"
+                icon="pi pi-ban" text rounded size="small" severity="danger"
+                v-tooltip="'Desactivar o eliminar'"
+                @click="confirmarDesactivarCategoria(data)"
+              />
+            </template>
+          </Column>
+        </DataTable>
       </div>
 
       <!-- Tab: Movimientos -->
@@ -309,6 +409,104 @@
         <Button :label="formCuenta.id ? 'Guardar cambios' : 'Crear cuenta'" icon="pi pi-check" :loading="guardandoCuenta" @click="guardarCuenta" />
       </template>
     </Dialog>
+
+    <!-- Dialog: Nueva/Editar categoría -->
+    <Dialog v-model:visible="dialogCategoriaVisible" modal :header="dialogCategoriaHeader" :style="{ width: '520px' }">
+      <div class="space-y-4">
+        <div class="rounded-lg bg-info-50 border border-info-200 px-4 py-2.5 flex items-center gap-2">
+          <i class="pi pi-info-circle text-info-600" />
+          <p class="text-sm text-ink-700">
+            Los campos con <span class="text-danger-600 font-semibold">*</span> son obligatorios.
+          </p>
+        </div>
+
+        <div v-if="formCategoria.id && formCategoria.esSistema" class="rounded-lg bg-warning-50 border border-warning-200 px-4 py-2.5 flex items-start gap-2">
+          <i class="pi pi-shield text-warning-600 mt-0.5" />
+          <p class="text-sm text-ink-700">
+            Esta es una categoría <b>del sistema</b>. Solo puedes cambiar el nombre — el código y el tipo están bloqueados.
+          </p>
+        </div>
+
+        <div>
+          <label for="field-cat-nombre" class="block text-sm font-medium text-ink-700 mb-1.5">
+            Nombre <span class="text-danger-600 font-semibold">*</span>
+          </label>
+          <InputText
+            id="field-cat-nombre"
+            v-model="formCategoria.nombre"
+            placeholder="Ej: Combustible, Publicidad Facebook, Cobro Estudiante"
+            maxlength="80"
+            class="w-full"
+            :class="errorsCat.nombre ? '!border-danger-500 !bg-danger-50' : ''"
+            @update:modelValue="clearErrCat('nombre')"
+          />
+          <p v-if="errorsCat.nombre" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCat.nombre }}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="field-cat-codigo" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Código <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <InputText
+              id="field-cat-codigo"
+              v-model="formCategoria.codigo"
+              placeholder="Ej: COMBUSTIBLE, MARKETING_FB"
+              maxlength="40"
+              class="w-full font-mono"
+              :disabled="!!(formCategoria.id && formCategoria.esSistema)"
+              :class="errorsCat.codigo ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="onCodigoInput"
+            />
+            <p v-if="errorsCat.codigo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCat.codigo }}
+            </p>
+            <p v-else class="text-[11px] text-ink-500 mt-1">MAYÚSCULAS, sin espacios (2–40 chars)</p>
+          </div>
+          <div>
+            <label for="field-cat-tipo" class="block text-sm font-medium text-ink-700 mb-1.5">
+              Tipo <span class="text-danger-600 font-semibold">*</span>
+            </label>
+            <Dropdown
+              v-model="formCategoria.tipo"
+              inputId="field-cat-tipo"
+              :options="[
+                { label: 'Ingreso', value: 'INGRESO' },
+                { label: 'Gasto',   value: 'GASTO' }
+              ]"
+              optionLabel="label" optionValue="value"
+              placeholder="Selecciona tipo"
+              class="w-full"
+              :disabled="!!(formCategoria.id && formCategoria.esSistema)"
+              :class="errorsCat.tipo ? '!border-danger-500 !bg-danger-50' : ''"
+              @update:modelValue="clearErrCat('tipo')"
+            />
+            <p v-if="errorsCat.tipo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
+              <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsCat.tipo }}
+            </p>
+          </div>
+        </div>
+
+        <div v-if="formCategoria.id" class="flex items-center gap-2 p-3 rounded-lg bg-ink-50 border border-ink-200">
+          <Checkbox
+            v-model="formCategoria.activo"
+            :binary="true"
+            inputId="field-cat-activo"
+            :disabled="!!formCategoria.esSistema"
+          />
+          <label for="field-cat-activo" class="text-sm text-ink-700">
+            Categoría activa
+            <span v-if="formCategoria.esSistema" class="text-xs text-ink-500 ml-1">(las de sistema siempre están activas)</span>
+          </label>
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Cancelar" outlined @click="dialogCategoriaVisible = false" :disabled="guardandoCategoria" />
+        <Button :label="formCategoria.id ? 'Guardar cambios' : 'Crear categoría'" icon="pi pi-check" :loading="guardandoCategoria" @click="guardarCategoria" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -349,9 +547,10 @@ const esAdmin = computed(() => authStore.currentRole === 'ADMIN')
 
 const tabs = [
   { key: 'cuentas',     label: 'Cuentas',     icon: 'pi-briefcase' },
+  { key: 'categorias',  label: 'Categorías',  icon: 'pi-tags' },
   { key: 'movimientos', label: 'Movimientos', icon: 'pi-list' }
 ] as const
-const tab = ref<'cuentas' | 'movimientos'>('cuentas')
+const tab = ref<'cuentas' | 'categorias' | 'movimientos'>('cuentas')
 
 const formatMoney = (n: any) =>
   `$${(parseFloat(n) || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -504,6 +703,129 @@ const confirmarDesactivarCuenta = (c: CuentaResponse) => {
   })
 }
 
+// ============ CATEGORÍAS (CRUD) ============
+const cargandoCategorias = ref(false)
+const filtroCatTipo = ref<'INGRESO' | 'GASTO' | null>(null)
+
+const categoriasFiltradas = computed(() => {
+  const base = categorias.value
+  if (!filtroCatTipo.value) return base
+  return base.filter(c => c.tipo === filtroCatTipo.value)
+})
+
+const valCat = useValidation()
+const errorsCat = valCat.errors
+const setErrCat = valCat.setError
+const clearErrCat = valCat.clearError
+const clearAllCat = valCat.clearAll
+
+const dialogCategoriaVisible = ref(false)
+const guardandoCategoria = ref(false)
+const formCategoria = reactive<any>({
+  id: null, codigo: '', nombre: '', tipo: 'GASTO', esSistema: false, activo: true
+})
+
+const dialogCategoriaHeader = computed(() => {
+  if (!formCategoria.id) return 'Nueva categoría'
+  return formCategoria.esSistema ? 'Renombrar categoría de sistema' : 'Editar categoría'
+})
+
+const onCodigoInput = (v: string) => {
+  formCategoria.codigo = (v || '').toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 40)
+  clearErrCat('codigo')
+}
+
+const abrirDialogNuevaCategoria = () => {
+  Object.assign(formCategoria, { id: null, codigo: '', nombre: '', tipo: 'GASTO', esSistema: false, activo: true })
+  clearAllCat()
+  dialogCategoriaVisible.value = true
+}
+
+const abrirDialogEditarCategoria = (c: CategoriaMovimientoResponse) => {
+  Object.assign(formCategoria, {
+    id: c.id, codigo: c.codigo, nombre: c.nombre, tipo: c.tipo,
+    esSistema: c.esSistema, activo: c.activo
+  })
+  clearAllCat()
+  dialogCategoriaVisible.value = true
+}
+
+const validarCategoria = (): boolean => {
+  clearAllCat()
+  const nombre = formCategoria.nombre?.trim() ?? ''
+  if (!nombre) setErrCat('nombre', 'El nombre es requerido')
+  else if (nombre.length < 2) setErrCat('nombre', 'Mínimo 2 caracteres')
+
+  // Sistema: código y tipo bloqueados, no validar
+  if (!(formCategoria.id && formCategoria.esSistema)) {
+    const codigo = (formCategoria.codigo || '').trim()
+    if (!codigo) setErrCat('codigo', 'El código es requerido')
+    else if (!/^[A-Z][A-Z0-9_]{1,39}$/.test(codigo)) {
+      setErrCat('codigo', 'Debe empezar con letra, solo MAYÚSCULAS, números y _ (2–40)')
+    }
+    if (!formCategoria.tipo) setErrCat('tipo', 'Selecciona el tipo')
+  }
+
+  if (Object.keys(errorsCat).length > 0) {
+    valCat.focusFirst(['nombre', 'codigo', 'tipo'], 'cat', true)
+    return false
+  }
+  return true
+}
+
+const guardarCategoria = async () => {
+  if (!validarCategoria()) return
+  guardandoCategoria.value = true
+  try {
+    const payload = {
+      codigo: (formCategoria.codigo || '').trim().toUpperCase(),
+      nombre: formCategoria.nombre.trim(),
+      tipo: formCategoria.tipo,
+      activo: formCategoria.esSistema ? true : formCategoria.activo
+    }
+    if (formCategoria.id) {
+      await finanzasService.actualizarCategoria(formCategoria.id, payload)
+      toast.add({ severity: 'success', summary: 'Actualizada', detail: formCategoria.nombre, life: 3000 })
+    } else {
+      await finanzasService.crearCategoria(payload)
+      toast.add({ severity: 'success', summary: 'Creada', detail: formCategoria.nombre, life: 3000 })
+    }
+    dialogCategoriaVisible.value = false
+    await cargarCategorias()
+  } catch (e: any) {
+    const status = e.response?.status
+    const detail = e.response?.data?.detail || e.response?.data?.message
+    let mensaje = detail || 'No se pudo guardar la categoría'
+    if (status === 409) mensaje = detail || 'Ya existe otra categoría con ese código'
+    toast.add({ severity: 'error', summary: 'Error', detail: mensaje, life: 4000 })
+  } finally { guardandoCategoria.value = false }
+}
+
+const confirmarDesactivarCategoria = (c: CategoriaMovimientoResponse) => {
+  confirm.require({
+    message: `¿Desactivar la categoría "${c.nombre}"? Si tiene movimientos históricos se marca como inactiva; si no tiene ninguno, se elimina.`,
+    header: 'Desactivar categoría',
+    icon: 'pi pi-exclamation-triangle',
+    rejectLabel: 'Cancelar',
+    acceptLabel: 'Desactivar',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      try {
+        await finanzasService.desactivarCategoria(c.id)
+        toast.add({ severity: 'success', summary: 'Desactivada', detail: c.nombre, life: 3000 })
+        await cargarCategorias()
+      } catch (e: any) {
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: e.response?.data?.detail || 'No se pudo desactivar',
+          life: 4000
+        })
+      }
+    }
+  })
+}
+
 // ============ MOVIMIENTOS ============
 const movimientos = ref<MovimientoContableResponse[]>([])
 const categorias = ref<CategoriaMovimientoResponse[]>([])
@@ -515,8 +837,9 @@ const filtros = reactive<any>({
 
 const categoriasFiltro = computed(() => {
   const base = [{ id: null, nombre: 'Todas', tipo: null } as any]
-  if (!filtros.tipo) return [...base, ...categorias.value]
-  return [...base, ...categorias.value.filter(c => c.tipo === filtros.tipo)]
+  const activas = categorias.value.filter(c => c.activo)
+  if (!filtros.tipo) return [...base, ...activas]
+  return [...base, ...activas.filter(c => c.tipo === filtros.tipo)]
 })
 
 const fmtFecha = (d: any): string | undefined => {
@@ -526,9 +849,12 @@ const fmtFecha = (d: any): string | undefined => {
 }
 
 const cargarCategorias = async () => {
+  cargandoCategorias.value = true
   try {
-    categorias.value = await finanzasService.listarCategorias(undefined, true)
-  } catch { /* ignore */ }
+    categorias.value = await finanzasService.listarCategorias(undefined, false)
+  } catch {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las categorías', life: 4000 })
+  } finally { cargandoCategorias.value = false }
 }
 
 const cargarMovimientos = async () => {
