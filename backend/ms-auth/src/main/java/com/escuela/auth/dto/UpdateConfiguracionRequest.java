@@ -34,5 +34,12 @@ public record UpdateConfiguracionRequest(
         Short duracionBloqueoMinutos,
         @Min(value = 5, message = "Debe ser al menos 5")
         @Max(value = 1440, message = "No puede superar 1440 (24 horas)")
-        Short expiracionTokenResetMinutos
+        Short expiracionTokenResetMinutos,
+
+        // Cuentas contables por defecto (opcionales; NULL desasigna).
+        // No validamos existencia contra ms-cobros: se valida al momento de uso
+        // para evitar acoplar ms-auth con ms-cobros por Feign.
+        Long cuentaDefaultCobrosId,
+        Long cuentaDefaultCombustibleId,
+        Long cuentaDefaultMantenimientoId
 ) {}
