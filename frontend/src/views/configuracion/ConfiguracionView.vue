@@ -486,6 +486,111 @@
           </Dialog>
         </div>
 
+        <!-- =============== CONTABILIDAD =============== -->
+        <FormCard
+          v-if="activa === 'contabilidad'"
+          title="Contabilidad — cuentas por defecto"
+          description="Define a qué cuenta se envían automáticamente los movimientos generados por el sistema."
+          icon="pi pi-wallet"
+        >
+          <div class="rounded-lg bg-info-50 border border-info-500/20 p-3 mb-5 flex items-start gap-2 text-xs text-info-700">
+            <i class="pi pi-info-circle mt-0.5" />
+            <span>
+              Cuando registras un cobro o un gasto (combustible / mantenimiento en Vehículos),
+              el sistema puede depositarlo automáticamente en la cuenta que elijas aquí, sin
+              tener que seleccionarla cada vez. Si un rubro queda <strong>sin cuenta configurada</strong>,
+              el sistema pedirá seleccionarla manualmente en cada operación.
+            </span>
+          </div>
+
+          <div v-if="cuentasCargando" class="text-center py-8 text-ink-500">
+            <i class="pi pi-spin pi-spinner mr-2" /> Cargando cuentas…
+          </div>
+          <div v-else-if="cuentasActivas.length === 0" class="rounded-lg bg-warning-50 border border-warning-200 p-4 text-sm text-ink-700 flex items-start gap-2">
+            <i class="pi pi-exclamation-triangle text-warning-600 mt-0.5" />
+            <div>
+              <p class="font-semibold text-warning-800 mb-1">No hay cuentas contables activas</p>
+              <p>
+                Primero crea al menos una cuenta desde
+                <router-link to="/finanzas/saldo" class="text-brand-700 hover:underline font-medium">Saldo → Cuentas</router-link>
+                para poder asignarla como default de un rubro.
+              </p>
+            </div>
+          </div>
+          <div v-else class="grid grid-cols-1 gap-5">
+            <Field
+              label="Cuenta default para cobros de estudiantes"
+              hint="Los pagos registrados en 'Cobros' se depositan en esta cuenta salvo que el operador elija otra."
+            >
+              <Dropdown
+                v-model="config.cuentaDefaultCobrosId"
+                :options="cuentasActivas"
+                optionLabel="nombre"
+                optionValue="id"
+                placeholder="— Sin cuenta por defecto —"
+                class="w-full"
+                showClear
+              >
+                <template #option="{ option }">
+                  <div class="flex items-center gap-2">
+                    <i :class="iconoCuenta(option.tipo)" class="text-brand-600" />
+                    <span>{{ option.nombre }}</span>
+                    <span class="text-xs text-ink-500 ml-auto">{{ humanTipoCuenta(option.tipo) }}</span>
+                  </div>
+                </template>
+              </Dropdown>
+            </Field>
+            <Field
+              label="Cuenta default para gastos de combustible (Vehículos)"
+              hint="Al cargar combustible en un vehículo, el gasto se registra en esta cuenta con categoría Combustible."
+            >
+              <Dropdown
+                v-model="config.cuentaDefaultCombustibleId"
+                :options="cuentasActivas"
+                optionLabel="nombre"
+                optionValue="id"
+                placeholder="— Sin cuenta por defecto —"
+                class="w-full"
+                showClear
+              >
+                <template #option="{ option }">
+                  <div class="flex items-center gap-2">
+                    <i :class="iconoCuenta(option.tipo)" class="text-brand-600" />
+                    <span>{{ option.nombre }}</span>
+                    <span class="text-xs text-ink-500 ml-auto">{{ humanTipoCuenta(option.tipo) }}</span>
+                  </div>
+                </template>
+              </Dropdown>
+            </Field>
+            <Field
+              label="Cuenta default para gastos de mantenimiento (Vehículos)"
+              hint="Al registrar un mantenimiento (preventivo o correctivo), el gasto va aquí con categoría Mantenimiento."
+            >
+              <Dropdown
+                v-model="config.cuentaDefaultMantenimientoId"
+                :options="cuentasActivas"
+                optionLabel="nombre"
+                optionValue="id"
+                placeholder="— Sin cuenta por defecto —"
+                class="w-full"
+                showClear
+              >
+                <template #option="{ option }">
+                  <div class="flex items-center gap-2">
+                    <i :class="iconoCuenta(option.tipo)" class="text-brand-600" />
+                    <span>{{ option.nombre }}</span>
+                    <span class="text-xs text-ink-500 ml-auto">{{ humanTipoCuenta(option.tipo) }}</span>
+                  </div>
+                </template>
+              </Dropdown>
+            </Field>
+          </div>
+
+          <template #actions>
+            <Button label="Guardar cambios" icon="pi pi-check" @click="guardar" :loading="guardando" />
+          </template>
+        </FormCard>
+
         <!-- =============== SEGURIDAD =============== -->
         <FormCard
           v-if="activa === 'seguridad'"
@@ -630,16 +735,17 @@ const Field = defineComponent({
   }
 })
 
-const activa = ref<'escuela' | 'horarios' | 'marca' | 'alertas' | 'catalogos' | 'seguridad'>('escuela')
+const activa = ref<'escuela' | 'horarios' | 'marca' | 'alertas' | 'catalogos' | 'contabilidad' | 'seguridad'>('escuela')
 const guardando = ref(false)
 
 const secciones = [
-  { key: 'escuela',   label: 'Información general', icon: 'pi-building', hint: 'Datos de la empresa' },
-  { key: 'horarios',  label: 'Horarios',            icon: 'pi-clock',    hint: 'Reglas operativas' },
-  { key: 'marca',     label: 'Identidad visual',    icon: 'pi-palette',  hint: 'Colores corporativos' },
-  { key: 'alertas',   label: 'Alertas',             icon: 'pi-bell',     hint: 'Umbrales del sistema' },
-  { key: 'catalogos', label: 'Catálogos',           icon: 'pi-book',     hint: 'Conceptos y tipos de curso' },
-  { key: 'seguridad', label: 'Seguridad',           icon: 'pi-shield',   hint: 'Bloqueos y contraseñas' }
+  { key: 'escuela',      label: 'Información general', icon: 'pi-building', hint: 'Datos de la empresa' },
+  { key: 'horarios',     label: 'Horarios',            icon: 'pi-clock',    hint: 'Reglas operativas' },
+  { key: 'marca',        label: 'Identidad visual',    icon: 'pi-palette',  hint: 'Colores corporativos' },
+  { key: 'alertas',      label: 'Alertas',             icon: 'pi-bell',     hint: 'Umbrales del sistema' },
+  { key: 'catalogos',    label: 'Catálogos',           icon: 'pi-book',     hint: 'Conceptos y tipos de curso' },
+  { key: 'contabilidad', label: 'Contabilidad',        icon: 'pi-wallet',   hint: 'Cuentas por defecto' },
+  { key: 'seguridad',    label: 'Seguridad',           icon: 'pi-shield',   hint: 'Bloqueos y contraseñas' }
 ]
 
 const config = reactive<any>({
@@ -650,8 +756,36 @@ const config = reactive<any>({
   diasAlertaSoat: 30,
   maxIntentosFallidos: 3,
   duracionBloqueoMinutos: 15,
-  expiracionTokenResetMinutos: 60
+  expiracionTokenResetMinutos: 60,
+  cuentaDefaultCobrosId: null,
+  cuentaDefaultCombustibleId: null,
+  cuentaDefaultMantenimientoId: null
 })
+
+// -------- Contabilidad: cuentas activas para los dropdowns --------
+const cuentasActivas = ref<Array<{ id: number; nombre: string; tipo: string }>>([])
+const cuentasCargando = ref(false)
+
+const humanTipoCuenta = (t: string) => ({ EFECTIVO: 'Efectivo', BANCO: 'Banco', TARJETA: 'Tarjeta' } as any)[t] || t
+const iconoCuenta = (t: string) => ({
+  EFECTIVO: 'pi pi-money-bill',
+  BANCO: 'pi pi-building',
+  TARJETA: 'pi pi-credit-card'
+} as any)[t] || 'pi pi-briefcase'
+
+const cargarCuentasActivas = async () => {
+  if (cuentasActivas.value.length > 0) return
+  cuentasCargando.value = true
+  try {
+    const { data } = await api.get('/cuentas', { params: { soloActivas: true } })
+    cuentasActivas.value = data
+  } catch (e) {
+    console.error(e)
+    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las cuentas contables', life: 4000 })
+  } finally {
+    cuentasCargando.value = false
+  }
+}
 
 // PrimeVue Calendar timeOnly trabaja con Date; el backend habla LocalTime (HH:mm:ss).
 const horaStringADate = (hhmmss: string | null | undefined): Date | null => {
@@ -702,7 +836,10 @@ const guardar = async () => {
       diasAlertaSoat: config.diasAlertaSoat,
       maxIntentosFallidos: config.maxIntentosFallidos,
       duracionBloqueoMinutos: config.duracionBloqueoMinutos,
-      expiracionTokenResetMinutos: config.expiracionTokenResetMinutos
+      expiracionTokenResetMinutos: config.expiracionTokenResetMinutos,
+      cuentaDefaultCobrosId: config.cuentaDefaultCobrosId ?? null,
+      cuentaDefaultCombustibleId: config.cuentaDefaultCombustibleId ?? null,
+      cuentaDefaultMantenimientoId: config.cuentaDefaultMantenimientoId ?? null
     }
     const { data } = await api.put('/configuracion', payload)
     // Re-hidratar horarios como Date para que Calendar los siga mostrando bien
@@ -947,11 +1084,15 @@ const cargarCatalogos = async () => {
 }
 
 // Carga perezosa al entrar a la sección
-watch(activa, (v) => { if (v === 'catalogos') cargarCatalogos() })
+watch(activa, (v) => {
+  if (v === 'catalogos') cargarCatalogos()
+  if (v === 'contabilidad') cargarCuentasActivas()
+})
 
 onMounted(() => {
   cargar()
   // Si entras directo a /configuracion y eliges catálogos, también lo precargamos
   if (activa.value === 'catalogos') cargarCatalogos()
+  if (activa.value === 'contabilidad') cargarCuentasActivas()
 })
 </script>
