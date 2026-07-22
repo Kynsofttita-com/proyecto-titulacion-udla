@@ -87,6 +87,18 @@ public class ConfiguracionEscuela implements Serializable {
     @Column(name = "expiracion_token_reset_minutos", nullable = false)
     private Short expiracionTokenResetMinutos = 60;
 
+    // ----- Cuentas contables por defecto (contabilidad_schema.cuentas en ms-cobros) -----
+    // Sin FK: cross-MS. Validacion en el momento de uso.
+
+    @Column(name = "cuenta_default_cobros_id")
+    private Long cuentaDefaultCobrosId;
+
+    @Column(name = "cuenta_default_combustible_id")
+    private Long cuentaDefaultCombustibleId;
+
+    @Column(name = "cuenta_default_mantenimiento_id")
+    private Long cuentaDefaultMantenimientoId;
+
     // ----- Audit fields (sin deleted_at) -----
 
     @CreatedDate

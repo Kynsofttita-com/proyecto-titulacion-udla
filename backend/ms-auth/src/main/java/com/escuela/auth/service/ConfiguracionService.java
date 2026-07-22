@@ -53,6 +53,13 @@ public class ConfiguracionService {
         }
 
         mapper.updateEntity(request, conf);
+
+        // Las cuentas contables por defecto SI aceptan null (desasignar).
+        // El mapper ignora nulls; los seteamos aparte para permitir limpiar la seleccion.
+        conf.setCuentaDefaultCobrosId(request.cuentaDefaultCobrosId());
+        conf.setCuentaDefaultCombustibleId(request.cuentaDefaultCombustibleId());
+        conf.setCuentaDefaultMantenimientoId(request.cuentaDefaultMantenimientoId());
+
         repository.save(conf);
         log.info("Configuracion actualizada id={}", conf.getId());
         return mapper.toResponse(conf);
