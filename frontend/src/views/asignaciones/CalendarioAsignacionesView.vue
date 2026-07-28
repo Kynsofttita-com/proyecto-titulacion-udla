@@ -796,7 +796,19 @@ watch(mostrarForm, (open) => {
 
 // Al cambiar de estudiante: limpiar instructor/vehículo si ya no aplican a su categoría
 // y recomputar las sugerencias precargadas del dropdown (flechita) de AutoComplete.
-watch(selEstudiante, () => {
+// El listado /estudiantes no devuelve categoriaLicenciaId — lo enriquecemos con el
+// detalle GET /estudiantes/{id} solo cuando falta.
+watch(selEstudiante, async (nuevo) => {
+  if (nuevo && nuevo.id && nuevo.categoriaLicenciaId == null) {
+    try {
+      const detalle = await api.get(`/estudiantes/${nuevo.id}`)
+      const catId = detalle.data?.categoriaLicenciaId
+      if (catId != null && selEstudiante.value?.id === nuevo.id) {
+        selEstudiante.value = { ...nuevo, categoriaLicenciaId: catId }
+        return
+      }
+    } catch { /* ignore, seguimos sin filtro */ }
+  }
   const codigo = categoriaCodigoEstudiante.value
   const catId = categoriaIdEstudiante.value
   if (selInstructor.value && codigo && selInstructor.value.licenciaCategoria !== codigo) {
