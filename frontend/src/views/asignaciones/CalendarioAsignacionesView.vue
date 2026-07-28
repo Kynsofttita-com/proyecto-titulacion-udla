@@ -226,6 +226,15 @@
               <DetailRow label="Estado" :value="selEstudiante.estado" />
               <DetailRow label="Teléfono" :value="selEstudiante.telefono || '—'" />
               <DetailRow label="Email" :value="selEstudiante.email" />
+              <div class="col-span-2 mt-1 pt-2 border-t border-brand-200 flex items-center justify-between gap-2">
+                <span class="text-ink-500">Licencia requerida:</span>
+                <span v-if="categoriaCodigoEstudiante" class="inline-flex items-center gap-1 rounded bg-brand-600 text-white text-[11px] font-semibold px-2 py-0.5">
+                  <i class="pi pi-id-card text-[10px]" />{{ categoriaCodigoEstudiante }}
+                </span>
+                <span v-else class="text-amber-700 text-[11px] font-medium">
+                  Sin categoría asignada — se listarán todos
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -270,6 +279,12 @@
           </AutoComplete>
           <p v-if="errorsAsig.instructor" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
             <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsAsig.instructor }}
+          </p>
+          <p v-else-if="selEstudiante && categoriaCodigoEstudiante && !hayInstructoresParaCategoria" class="text-xs text-amber-700 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-triangle text-[10px]" />No hay instructores con licencia {{ categoriaCodigoEstudiante }}
+          </p>
+          <p v-else-if="selEstudiante && categoriaCodigoEstudiante" class="text-xs text-ink-500 mt-1">
+            Filtrando por licencia <strong>{{ categoriaCodigoEstudiante }}</strong>
           </p>
 
           <div v-if="selInstructor" class="mt-3 rounded-lg border border-brand-200 bg-brand-50/40 p-3 animate-fade-up">
@@ -325,6 +340,12 @@
           </AutoComplete>
           <p v-if="errorsAsig.vehiculo" class="text-xs text-danger-600 mt-1 flex items-center gap-1">
             <i class="pi pi-exclamation-circle text-[10px]" />{{ errorsAsig.vehiculo }}
+          </p>
+          <p v-else-if="selEstudiante && categoriaCodigoEstudiante && !hayVehiculosParaCategoria" class="text-xs text-amber-700 mt-1 flex items-center gap-1">
+            <i class="pi pi-exclamation-triangle text-[10px]" />No hay vehículos para licencia {{ categoriaCodigoEstudiante }}
+          </p>
+          <p v-else-if="selEstudiante && categoriaCodigoEstudiante" class="text-xs text-ink-500 mt-1">
+            Filtrando por licencia <strong>{{ categoriaCodigoEstudiante }}</strong>
           </p>
 
           <div v-if="selVehiculo" class="mt-3 rounded-lg border border-brand-200 bg-brand-50/40 p-3 animate-fade-up">
@@ -630,6 +651,27 @@ const estudiantesFiltered = ref<any[]>([])
 const instructoresFiltered = ref<any[]>([])
 const vehiculosFiltered = ref<any[]>([])
 
+// Categorías de licencia (para filtrar instructor/vehículo por la categoría del estudiante)
+const categoriasLicencia = ref<any[]>([])
+const categoriaIdEstudiante = computed<number | null>(() =>
+  (selEstudiante.value?.categoriaLicenciaId ?? null)
+)
+const categoriaCodigoEstudiante = computed<string | null>(() => {
+  const id = categoriaIdEstudiante.value
+  if (id == null) return null
+  return categoriasLicencia.value.find((c: any) => c.id === id)?.codigo ?? null
+})
+const hayInstructoresParaCategoria = computed(() => {
+  const codigo = categoriaCodigoEstudiante.value
+  if (!codigo) return true
+  return instructoresActivos.value.some(i => i.licenciaCategoria === codigo)
+})
+const hayVehiculosParaCategoria = computed(() => {
+  const catId = categoriaIdEstudiante.value
+  if (catId == null) return true
+  return vehiculosActivos.value.some(v => v.categoriaLicenciaId === catId)
+})
+
 // -------- Helper factory de validación por campo --------
 function useValidation() {
   const errors = reactive<Record<string, string>>({})
@@ -683,8 +725,12 @@ const filterEstudiantes = (e: any) => {
 
 const filterInstructores = (e: any) => {
   const q = (e.query || '').toLowerCase().trim()
-  if (!q) { instructoresFiltered.value = instructoresActivos.value.slice(0, 20); return }
-  instructoresFiltered.value = instructoresActivos.value.filter(i => {
+  const codigo = categoriaCodigoEstudiante.value
+  const base = codigo
+    ? instructoresActivos.value.filter(i => i.licenciaCategoria === codigo)
+    : instructoresActivos.value
+  if (!q) { instructoresFiltered.value = base.slice(0, 20); return }
+  instructoresFiltered.value = base.filter(i => {
     return (i.nombreCompleto || '').toLowerCase().includes(q)
       || (i.cedula || '').toLowerCase().includes(q)
   }).slice(0, 20)
@@ -692,8 +738,12 @@ const filterInstructores = (e: any) => {
 
 const filterVehiculos = (e: any) => {
   const q = (e.query || '').toLowerCase().trim()
-  if (!q) { vehiculosFiltered.value = vehiculosActivos.value.slice(0, 20); return }
-  vehiculosFiltered.value = vehiculosActivos.value.filter(v => {
+  const catId = categoriaIdEstudiante.value
+  const base = catId != null
+    ? vehiculosActivos.value.filter(v => v.categoriaLicenciaId === catId)
+    : vehiculosActivos.value
+  if (!q) { vehiculosFiltered.value = base.slice(0, 20); return }
+  vehiculosFiltered.value = base.filter(v => {
     return (v.placa || '').toLowerCase().includes(q)
       || (v.marca || '').toLowerCase().includes(q)
       || (v.modelo || '').toLowerCase().includes(q)
@@ -703,11 +753,13 @@ const filterVehiculos = (e: any) => {
 // Carga listas activas al abrir el dialog + precarga de sugerencias para dropdown
 const cargarListasParaForm = async () => {
   try {
-    const [estRes, insRes, vehRes] = await Promise.all([
+    const [estRes, insRes, vehRes, catRes] = await Promise.all([
       api.get('/estudiantes', { params: { size: 200 } }),
       api.get('/instructores', { params: { size: 200 } }),
-      api.get('/vehiculos', { params: { size: 200 } })
+      api.get('/vehiculos', { params: { size: 200 } }),
+      vehiculosService.listarCategoriasLicencia(true).catch(() => [])
     ])
+    categoriasLicencia.value = Array.isArray(catRes) ? catRes : []
     // Estudiantes que pueden recibir clases: MATRICULADO (aun sin clases) o
     // CURSANDO (ya en progreso). El backend rechaza los demas estados.
     // NOTA: antes filtrabamos por 'ACTIVO' (que no existe como estado de
@@ -740,6 +792,25 @@ const cargarListasParaForm = async () => {
 watch(mostrarForm, (open) => {
   if (open) cargarListasParaForm()
   else cancelarForm()
+})
+
+// Al cambiar de estudiante: limpiar instructor/vehículo si ya no aplican a su categoría
+// y recomputar las sugerencias precargadas del dropdown (flechita) de AutoComplete.
+watch(selEstudiante, () => {
+  const codigo = categoriaCodigoEstudiante.value
+  const catId = categoriaIdEstudiante.value
+  if (selInstructor.value && codigo && selInstructor.value.licenciaCategoria !== codigo) {
+    selInstructor.value = null
+  }
+  if (selVehiculo.value && catId != null && selVehiculo.value.categoriaLicenciaId !== catId) {
+    selVehiculo.value = null
+  }
+  instructoresFiltered.value = (codigo
+    ? instructoresActivos.value.filter(i => i.licenciaCategoria === codigo)
+    : instructoresActivos.value).slice(0, 20)
+  vehiculosFiltered.value = (catId != null
+    ? vehiculosActivos.value.filter(v => v.categoriaLicenciaId === catId)
+    : vehiculosActivos.value).slice(0, 20)
 })
 
 const cancelarForm = () => {
